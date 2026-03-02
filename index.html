@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Robot Configurator</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <!-- ═══════ LEFT PANEL ═══════ -->
+      <aside class="panel panel-left">
+        <div class="logo-header">
+          <h1 class="logo">Robot Configurator</h1>
+          <div class="logo-sub">
+            UNIT&nbsp;MK-1 &nbsp;·&nbsp; BUILD MODE ACTIVE
+          </div>
+        </div>
+
+        <!-- COMPONENTS — collapsible -->
+        <section class="panel-section">
+          <button class="section-toggle" data-target="sec-components">
+            COMPONENTS
+            <span class="chevron">▼</span>
+          </button>
+          <div class="section-body" id="sec-components">
+            <button id="addMotor" class="btn btn-motor">
+              <span class="btn-glyph">⚙</span>
+              <span class="btn-body">
+                <span class="btn-label">Add Motor</span>
+                <span class="btn-desc">Drive unit housing</span>
+              </span>
+              <span class="btn-tag">MOT</span>
+            </button>
+
+            <button id="addFrame" class="btn btn-frame">
+              <span class="btn-glyph">▭</span>
+              <span class="btn-body">
+                <span class="btn-label">Rect. Frame</span>
+                <span class="btn-desc">Structural base</span>
+              </span>
+              <span class="btn-tag">FRM</span>
+            </button>
+
+            <button id="addTriangle" class="btn btn-triangle">
+              <span class="btn-glyph">△</span>
+              <span class="btn-body">
+                <span class="btn-label">Tri. Frame</span>
+                <span class="btn-desc">Angular brace</span>
+              </span>
+              <span class="btn-tag">TRI</span>
+            </button>
+
+            <button id="addSupportFrame" class="btn btn-support">
+              <span class="btn-glyph">⊞</span>
+              <span class="btn-body">
+                <span class="btn-label">Support Frame</span>
+                <span class="btn-desc">Cross-bridge span</span>
+              </span>
+              <span class="btn-tag">SUP</span>
+            </button>
+
+            <button id="addFrameToSupport" class="btn btn-frame-on-support">
+              <span class="btn-glyph">⇅</span>
+              <span class="btn-body">
+                <span class="btn-label">Attach to Support</span>
+                <span class="btn-desc">Frame on support</span>
+              </span>
+              <span class="btn-tag">ATT</span>
+            </button>
+
+            <button id="addWheelBtn" class="btn btn-wheel">
+              <span class="btn-glyph">◎</span>
+              <span class="btn-body">
+                <span class="btn-label">Add Wheel</span>
+                <span class="btn-desc">Motor-driven wheel</span>
+              </span>
+              <span class="btn-tag">WHL</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- ACTIONS — collapsible -->
+        <section class="panel-section">
+          <button class="section-toggle" data-target="sec-actions">
+            ACTIONS
+            <span class="chevron">▼</span>
+          </button>
+          <div class="section-body" id="sec-actions">
+            <div class="action-row">
+              <button id="editBtn" class="btn btn-secondary">
+                <span class="btn-icon">✎</span> Edit
+              </button>
+              <button id="finalizeBtn" class="btn btn-primary">
+                <span class="btn-icon">✔</span> Finalize
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- CAMERA PRESETS — in sidebar -->
+        <section class="panel-section panel-section-camera">
+          <button class="section-toggle" data-target="sec-camera">
+            CAMERA PRESETS
+            <span class="chevron">▼</span>
+          </button>
+          <div class="section-body" id="sec-camera">
+            <div class="sidebar-cam-grid">
+              <button
+                class="sidebar-cam-btn active"
+                data-cam="perspective"
+                title="Perspective View"
+              >
+                <span class="sidebar-cam-icon">◈</span>
+                <span class="sidebar-cam-label">PERSP</span>
+              </button>
+              <button
+                class="sidebar-cam-btn"
+                data-cam="front"
+                title="Front View"
+              >
+                <span class="sidebar-cam-icon">⬛</span>
+                <span class="sidebar-cam-label">FRONT</span>
+              </button>
+              <button class="sidebar-cam-btn" data-cam="back" title="Back View">
+                <span class="sidebar-cam-icon">⬛</span>
+                <span class="sidebar-cam-label">BACK</span>
+              </button>
+              <button class="sidebar-cam-btn" data-cam="top" title="Top View">
+                <span class="sidebar-cam-icon">⊡</span>
+                <span class="sidebar-cam-label">TOP</span>
+              </button>
+              <button
+                class="sidebar-cam-btn"
+                data-cam="bottom"
+                title="Bottom View"
+              >
+                <span class="sidebar-cam-icon">⊡</span>
+                <span class="sidebar-cam-label">BTM</span>
+              </button>
+              <button
+                class="sidebar-cam-btn"
+                data-cam="left"
+                title="Left Side View"
+              >
+                <span class="sidebar-cam-icon">◁</span>
+                <span class="sidebar-cam-label">LEFT</span>
+              </button>
+              <button
+                class="sidebar-cam-btn"
+                data-cam="right"
+                title="Right Side View"
+              >
+                <span class="sidebar-cam-icon">▷</span>
+                <span class="sidebar-cam-label">RIGHT</span>
+              </button>
+              <button
+                class="sidebar-cam-btn"
+                data-cam="iso"
+                title="Isometric View"
+              >
+                <span class="sidebar-cam-icon">⬡</span>
+                <span class="sidebar-cam-label">ISO</span>
+              </button>
+            </div>
+            <div class="cam-hint">Alt+0–7 or click to switch</div>
+          </div>
+        </section>
+      </aside>
+
+      <!-- ═══════ VIEWPORT ═══════ -->
+      <main class="viewport">
+        <canvas id="app"></canvas>
+
+        <!-- INSTRUCTION PANEL -->
+        <section
+          class="instruction-section"
+          id="instructionSection"
+          style="display: none"
+        >
+          <div class="instruction-header">
+            <span class="instruction-icon" id="instructionIcon">●</span>
+            <span class="instruction-title" id="instructionTitle"
+              >INSTRUCTIONS</span
+            >
+            <button
+              class="instruction-close"
+              id="instructionClose"
+              title="Cancel placement (Esc)"
+            >
+              ✕
+            </button>
+          </div>
+          <div class="instruction-body" id="instructionBody"></div>
+        </section>
+
+        <!-- COLOR LEGEND -->
+        <div class="color-legend" id="colorLegend">
+          <div class="legend-title">SOCKET GUIDE</div>
+          <div class="legend-items" id="legendItems">
+            <div class="legend-item">
+              <span
+                class="legend-dot"
+                style="background: #00ff44; box-shadow: 0 0 6px #00ff44"
+              ></span>
+              <span class="legend-text"
+                ><strong>GREEN</strong> — Frame socket · connects Rect. &amp;
+                Tri. Frames</span
+              >
+            </div>
+            <div class="legend-item">
+              <span
+                class="legend-dot"
+                style="background: #ff2200; box-shadow: 0 0 6px #ff2200"
+              ></span>
+              <span class="legend-text"
+                ><strong>RED</strong> — Motor socket · click to attach a Motor
+                Housing</span
+              >
+            </div>
+            <div class="legend-item">
+              <span
+                class="legend-dot"
+                style="background: #44ddff; box-shadow: 0 0 6px #44ddff"
+              ></span>
+              <span class="legend-text"
+                ><strong>CYAN</strong> — Triangle socket · for Tri. Frame or
+                Support Frame</span
+              >
+            </div>
+            <div class="legend-item">
+              <span
+                class="legend-dot"
+                style="background: #cc44ff; box-shadow: 0 0 6px #cc44ff"
+              ></span>
+              <span class="legend-text"
+                ><strong>PURPLE</strong> — Support socket · attach Rect. Frame
+                to Support</span
+              >
+            </div>
+            <div class="legend-item">
+              <span
+                class="legend-dot"
+                style="background: #ff9900; box-shadow: 0 0 6px #ff9900"
+              ></span>
+              <span class="legend-text"
+                ><strong>ORANGE</strong> — Wheel socket · snap a Wheel onto a
+                Motor</span
+              >
+            </div>
+          </div>
+          <button
+            class="legend-collapse-btn"
+            id="legendToggle"
+            title="Collapse"
+          >
+            ◀
+          </button>
+        </div>
+
+        <!-- IDLE ARROWS container — populated by JS -->
+        <div id="idle-arrows"></div>
+      </main>
+
+      <!-- ═══════ RIGHT PANEL ═══════ -->
+      <aside class="panel panel-right">
+        <div class="basket-header">
+          <span class="basket-title">Requisition</span>
+          <span class="basket-count" id="basketCount">0 ITEMS</span>
+        </div>
+
+        <div class="basket-section">
+          <div id="basketItems" class="basket-items"></div>
+        </div>
+
+        <div class="basket-footer">
+          <span>Total Cost</span>
+          <span class="price">&#8377;<span id="totalPrice">0</span></span>
+        </div>
+
+        <div id="paymentSection" class="payment-section hidden">
+          <button id="proceedPaymentBtn" class="btn btn-primary">
+            <span class="btn-icon">&#9658;</span> Proceed to Payment
+          </button>
+        </div>
+
+        <!-- SAVE & PRINT — always visible -->
+        <div class="save-print-section">
+          <button id="saveDesignBtn" class="btn btn-save">
+            <span class="btn-icon">&#9112;</span> Save Design
+          </button>
+          <button id="printDesignBtn" class="btn btn-print">
+            <span class="btn-icon">&#9113;</span> Print Report
+          </button>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Collapsible section logic -->
+    <script>
+      document.querySelectorAll(".section-toggle").forEach((toggle) => {
+        const targetId = toggle.dataset.target;
+        const body = document.getElementById(targetId);
+        toggle.addEventListener("click", () => {
+          const isCollapsed = toggle.classList.contains("collapsed");
+          if (isCollapsed) {
+            toggle.classList.remove("collapsed");
+            body.classList.remove("collapsed");
+            body.classList.add("animate-in");
+            setTimeout(() => body.classList.remove("animate-in"), 400);
+          } else {
+            toggle.classList.add("collapsed");
+            body.classList.add("collapsed");
+          }
+        });
+      });
+
+      const basketEl = document.getElementById("basketItems");
+      const countEl = document.getElementById("basketCount");
+      if (basketEl && countEl) {
+        new MutationObserver(() => {
+          const n = basketEl.children.length;
+          countEl.textContent = n + (n === 1 ? " ITEM" : " ITEMS");
+        }).observe(basketEl, { childList: true });
+      }
+    </script>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
