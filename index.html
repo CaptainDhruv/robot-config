@@ -25,48 +25,58 @@
           </button>
           <div class="section-body" id="sec-components">
             <button id="addMotor" class="btn btn-motor">
-              <span class="btn-glyph">⚙</span>
-              <span class="btn-body">
-                <span class="btn-label">Add Motor</span>
-                <span class="btn-desc">Drive unit housing</span>
-              </span>
-              <span class="btn-tag">MOT</span>
+              <div class="btn-inner">
+                <span class="btn-glyph">⬡</span>
+                <span class="btn-body">
+                  <span class="btn-label">Add Motor</span>
+                  <span class="btn-desc">Drive unit housing</span>
+                </span>
+                <span class="btn-tag">MOT</span>
+              </div>
             </button>
 
             <button id="addFrame" class="btn btn-frame">
-              <span class="btn-glyph">▭</span>
-              <span class="btn-body">
-                <span class="btn-label">Rect. Frame</span>
-                <span class="btn-desc">Structural base</span>
-              </span>
-              <span class="btn-tag">FRM</span>
+              <div class="btn-inner">
+                <span class="btn-glyph">▬</span>
+                <span class="btn-body">
+                  <span class="btn-label">Rect. Frame</span>
+                  <span class="btn-desc">Structural base</span>
+                </span>
+                <span class="btn-tag">FRM</span>
+              </div>
             </button>
 
             <button id="addTriangle" class="btn btn-triangle">
-              <span class="btn-glyph">△</span>
-              <span class="btn-body">
-                <span class="btn-label">Tri. Frame</span>
-                <span class="btn-desc">Angular brace</span>
-              </span>
-              <span class="btn-tag">TRI</span>
+              <div class="btn-inner">
+                <span class="btn-glyph">▲</span>
+                <span class="btn-body">
+                  <span class="btn-label">Tri. Frame</span>
+                  <span class="btn-desc">Angular brace</span>
+                </span>
+                <span class="btn-tag">TRI</span>
+              </div>
             </button>
 
             <button id="addSupportFrame" class="btn btn-support">
-              <span class="btn-glyph">⊞</span>
-              <span class="btn-body">
-                <span class="btn-label">Stress Bridge</span>
-                <span class="btn-desc">Cross-bridge span</span>
-              </span>
-              <span class="btn-tag">SUP</span>
+              <div class="btn-inner">
+                <span class="btn-glyph">╬</span>
+                <span class="btn-body">
+                  <span class="btn-label">Stress Bridge</span>
+                  <span class="btn-desc">Cross-bridge span</span>
+                </span>
+                <span class="btn-tag">SUP</span>
+              </div>
             </button>
 
             <button id="addWheelBtn" class="btn btn-wheel">
-              <span class="btn-glyph">◎</span>
-              <span class="btn-body">
-                <span class="btn-label">Add Wheel</span>
-                <span class="btn-desc">Motor-driven wheel</span>
-              </span>
-              <span class="btn-tag">WHL</span>
+              <div class="btn-inner">
+                <span class="btn-glyph">◉</span>
+                <span class="btn-body">
+                  <span class="btn-label">Add Wheel</span>
+                  <span class="btn-desc">Motor-driven wheel</span>
+                </span>
+                <span class="btn-tag">WHL</span>
+              </div>
             </button>
           </div>
         </section>
@@ -80,16 +90,22 @@
           <div class="section-body" id="sec-actions">
             <div class="action-row">
               <button id="editBtn" class="btn btn-secondary">
-                <span class="btn-icon">✎</span> Edit
+                <div class="btn-inner">
+                  <span class="btn-icon">◈</span>
+                  <span class="btn-action-label">Edit</span>
+                </div>
               </button>
               <button id="finalizeBtn" class="btn btn-primary">
-                <span class="btn-icon">✔</span> Finalize
+                <div class="btn-inner">
+                  <span class="btn-icon">◼</span>
+                  <span class="btn-action-label">Finalize</span>
+                </div>
               </button>
             </div>
           </div>
         </section>
 
-        <!-- CAMERA PRESETS — in sidebar -->
+        <!-- CAMERA PRESETS -->
         <section class="panel-section panel-section-camera">
           <button class="section-toggle" data-target="sec-camera">
             CAMERA PRESETS
@@ -249,7 +265,7 @@
           </button>
         </div>
 
-        <!-- IDLE ARROWS container — populated by JS -->
+        <!-- IDLE ARROWS container -->
         <div id="idle-arrows"></div>
       </main>
 
@@ -271,17 +287,26 @@
 
         <div id="paymentSection" class="payment-section hidden">
           <button id="proceedPaymentBtn" class="btn btn-primary">
-            <span class="btn-icon">&#9658;</span> Proceed to Payment
+            <div class="btn-inner">
+              <span class="btn-icon">▶▶</span>
+              <span class="btn-action-label">Proceed to Payment</span>
+            </div>
           </button>
         </div>
 
-        <!-- SAVE & PRINT — always visible -->
+        <!-- SAVE & PRINT -->
         <div class="save-print-section">
           <button id="saveDesignBtn" class="btn btn-save">
-            <span class="btn-icon">&#9112;</span> Save Design
+            <div class="btn-inner">
+              <span class="btn-icon">▣</span>
+              <span class="btn-action-label">Save Design</span>
+            </div>
           </button>
           <button id="printDesignBtn" class="btn btn-print">
-            <span class="btn-icon">&#9113;</span> Print Report
+            <div class="btn-inner">
+              <span class="btn-icon">▤</span>
+              <span class="btn-action-label">Print Report</span>
+            </div>
           </button>
         </div>
       </aside>
