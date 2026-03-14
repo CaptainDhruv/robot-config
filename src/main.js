@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { scene } from "./core/scene.js";
+import "./style.css";
 import { camera } from "./core/camera.js";
 import { createRenderer } from "./core/renderer.js";
 import { createControls } from "./core/controls.js";
