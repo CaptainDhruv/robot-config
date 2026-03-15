@@ -945,6 +945,7 @@ async function init() {
 
   canvas.addEventListener("mousemove", onMouseMove);
   canvas.addEventListener("click", onClick);
+  canvas.addEventListener("contextmenu", onContextMenu);
   window.addEventListener("keydown", onKeyDown);
 
   window.addEventListener("resize", onWindowResize);
@@ -1713,6 +1714,7 @@ function makeSolid(obj) {
 }
 
 function clearGhost() {
+  destroyContextMenu();
   document
     .querySelectorAll(".btn.active-mode")
     .forEach((b) => b.classList.remove("active-mode"));
@@ -3554,32 +3556,7 @@ function onKeyDown(e) {
       return;
     }
 
-    const { socket, socketB, type } = mountToDelete.userData;
-
-    restoreMeshEmissive(selectedMesh, selectedOrigEm);
-    selectedMesh = null;
-    selectedMount = null;
-
-    if (hoveredMount === mountToDelete) {
-      restoreMeshEmissive(hoveredMesh, hoveredOrigEm);
-      hoveredMesh = null;
-      hoveredMount = null;
-    }
-
-    usedSockets.delete(socket?.uuid);
-    if (socketB) usedSockets.delete(socketB.uuid);
-
-    for (const entry of undoStack) {
-      if (entry.mount === mountToDelete) {
-        entry.socketUuids.forEach((uuid) => usedSockets.delete(uuid));
-      }
-    }
-
-    scene.remove(mountToDelete);
-
-    removeFromInventory(type);
-    rebuildSocketMarkers();
-    applySocketHighlights();
+    executeDelete(mountToDelete);
   }
 }
 
@@ -3740,6 +3717,293 @@ function hideIdleArrows() {
   }
 
   idleArrowsShown = false;
+}
+
+/* =========================================================
+   RIGHT-CLICK CONTEXT MENU
+   ========================================================= */
+
+const PART_GLYPHS = {
+  frame: "▬",
+  motor: "⬡",
+  triangle_frame: "▲",
+  support_frame: "╬",
+  wheel: "◉",
+};
+
+let ctxMenuEl = null;
+let ctxTargetMount = null;
+
+function buildContextMenu(mount, screenX, screenY) {
+  destroyContextMenu();
+
+  ctxTargetMount = mount;
+
+  const type = mount.userData.type ?? "frame";
+  const label = PART_LABELS[type] ?? type.replace(/_/g, " ");
+  const glyph = PART_GLYPHS[type] ?? "◈";
+  const cost = PART_COSTS[type] ?? 0;
+
+  // ── check deletion feasibility up-front so we can show cascade info ──
+  const delResult = checkDeletionAllowed(mount);
+  const depCount = delResult.ok ? 0 : delResult.dependents.length;
+
+  // ── build DOM ───────────────────────────────────────────────────────
+  const menu = document.createElement("div");
+  menu.id = "ctx-menu";
+
+  // header
+  const header = document.createElement("div");
+  header.className = "ctx-header";
+  header.innerHTML = `
+    <span class="ctx-header-glyph">${glyph}</span>
+    <div>
+      <div class="ctx-header-name">${label}</div>
+      <div class="ctx-header-type">₹${cost.toLocaleString()} · ${type.replace(/_/g, " ")}</div>
+    </div>`;
+  menu.appendChild(header);
+
+  const items = document.createElement("div");
+  items.className = "ctx-items";
+
+  // ── FOCUS / FRAME CAMERA ────────────────────────────────────────────
+  items.appendChild(
+    makeCtxItem({
+      icon: "◎",
+      label: "Focus Camera",
+      hint: "Frame this part in view",
+      kbd: null,
+      onClick: () => {
+        destroyContextMenu();
+        frameObject(mount);
+        showHudMessage(`FOCUSED: ${label.toUpperCase()}`);
+      },
+    }),
+  );
+
+  // ── SELECT (highlight) ──────────────────────────────────────────────
+  const isSelected = selectedMount === mount;
+  items.appendChild(
+    makeCtxItem({
+      icon: isSelected ? "◈" : "◇",
+      label: isSelected ? "Deselect Part" : "Select Part",
+      hint: isSelected ? "Clear current selection" : "Highlight this part",
+      kbd: "Click",
+      onClick: () => {
+        destroyContextMenu();
+        // find the first mesh in this mount to use for selection
+        let mesh = null;
+        mount.traverse((o) => {
+          if (!mesh && o.isMesh) mesh = o;
+        });
+        selectMesh(mesh, mount);
+      },
+    }),
+  );
+
+  items.appendChild(makeSep());
+
+  // ── DELETE ──────────────────────────────────────────────────────────
+  const deleteItem = makeCtxItem({
+    icon: "✕",
+    label: depCount > 0 ? `Delete All (${depCount + 1} parts)` : "Delete Part",
+    hint:
+      depCount > 0
+        ? `Will also remove ${depCount} dependent part${depCount !== 1 ? "s" : ""}`
+        : "Remove from build",
+    kbd: "Del",
+    danger: true,
+    onClick: () => {
+      destroyContextMenu();
+      if (depCount > 0) {
+        // show the existing cascade popup so user confirms
+        showDependencyBlockedPopup(mount, delResult);
+      } else {
+        executeDelete(mount);
+      }
+    },
+  });
+
+  // cascade badge
+  if (depCount > 0) {
+    const badge = document.createElement("div");
+    badge.className = "ctx-cascade-badge";
+    badge.innerHTML = `⚠ ${depCount} dependent part${depCount !== 1 ? "s" : ""} will also be removed`;
+    deleteItem.querySelector(".ctx-item-body").appendChild(badge);
+  }
+
+  items.appendChild(deleteItem);
+
+  menu.appendChild(items);
+
+  // ── POSITION — keep inside viewport ────────────────────────────────
+  document.body.appendChild(menu);
+  ctxMenuEl = menu;
+
+  const mw = menu.offsetWidth || 220;
+  const mh = menu.offsetHeight || 180;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  let x = screenX + 4;
+  let y = screenY + 4;
+  if (x + mw > vw - 8) x = screenX - mw - 4;
+  if (y + mh > vh - 8) y = screenY - mh - 4;
+  x = Math.max(8, x);
+  y = Math.max(8, y);
+
+  menu.style.left = `${x}px`;
+  menu.style.top = `${y}px`;
+
+  // ── dismiss on outside click / ESC ──────────────────────────────────
+  setTimeout(() => {
+    document.addEventListener("mousedown", onCtxOutsideClick, { once: true });
+    document.addEventListener("keydown", onCtxKeyDown, { capture: true });
+  }, 0);
+}
+
+function makeCtxItem({ icon, label, hint, kbd, danger, disabled, onClick }) {
+  const item = document.createElement("div");
+  item.className =
+    "ctx-item" +
+    (danger ? " ctx-danger" : "") +
+    (disabled ? " ctx-disabled" : "");
+
+  item.innerHTML = `
+    <span class="ctx-item-icon">${icon}</span>
+    <span class="ctx-item-body">
+      <span class="ctx-item-label">${label}</span>
+      ${hint ? `<span class="ctx-item-hint">${hint}</span>` : ""}
+    </span>
+    ${kbd ? `<span class="ctx-item-kbd">${kbd}</span>` : ""}`;
+
+  if (!disabled) item.addEventListener("click", onClick);
+  return item;
+}
+
+function makeSep() {
+  const sep = document.createElement("div");
+  sep.className = "ctx-sep";
+  return sep;
+}
+
+function destroyContextMenu() {
+  if (ctxMenuEl) {
+    ctxMenuEl.remove();
+    ctxMenuEl = null;
+  }
+  ctxTargetMount = null;
+  document.removeEventListener("mousedown", onCtxOutsideClick);
+  document.removeEventListener("keydown", onCtxKeyDown, { capture: true });
+}
+
+function onCtxOutsideClick(e) {
+  if (ctxMenuEl && !ctxMenuEl.contains(e.target)) {
+    destroyContextMenu();
+  }
+}
+
+function onCtxKeyDown(e) {
+  if (e.key === "Escape") {
+    destroyContextMenu();
+  }
+}
+
+// ── The actual right-click handler on the canvas ──────────────────────────
+function onContextMenu(e) {
+  e.preventDefault();
+
+  // Don't open menu when in placement mode — right-click = pan there
+  if (placementMode || isFinalized) return;
+
+  updateMouse(e);
+  raycaster.setFromCamera(mouse, camera);
+
+  const hits = raycaster.intersectObjects(scene.children, true);
+
+  for (const h of hits) {
+    // skip socket markers
+    if (
+      frameMarkers.includes(h.object) ||
+      motorMarkers.includes(h.object) ||
+      triangleMarkers.includes(h.object) ||
+      frameOnSupportMarkers.includes(h.object) ||
+      wheelMarkers.includes(h.object)
+    )
+      continue;
+
+    const { mount } = resolveMeshAndMount(h.object);
+    if (mount) {
+      // also select the part so user gets visual feedback
+      let mesh = null;
+      mount.traverse((o) => {
+        if (!mesh && o.isMesh) mesh = o;
+      });
+      selectMesh(mesh, mount);
+
+      buildContextMenu(mount, e.clientX, e.clientY);
+      return;
+    }
+  }
+
+  // right-clicked empty space — just close any open menu
+  destroyContextMenu();
+}
+
+// ── Shared delete helper (used by both context menu and keyboard handler) ──
+function executeDelete(mount) {
+  if (selectedMount === mount) {
+    restoreMeshEmissive(selectedMesh, selectedOrigEm);
+    selectedMesh = null;
+    selectedMount = null;
+  }
+  if (hoveredMount === mount) {
+    restoreMeshEmissive(hoveredMesh, hoveredOrigEm);
+    hoveredMesh = null;
+    hoveredMount = null;
+  }
+
+  const { socket, socketB, type } = mount.userData;
+  usedSockets.delete(socket?.uuid);
+  if (socketB) usedSockets.delete(socketB.uuid);
+
+  for (const entry of undoStack) {
+    if (entry.mount === mount) {
+      entry.socketUuids.forEach((uuid) => usedSockets.delete(uuid));
+    }
+  }
+
+  scene.remove(mount);
+  removeFromInventory(type);
+  rebuildSocketMarkers();
+  applySocketHighlights();
+  showHudMessage(`DELETED: ${(PART_LABELS[type] ?? type).toUpperCase()}`);
+}
+
+// ── Duplicate a rectangular frame (offset slightly so it doesn't overlap) ──
+function duplicateFrame(sourceMount) {
+  const frame = frameTemplate.clone(true);
+  makeSolid(frame);
+
+  const mount = new THREE.Group();
+  mount.userData = { isMount: true, type: "frame" };
+
+  // offset by half a frame width so it's visible but still close
+  mount.position.set(
+    sourceMount.position.x + 1.2,
+    sourceMount.position.y,
+    sourceMount.position.z,
+  );
+  mount.rotation.copy(sourceMount.rotation);
+  mount.add(frame);
+  scene.add(mount);
+
+  addToInventory("frame");
+  pushUndo(mount, [], "frame");
+  rebuildSocketMarkers();
+  applySocketHighlights();
+  frameObject(mount);
+  showHudMessage("FRAME DUPLICATED ✓");
 }
 
 /* =========================================================

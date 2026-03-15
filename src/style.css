@@ -1366,6 +1366,207 @@ canvas#app {
 }
 
 /* ═══════════════════════════════════════════════════
+   RIGHT-CLICK CONTEXT MENU
+   ═══════════════════════════════════════════════════ */
+
+@keyframes ctxMenuIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+@keyframes ctxItemIn {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+#ctx-menu {
+  position: fixed;
+  z-index: 999990;
+  min-width: 210px;
+  background: #0f0f0f;
+  border: 1px solid rgba(204, 34, 0, 0.35);
+  border-left: 3px solid var(--red);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.8),
+    0 8px 32px rgba(0, 0, 0, 0.7),
+    0 0 24px rgba(204, 34, 0, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: ctxMenuIn 0.14s cubic-bezier(0.2, 0, 0, 1) both;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── header strip showing part name ── */
+.ctx-header {
+  padding: 9px 14px 8px;
+  background: rgba(204, 34, 0, 0.06);
+  border-bottom: 1px solid rgba(204, 34, 0, 0.18);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ctx-header-glyph {
+  font-size: 14px;
+  opacity: 0.7;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.ctx-header-name {
+  font-family: var(--font-hud);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--steel-bright);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ctx-header-type {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-lo);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* ── menu items ── */
+.ctx-items {
+  padding: 5px 0;
+}
+
+.ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  cursor: pointer;
+  transition:
+    background 0.08s,
+    color 0.08s;
+  position: relative;
+  animation: ctxItemIn 0.18s ease both;
+}
+.ctx-item:nth-child(1) {
+  animation-delay: 0.03s;
+}
+.ctx-item:nth-child(2) {
+  animation-delay: 0.06s;
+}
+.ctx-item:nth-child(3) {
+  animation-delay: 0.09s;
+}
+.ctx-item:nth-child(4) {
+  animation-delay: 0.12s;
+}
+.ctx-item:nth-child(5) {
+  animation-delay: 0.15s;
+}
+
+.ctx-item:hover {
+  background: rgba(204, 34, 0, 0.08);
+}
+.ctx-item:active {
+  background: rgba(204, 34, 0, 0.16);
+}
+
+/* danger variant — delete */
+.ctx-item.ctx-danger:hover {
+  background: rgba(204, 34, 0, 0.14);
+}
+.ctx-item.ctx-danger .ctx-item-label {
+  color: #e85040;
+}
+.ctx-item.ctx-danger .ctx-item-icon {
+  color: #cc2200;
+}
+.ctx-item.ctx-danger:hover .ctx-item-label {
+  color: #ff6655;
+}
+
+/* disabled variant */
+.ctx-item.ctx-disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.ctx-item-icon {
+  width: 18px;
+  text-align: center;
+  font-size: 13px;
+  flex-shrink: 0;
+  color: var(--steel);
+  line-height: 1;
+}
+.ctx-item-body {
+  flex: 1;
+  min-width: 0;
+}
+.ctx-item-label {
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-hi);
+  line-height: 1;
+  display: block;
+}
+.ctx-item-hint {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  color: var(--text-lo);
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+  display: block;
+}
+.ctx-item-kbd {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-lo);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1px 5px;
+  flex-shrink: 0;
+  letter-spacing: 0.06em;
+}
+
+/* ── separator ── */
+.ctx-sep {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.05);
+  margin: 4px 0;
+}
+
+/* ── cascade warning badge ── */
+.ctx-cascade-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 7.5px;
+  letter-spacing: 0.08em;
+  color: #cc2200;
+  background: rgba(204, 34, 0, 0.1);
+  border: 1px solid rgba(204, 34, 0, 0.25);
+  padding: 2px 6px;
+  margin-top: 3px;
+}
+
+/* ═══════════════════════════════════════════════════
    RESPONSIVE BREAKPOINTS
    Large monitors: panels can be a bit wider
    Medium screens (laptops): balanced layout
