@@ -161,36 +161,6 @@ body::after {
     transform: translateY(0);
   }
 }
-@keyframes inst-slide-in {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-@keyframes inst-step-in {
-  from {
-    opacity: 0;
-    transform: translateX(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-@keyframes inst-border-pulse {
-  0%,
-  100% {
-    border-color: var(--inst-color, #cc2200);
-    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
-  }
-  50% {
-    box-shadow: 0 0 12px var(--inst-color, rgba(204, 34, 0, 0.25));
-  }
-}
 @keyframes active-pulse {
   0%,
   100% {
@@ -430,7 +400,6 @@ body::after {
     box-shadow 0.08s ease;
 }
 
-/* ── BRUTALIST COMPONENT BUTTON INNER LAYOUT ── */
 .btn-inner {
   display: flex;
   align-items: stretch;
@@ -508,19 +477,15 @@ body::after {
     color 0.1s;
 }
 
-/* hover: shift up-left, deepen shadow */
 .btn:hover {
   transform: translate(-3px, -3px);
   z-index: 2;
 }
-
-/* active/click: stamp down */
 .btn:active {
   transform: translate(0, 0) !important;
   animation: btn-stamp 0.1s ease both;
 }
 
-/* active placement mode pulse */
 .btn.active-mode .btn-inner {
   animation: active-pulse 1.2s ease-in-out infinite;
 }
@@ -729,7 +694,7 @@ body::after {
 }
 
 /* ═══════════════════════════════════════════════════
-   ACTION BUTTONS — BRUTALIST (Edit / Finalize)
+   ACTION BUTTONS — BRUTALIST (Edit only in left panel)
    ═══════════════════════════════════════════════════ */
 
 .action-row {
@@ -737,6 +702,11 @@ body::after {
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   padding: 2px 0;
+}
+
+/* Single-button action row (Edit only) */
+.action-row-single {
+  grid-template-columns: 1fr;
 }
 
 .action-row .btn {
@@ -772,7 +742,7 @@ body::after {
   text-transform: uppercase;
 }
 
-/* PRIMARY — Finalize */
+/* PRIMARY — used for Finalize */
 .btn-primary .btn-inner {
   background: var(--red);
   border: 2px solid var(--red);
@@ -923,201 +893,6 @@ canvas#app {
   border-top: 1px solid var(--border);
 }
 
-/* ── INSTRUCTION PANEL ── */
-.instruction-section {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  right: 20px;
-  z-index: 100;
-  pointer-events: auto;
-  background: rgba(15, 15, 15, 0.96);
-  border: 1px solid var(--inst-color, #cc2200);
-  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow:
-    0 0 32px rgba(0, 0, 0, 0.8),
-    0 0 20px var(--inst-color, rgba(204, 34, 0, 0.14));
-  animation:
-    inst-slide-in 0.25s ease both,
-    inst-border-pulse 2.5s ease-in-out infinite;
-}
-.instruction-section::before {
-  content: "";
-  position: absolute;
-  top: -1px;
-  left: -1px;
-  width: 18px;
-  height: 18px;
-  border-top: 1.5px solid var(--inst-color, #cc2200);
-  border-left: 1.5px solid var(--inst-color, #cc2200);
-  pointer-events: none;
-}
-.instruction-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 16px 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(0, 0, 0, 0.25);
-}
-.instruction-icon {
-  font-size: 15px;
-  line-height: 1;
-  flex-shrink: 0;
-  filter: drop-shadow(0 0 4px currentColor);
-}
-.instruction-title {
-  font-family: var(--font-hud);
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.22em;
-  flex: 1;
-}
-.instruction-close {
-  background: none;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  color: var(--text-lo);
-  font-size: 11px;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition:
-    color 0.1s,
-    border-color 0.1s,
-    background 0.1s,
-    transform 0.08s,
-    box-shadow 0.08s;
-  flex-shrink: 0;
-  padding: 0;
-  line-height: 1;
-  border-radius: 0;
-  box-shadow: 2px 2px 0 rgba(220, 70, 70, 0.2);
-}
-.instruction-close:hover {
-  color: #111;
-  border-color: #e05050;
-  background: #e05050;
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 #8a1010;
-}
-
-.instruction-body {
-  padding: 10px 16px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-hi) transparent;
-}
-.instruction-body::-webkit-scrollbar {
-  height: 3px;
-}
-.instruction-body::-webkit-scrollbar-thumb {
-  background: var(--border-hi);
-}
-
-.inst-steps {
-  display: flex;
-  flex-direction: row;
-  gap: 0;
-  align-items: stretch;
-}
-.inst-step {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  align-items: flex-start;
-  animation: inst-step-in 0.2s ease both;
-  flex: 1;
-  min-width: 155px;
-  padding: 6px 14px 6px 0;
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
-  margin-right: 14px;
-}
-.inst-step:last-child {
-  border-right: none;
-  margin-right: 0;
-}
-.inst-step-num {
-  width: 20px;
-  height: 20px;
-  border: 1px solid;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-hud);
-  font-size: 9px;
-  flex-shrink: 0;
-  clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%);
-}
-.inst-step-label {
-  font-family: var(--font-mono);
-  font-size: 8.5px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  margin-bottom: 2px;
-  font-weight: 700;
-}
-.inst-step-text {
-  font-family: var(--font-ui);
-  font-size: 11px;
-  color: var(--text-mid);
-  line-height: 1.45;
-  letter-spacing: 0.02em;
-}
-.inst-step-text strong {
-  color: var(--text-hi);
-}
-.inst-step-text kbd {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  background: var(--bg-row);
-  border: 1px solid var(--border-red);
-  padding: 1px 5px;
-  color: var(--red-bright);
-}
-.inst-tip {
-  background: rgba(204, 34, 0, 0.05);
-  border: 1px solid rgba(204, 34, 0, 0.15);
-  border-left: 2px solid var(--red);
-  padding: 5px 12px;
-  font-family: var(--font-ui);
-  font-size: 11px;
-  color: var(--text-mid);
-  line-height: 1.4;
-  margin-top: 8px;
-  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
-}
-.inst-tip-label {
-  display: inline-block;
-  font-family: var(--font-hud);
-  font-size: 8px;
-  letter-spacing: 0.2em;
-  color: var(--red);
-  margin-right: 6px;
-  vertical-align: middle;
-}
-.inst-esc-hint {
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  color: var(--text-lo);
-  letter-spacing: 0.1em;
-  text-align: right;
-  padding-top: 6px;
-}
-.inst-esc-hint kbd {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  background: var(--bg-row);
-  border: 1px solid var(--border);
-  padding: 1px 5px;
-  color: var(--text-mid);
-}
-
 /* ── BASKET HEADER ── */
 .basket-header {
   padding: 18px 18px 14px 20px;
@@ -1239,7 +1014,7 @@ canvas#app {
 }
 
 /* ═══════════════════════════════════════════════════
-   PAYMENT + SAVE/PRINT — BRUTALIST
+   PAYMENT + FINALIZE/PRINT — BRUTALIST
    ═══════════════════════════════════════════════════ */
 
 .payment-section {
@@ -1248,7 +1023,6 @@ canvas#app {
   flex-shrink: 0;
 }
 
-/* Payment button — full width brutalist */
 .payment-section .btn {
   margin-bottom: 0;
 }
@@ -1292,18 +1066,21 @@ canvas#app {
   padding: 12px 14px;
 }
 
-/* SAVE */
-.btn-save .btn-inner {
-  background: #1a0500;
-  border: 2px solid var(--red);
-  color: var(--red-bright);
-  box-shadow: 4px 4px 0 #660000;
+/* FINALIZE — larger, more prominent in right panel */
+.btn-finalize-large .btn-inner {
+  padding: 15px 14px !important;
+  justify-content: center !important;
+  box-shadow: 5px 5px 0 #660000 !important;
 }
-.btn-save:hover .btn-inner {
-  background: var(--red);
-  color: #111;
-  border-color: var(--red);
-  box-shadow: 7px 7px 0 #660000;
+.btn-finalize-large .btn-action-label {
+  font-size: 11px !important;
+  letter-spacing: 0.22em !important;
+}
+.btn-finalize-large .btn-icon {
+  font-size: 17px !important;
+}
+.btn-finalize-large:hover .btn-inner {
+  box-shadow: 8px 8px 0 #660000 !important;
 }
 
 /* PRINT */

@@ -350,187 +350,17 @@ function captureFromAngle(presetKey) {
 }
 
 /* =========================================================
-   INSTRUCTION PANEL DEFINITIONS
+   INSTRUCTION PANEL — DISABLED (no-ops)
    ========================================================= */
 
-const INSTRUCTIONS = {
-  motor: {
-    icon: "⚙",
-    title: "MOTOR HOUSING",
-    color: "#cc2200",
-    steps: [
-      {
-        label: "LOCATE SOCKET",
-        text: "Look for <strong style='color:#ff2200'>red glowing dots</strong> on your rectangular frame — these are the SOCKET_FRAME attachment points where motors can be mounted.",
-      },
-      {
-        label: "HOVER TO PREVIEW",
-        text: "Move your cursor over any red socket dot. The motor ghost <strong style='color:#e83a1a'>auto-rotates</strong> to face outward from that socket surface automatically.",
-      },
-      {
-        label: "ROTATE (OPTIONAL)",
-        text: "Press <kbd>R</kbd> to add an extra 90° rotation on top of the auto-orientation. Each press rotates it another quarter turn.",
-      },
-      {
-        label: "CLICK TO PLACE",
-        text: "Click on the socket to confirm placement. The motor locks in at the previewed orientation. <strong style='color:#e83a1a'>Mode stays active</strong> — keep clicking sockets to add more motors. Press <kbd>Esc</kbd> when done.",
-      },
-    ],
-    tip: "The ghost auto-orients to each socket on hover. Press ← → to add manual rotation on top. Mode stays on after each motor — press Esc to exit.",
-  },
-  frame: {
-    icon: "▭",
-    title: "RECTANGULAR FRAME",
-    color: "#909aa8",
-    steps: [
-      {
-        label: "WHITE DOTS — EXTEND",
-        text: "<strong style='color:#d8e0e8'>White socket dots</strong> on existing frames are SOCKET_FRAME points — hover and click to extend the structure outward with a new frame.",
-      },
-      {
-        label: "STEEL DOTS — BRIDGE",
-        text: "<strong style='color:#b0bcc8'>Steel-blue socket dots</strong> on support frames are SOCKET_FRAME_SUPPORT points — hover and click to lay a frame flat across supports.",
-      },
-      {
-        label: "ROTATE ON SUPPORT (R)",
-        text: "When hovering a <strong style='color:#b0bcc8'>steel-blue dot</strong>, press <kbd>←</kbd> <kbd>→</kbd> to rotate the frame in 90° increments before placing.",
-      },
-      {
-        label: "CLICK TO PLACE",
-        text: "Click any socket dot to confirm. <strong style='color:#e83a1a'>Mode stays active</strong> — keep clicking sockets to keep building. Press <kbd>Esc</kbd> when done.",
-      },
-    ],
-    tip: "One button handles everything — white dots extend the frame structure, steel-blue dots bridge across supports. Press ← → on steel-blue sockets to rotate.",
-  },
-  triangle: {
-    icon: "△",
-    title: "TRIANGULAR FRAME",
-    color: "#8090a0",
-    steps: [
-      {
-        label: "LOCATE SOCKET",
-        text: "Look for <strong style='color:#8090a0'>grey glowing dots</strong> — these are SOCKET_TRIANGLE connection points on your rectangular frames.",
-      },
-      {
-        label: "HOVER TO PREVIEW",
-        text: "Move your cursor over any grey socket dot. The triangle ghost <strong style='color:#8090a0'>auto-rotates</strong> to face outward from that frame edge automatically.",
-      },
-      {
-        label: "ROTATE (OPTIONAL)",
-        text: "Press <kbd>R</kbd> to add an extra 90° rotation on top of the auto-orientation. Each press rotates it another quarter turn.",
-      },
-      {
-        label: "CLICK TO PLACE",
-        text: "Click the socket dot to place. The triangle locks in at the previewed orientation. <strong style='color:#e83a1a'>Mode stays active</strong> — click another socket to add more triangles. Press <kbd>Esc</kbd> when done.",
-      },
-    ],
-    tip: "The ghost auto-orients to each socket on hover. Press ← → to add manual rotation on top. Mode stays on after each triangle — press Esc to exit.",
-  },
-  support: {
-    icon: "⊞",
-    title: "SUPPORT FRAME",
-    color: "#606870",
-    steps: [
-      {
-        // ── CHANGED: now requires 2 triangular frames ──────────────────────
-        label: "PREREQUISITE",
-        text: "You need <strong>at least 2 Triangular Frames</strong> placed before adding a Support Frame. The stress bridge spans between a pair of triangles.",
-      },
-      {
-        label: "LOCATE SOCKET",
-        text: "Look for <strong style='color:#8090a0'>grey glowing dots</strong> on your triangular frames.",
-      },
-      {
-        label: "HOVER TO PREVIEW",
-        text: "Move your cursor over any grey socket. The support ghost <strong style='color:#8090a0'>auto-rotates</strong> to align with the triangle's straight edge.",
-      },
-      {
-        label: "CLICK TO PLACE",
-        text: "Click once to place the support frame. <strong style='color:#e83a1a'>Mode stays active</strong> — keep clicking sockets to add more. Press <kbd>Esc</kbd> when done.",
-      },
-    ],
-    tip: "Two triangular frames are needed before a support/stress bridge can be placed. Use left/right arrows to rotate.",
-  },
-  wheel: {
-    icon: "◎",
-    title: "ADD WHEEL",
-    color: "#c02010",
-    steps: [
-      {
-        label: "PREREQUISITE",
-        text: "You need at least <strong>1 Motor Housing</strong> placed on your frame before wheels can be attached.",
-      },
-      {
-        label: "LOCATE SOCKET",
-        text: "Look for <strong style='color:#ff3010'>hot-red glowing dots</strong> — these are WHEEL_SOCKET points on your placed motor housings.",
-      },
-      {
-        label: "HOVER TO PREVIEW",
-        text: "Move your cursor over any <strong style='color:#ff3010'>hot-red socket dot</strong>. The wheel ghost will snap and preview its mounted position.",
-      },
-      {
-        label: "CLICK TO PLACE",
-        text: "Click the socket dot to snap the wheel in. <strong style='color:#e83a1a'>Mode stays active</strong> — click more sockets to add more wheels. Press <kbd>Esc</kbd> when done.",
-      },
-    ],
-    tip: "Placement mode stays on after each wheel. Press Esc to exit.",
-  },
-};
-
-/* =========================================================
-   INSTRUCTION PANEL
-   ========================================================= */
-
-function showInstructionPanel(mode) {
-  const section = document.getElementById("instructionSection");
-  const iconEl = document.getElementById("instructionIcon");
-  const titleEl = document.getElementById("instructionTitle");
-  const bodyEl = document.getElementById("instructionBody");
-  const closeBtn = document.getElementById("instructionClose");
-
-  if (!section || !bodyEl) return;
-
-  const def = INSTRUCTIONS[mode];
-  if (!def) return;
-
-  iconEl.textContent = def.icon;
-  iconEl.style.color = def.color;
-  titleEl.textContent = def.title;
-  titleEl.style.color = def.color;
-  section.style.setProperty("--inst-color", def.color);
-
-  let html = `<div class="inst-steps">`;
-  def.steps.forEach((step, i) => {
-    html += `
-      <div class="inst-step" style="animation-delay:${i * 0.07}s">
-        <div class="inst-step-num" style="border-color:${def.color};color:${def.color}">${i + 1}</div>
-        <div class="inst-step-content">
-          <div class="inst-step-label" style="color:${def.color}">${step.label}</div>
-          <div class="inst-step-text">${step.text}</div>
-        </div>
-      </div>`;
-  });
-  html += `</div>`;
-
-  if (def.tip) {
-    html += `<div class="inst-tip"><span class="inst-tip-label">TIP</span>${def.tip}</div>`;
-  }
-
-  html += `<div class="inst-esc-hint">Press <kbd>Esc</kbd> to exit placement mode</div>`;
-
-  bodyEl.innerHTML = html;
-  section.style.display = "block";
-
-  if (closeBtn) {
-    closeBtn.onclick = () => {
-      clearGhost();
-    };
-  }
+// Instruction panel has been removed. These are kept as no-ops
+// so all existing call sites continue to work without errors.
+function showInstructionPanel(_mode) {
+  // intentionally empty — panel removed per design update
 }
 
 function hideInstructionPanel() {
-  const section = document.getElementById("instructionSection");
-  if (section) section.style.display = "none";
+  // intentionally empty — panel removed per design update
 }
 
 /* =========================================================
@@ -549,8 +379,6 @@ let baseFrameYLevel = 0;
 const FRAME_ON_SUPPORT_Y_OFFSET = -0.07;
 const TRIANGLE_FRAME_Y_OFFSET = -0.01;
 const SUPPORT_BRIDGE_Y_OFFSET = 0.11;
-// Fine-tune Y lift for the 2-point connector snap (exact connector-to-socket
-// alignment undershoots slightly because the socket sits at the slot bottom).
 const SUPPORT_SNAP_Y_ADJUST = 0.1;
 
 /* =========================================================
@@ -561,10 +389,11 @@ const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
 /* =========================================================
-   SOCKET MARKERS — INDUSTRIAL COLORS
+   SOCKET MARKERS — LARGER SIZE + WIDER PROXIMITY
    ========================================================= */
 
-const socketGeo = new THREE.SphereGeometry(0.04, 12, 12);
+// ── Increased from 0.04 → 0.09 for bigger, easier-to-hit sockets ──
+const socketGeo = new THREE.SphereGeometry(0.09, 12, 12);
 const frameMat = new THREE.MeshBasicMaterial({ color: 0xd0d8e0 });
 const motorMat = new THREE.MeshBasicMaterial({ color: 0xdd2200 });
 const supportFrameSocketMat = new THREE.MeshBasicMaterial({ color: 0x909aaa });
@@ -573,14 +402,9 @@ const wheelSocketMat = new THREE.MeshBasicMaterial({ color: 0xff3010 });
 let frameMarkers = [];
 let motorMarkers = [];
 
-// ── v34: split triangle markers ──────────────────────────────────────────────
-// triangleSocketMarkers  → SOCKET_TRIANGLE only  → used for triangle placement raycasting
-// stressConnectorMarkers → SOCKET_STRESS_CONNECTOR only → used for support frame raycasting
-// triangleMarkers        → union of both, used for highlighting / pulsing / visibility
 let triangleSocketMarkers = [];
 let stressConnectorMarkers = [];
 let triangleMarkers = [];
-// ─────────────────────────────────────────────────────────────────────────────
 
 let frameOnSupportMarkers = [];
 let wheelMarkers = [];
@@ -712,7 +536,7 @@ function computeFrameSnapPosition(clickedSocket) {
 }
 
 /* =========================================================
-   MOTOR AUTO-ORIENTATION HELPER — v11
+   MOTOR AUTO-ORIENTATION HELPER
    ========================================================= */
 
 function computeMotorAutoYaw(socket) {
@@ -751,7 +575,7 @@ function computeMotorAutoYaw(socket) {
 }
 
 /* =========================================================
-   TRIANGLE AUTO-ORIENTATION HELPER — v24
+   TRIANGLE AUTO-ORIENTATION HELPER
    ========================================================= */
 
 function computeTriangleAutoYaw(socket) {
@@ -783,7 +607,6 @@ function computeTriangleAutoYaw(socket) {
     }
   }
 
-  // Fallback: use socket's own world quaternion yaw
   const socketWorldQuat = new THREE.Quaternion();
   socket.getWorldQuaternion(socketWorldQuat);
   const euler = new THREE.Euler().setFromQuaternion(socketWorldQuat, "YXZ");
@@ -791,7 +614,7 @@ function computeTriangleAutoYaw(socket) {
 }
 
 /* =========================================================
-   DEPENDENCY RULES — v12
+   DEPENDENCY RULES
    ========================================================= */
 
 function getAllMounts() {
@@ -1052,6 +875,9 @@ function performCascadeDelete(targetMount, directDependents) {
     removeFromInventory(type ?? "frame");
   }
 
+  hoveredMotorMarker = null;
+  hoveredTriangleMarker = null;
+
   rebuildSocketMarkers();
   applySocketHighlights();
 
@@ -1132,7 +958,7 @@ async function init() {
   window.addEventListener("resize", onWindowResize);
   onWindowResize();
 
-  // ── Accidental-refresh guard (v35) ───────────────────────────────────────
+  // ── Accidental-refresh guard ───────────────────────────────────────────────
   window.addEventListener("beforeunload", (e) => {
     const totalPlaced =
       countPlaced("frame") +
@@ -1145,7 +971,6 @@ async function init() {
       e.returnValue = "";
     }
   });
-  // ─────────────────────────────────────────────────────────────────────────
 
   animate();
 }
@@ -1268,7 +1093,6 @@ function bindUI() {
   bind("finalizeBtn", onFinalize);
   bind("editBtn", onEdit);
   bind("proceedPaymentBtn", onProceedToPayment);
-  bind("saveDesignBtn", saveDesign);
   bind("printDesignBtn", printDesign);
 
   tooltipEl = document.createElement("div");
@@ -1317,57 +1141,6 @@ function onEdit() {
 
 function onProceedToPayment() {
   alert("Proceeding to payment...");
-}
-
-/* =========================================================
-   SAVE DESIGN
-   ========================================================= */
-
-function saveDesign() {
-  const parts = [];
-  scene.traverse((obj) => {
-    if (!obj.userData?.isMount) return;
-    const p = obj.position;
-    const r = obj.rotation;
-    parts.push({
-      type: obj.userData.type ?? "unknown",
-      position: { x: +p.x.toFixed(4), y: +p.y.toFixed(4), z: +p.z.toFixed(4) },
-      rotation: { x: +r.x.toFixed(4), y: +r.y.toFixed(4), z: +r.z.toFixed(4) },
-    });
-  });
-
-  const basketRows = [];
-  document.querySelectorAll("#basketItems > *").forEach((row) => {
-    basketRows.push(row.textContent.trim().replace(/\s+/g, " "));
-  });
-  const total = document.getElementById("totalPrice")?.textContent ?? "0";
-
-  renderer.render(scene, camera);
-  const screenshot = renderer.domElement.toDataURL("image/png");
-
-  const saveData = {
-    version: "1.0",
-    savedAt: new Date().toISOString(),
-    finalized: isFinalized,
-    parts,
-    basket: { rows: basketRows, total: "₹" + total },
-    screenshot,
-  };
-
-  const blob = new Blob([JSON.stringify(saveData, null, 2)], {
-    type: "application/json",
-  });
-  const url = URL.createObjectURL(blob);
-  const a = Object.assign(document.createElement("a"), {
-    href: url,
-    download: "robot-design-" + Date.now() + ".json",
-  });
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-
-  showHudMessage("DESIGN SAVED ✓");
 }
 
 /* =========================================================
@@ -2048,55 +1821,101 @@ function rebuildSocketMarkers() {
   [
     ...frameMarkers,
     ...motorMarkers,
-    ...triangleMarkers, // union — covers both sub-arrays
+    ...triangleMarkers,
     ...frameOnSupportMarkers,
     ...wheelMarkers,
   ].forEach((m) => scene.remove(m));
 
   frameMarkers = [];
   motorMarkers = [];
-  // ── v34: reset both sub-arrays then rebuild union at the end ──────────────
   triangleSocketMarkers = [];
   stressConnectorMarkers = [];
   triangleMarkers = [];
-  // ─────────────────────────────────────────────────────────────────────────
   frameOnSupportMarkers = [];
   wheelMarkers = [];
 
   scene.updateMatrixWorld(true);
 
-  // ── Proximity deactivation ────────────────────────────────────────────────
-  const SOCKET_MERGE_DIST = 0.08;
-  const usedPositions = [];
+  // ── Proximity deduplication ───────────────────────────────────────────────
+  // suppressedSockets never touches usedSockets so undo always restores fully.
+  //
+  // KEY FIX: SOCKET_MOTOR nodes are NEVER proximity-suppressed.
+  // Motor sockets live on the frame surface and will always be near used
+  // SOCKET_FRAME nodes — suppressing them by proximity incorrectly hides them.
+  // Only SOCKET_FRAME and similar co-planar frame sockets need dedup.
+  // ─────────────────────────────────────────────────────────────────────────
+  const suppressedSockets = new Set();
 
+  // Pass 1: collect world positions of explicitly-used FRAME sockets only
+  // (motor sockets are intentionally excluded from the suppression source list)
+  const SOCKET_MERGE_DIST = 0.12;
+  const usedFramePositions = [];
   scene.traverse((o) => {
-    if (!o.name) return;
-    if (!isSocketNode(o.name)) return;
+    if (!o.name || !isSocketNode(o.name)) return;
     if (!usedSockets.has(o.uuid)) return;
+    // Only frame-type sockets contribute to proximity suppression
+    if (!o.name.startsWith("SOCKET_FRAME")) return;
     const wp = new THREE.Vector3();
     o.getWorldPosition(wp);
-    usedPositions.push(wp);
+    usedFramePositions.push(wp);
   });
 
-  if (usedPositions.length > 0) {
+  // Pass 2: suppress free FRAME sockets within merge distance of a used frame position.
+  // SOCKET_MOTOR and WHEEL_SOCKET are explicitly skipped — they must never be
+  // proximity-suppressed since they live on the frame surface by design.
+  if (usedFramePositions.length > 0) {
     scene.traverse((o) => {
-      if (!o.name) return;
-      if (!isSocketNode(o.name)) return;
-      if (usedSockets.has(o.uuid)) return;
+      if (!o.name || !isSocketNode(o.name)) return;
+      // Never proximity-suppress motor or wheel sockets
+      if (o.name.startsWith("SOCKET_MOTOR")) return;
+      if (o.name.startsWith("WHEEL_SOCKET")) return;
+      if (usedSockets.has(o.uuid) || suppressedSockets.has(o.uuid)) return;
+      if (ghost && isDescendantOf(o, ghost)) return;
       const wp = new THREE.Vector3();
       o.getWorldPosition(wp);
-      for (const up of usedPositions) {
+      for (const up of usedFramePositions) {
         if (wp.distanceTo(up) < SOCKET_MERGE_DIST) {
-          usedSockets.add(o.uuid);
+          suppressedSockets.add(o.uuid);
           break;
         }
       }
     });
   }
+
+  // Pass 3: cross-mount deduplication for SOCKET_FRAME connector joints only.
+  // Again, SOCKET_MOTOR is excluded — motor sockets on different mounts
+  // should never suppress each other.
+  const FRAME_JOINT_DIST = 0.25;
+  const mountFrameSockets = [];
+  scene.traverse((o) => {
+    if (!o.name || !o.name.startsWith("SOCKET_FRAME")) return;
+    if (usedSockets.has(o.uuid) || suppressedSockets.has(o.uuid)) return;
+    if (ghost && isDescendantOf(o, ghost)) return;
+    let mount = o.parent;
+    while (mount && !mount.userData?.isMount) mount = mount.parent;
+    if (!mount) return;
+    const wp = new THREE.Vector3();
+    o.getWorldPosition(wp);
+    mountFrameSockets.push({ mount, uuid: o.uuid, wp });
+  });
+
+  for (let i = 0; i < mountFrameSockets.length; i++) {
+    for (let j = i + 1; j < mountFrameSockets.length; j++) {
+      if (mountFrameSockets[i].mount === mountFrameSockets[j].mount) continue;
+      if (
+        mountFrameSockets[i].wp.distanceTo(mountFrameSockets[j].wp) <
+        FRAME_JOINT_DIST
+      ) {
+        suppressedSockets.add(mountFrameSockets[i].uuid);
+        suppressedSockets.add(mountFrameSockets[j].uuid);
+      }
+    }
+  }
   // ─────────────────────────────────────────────────────────────────────────
 
   scene.traverse((o) => {
     if (!o.name || usedSockets.has(o.uuid)) return;
+    if (suppressedSockets.has(o.uuid)) return;
 
     if (ghost && isDescendantOf(o, ghost)) return;
 
@@ -2110,17 +1929,13 @@ function rebuildSocketMarkers() {
     if (o.name.startsWith("WHEEL_SOCKET"))
       addMarker(o, wheelMarkers, wheelSocketMat);
 
-    // ── v34: SOCKET_TRIANGLE → triangleSocketMarkers (triangle placement only)
-    //         SOCKET_STRESS_CONNECTOR → stressConnectorMarkers (support frames only)
     if (o.name.startsWith("SOCKET_TRIANGLE"))
       addMarker(o, triangleSocketMarkers, frameMat);
     if (o.name.startsWith("SOCKET_STRESS_CONNECTOR"))
       addMarker(o, stressConnectorMarkers, frameMat);
   });
 
-  // ── v34: rebuild union after both sub-arrays are populated ────────────────
   triangleMarkers = [...triangleSocketMarkers, ...stressConnectorMarkers];
-  // ─────────────────────────────────────────────────────────────────────────
 }
 
 function isSocketNode(name) {
@@ -2134,7 +1949,7 @@ function isSocketNode(name) {
   );
 }
 
-// ── Active socket materials — INDUSTRIAL PALETTE ──────────────────────────
+// ── Active socket materials ────────────────────────────────────────────────
 const MAT_FRAME_ACTIVE = new THREE.MeshBasicMaterial({ color: 0xe8eef4 });
 const MAT_FRAME_DIM = new THREE.MeshBasicMaterial({
   color: 0x2a2e32,
@@ -2167,7 +1982,6 @@ const MAT_TRI_DIM = new THREE.MeshBasicMaterial({
 });
 const MAT_MOTOR_HOVER = new THREE.MeshBasicMaterial({ color: 0xffffff });
 const MAT_TRI_HOVER = new THREE.MeshBasicMaterial({ color: 0xffffff });
-// ──────────────────────────────────────────────────────────────────────────
 
 let hoveredMotorMarker = null;
 
@@ -2182,54 +1996,40 @@ function addMarker(socket, list, mat) {
 function applySocketHighlights() {
   const mode = placementMode;
 
-  // ── Unified frame mode: light up BOTH frame and support-frame sockets ─────
+  // Each marker group: visible ONLY when its mode is active.
+  // When mode is null (browse) or a different mode, markers are hidden entirely.
   const frameActive = mode === "frame";
   frameMarkers.forEach((m) => {
-    m.material = frameActive ? MAT_FRAME_ACTIVE : MAT_FRAME_DIM;
-    m.scale.setScalar(frameActive ? 1.5 : 0.7);
-    m.visible = true;
+    m.visible = frameActive;
+    m.material = MAT_FRAME_ACTIVE;
+    m.scale.setScalar(1.5);
   });
   frameOnSupportMarkers.forEach((m) => {
-    m.material = frameActive ? MAT_SUPPORT_ACTIVE : MAT_SUPPORT_DIM;
-    m.scale.setScalar(frameActive ? 1.5 : 0.7);
-    m.visible = true;
+    m.visible = frameActive;
+    m.material = MAT_SUPPORT_ACTIVE;
+    m.scale.setScalar(1.5);
   });
-  // ─────────────────────────────────────────────────────────────────────────
 
   const motorActive = mode === "motor";
   motorMarkers.forEach((m) => {
-    m.material = motorActive ? MAT_MOTOR_ACTIVE : MAT_MOTOR_DIM;
-    m.scale.setScalar(motorActive ? 1.5 : 0.7);
-    m.visible = true;
+    m.visible = motorActive;
+    m.material = MAT_MOTOR_ACTIVE;
+    m.scale.setScalar(1.5);
   });
 
-  // triangleMarkers is the full union — both SOCKET_TRIANGLE and SOCKET_STRESS_CONNECTOR
-  // are highlighted together in triangle or support mode (same visual treatment)
   const triActive = mode === "triangle" || mode === "support";
   triangleMarkers.forEach((m) => {
-    m.material = triActive ? MAT_TRI_ACTIVE : MAT_TRI_DIM;
-    m.scale.setScalar(triActive ? 1.5 : 0.7);
-    m.visible = true;
+    m.visible = triActive;
+    m.material = MAT_TRI_ACTIVE;
+    m.scale.setScalar(1.5);
   });
 
   const wheelActive = mode === "wheel";
   wheelMarkers.forEach((m) => {
-    m.material = wheelActive ? MAT_WHEEL_ACTIVE : MAT_WHEEL_DIM;
-    m.scale.setScalar(wheelActive ? 1.5 : 0.7);
-    m.visible = true;
+    m.visible = wheelActive;
+    m.material = MAT_WHEEL_ACTIVE;
+    m.scale.setScalar(1.5);
   });
-
-  if (!mode) {
-    [
-      ...frameMarkers,
-      ...motorMarkers,
-      ...triangleMarkers,
-      ...frameOnSupportMarkers,
-      ...wheelMarkers,
-    ].forEach((m) => {
-      m.visible = false;
-    });
-  }
 
   hoveredMotorMarker = null;
 }
@@ -2322,15 +2122,6 @@ function startTrianglePlacement() {
   scene.add(ghost);
 }
 
-/* =========================================================
-   START SUPPORT PLACEMENT
-   — CHANGED: now requires 2 triangular frames (was 1).
-     The queued intent also targets requiredCount: 2 so the
-     chain-toast progress dots correctly show 2 steps.
-     Once 2 triangles are placed the support mode auto-fires.
-     Placing MORE triangles after a bridge is always allowed
-     because triangle placement has no upper prerequisite limit.
-   ========================================================= */
 function startSupportPlacement() {
   hideIdleArrows();
   clearTimeout(idleTimer);
@@ -2367,7 +2158,7 @@ function startSupportPlacement() {
 }
 
 /* =========================================================
-   PLACEMENT RESTART — keeps mode alive after each placement
+   PLACEMENT RESTART
    ========================================================= */
 
 function restartPlacementMode(mode) {
@@ -2448,42 +2239,10 @@ function restartPlacementMode(mode) {
 }
 
 /* =========================================================
-   SUPPORT FRAME — LONGITUDINAL AXIS CORRECTION  (FIX v37)
-   =========================================================
-   Strategy: derive the intended support-frame axis directly from
-   the LINE CONNECTING THE TWO TRIANGLE MOUNT CENTRES.  That line
-   is exactly the axis the support frame should run along.
-   No bounding-box heuristics needed — works for any frame shape.
-
-   For each triangle mount we pick whichever of its free
-   SOCKET_STRESS_CONNECTOR sockets lies CLOSEST to the opposite
-   mount's centre.  Those two sockets are the canonical "inner"
-   connectors even when the user clicked an outer one.
+   SUPPORT FRAME — HELPERS
    ========================================================= */
 
-/**
- * Given any clicked SOCKET_STRESS_CONNECTOR, resolve the best
- * socket pair (one per triangle mount) that lies most directly
- * on the axis connecting the two triangle mounts.
- *
- * Returns { socketA, posA, socketB, posB }.
- */
-/* =========================================================
-   getFreeBridgeableTriangleMounts
-   =========================================================
-   Returns the list of triangle_frame mounts that are NOT yet
-   occupied by any placed stress bridge.
-
-   A triangle mount is considered "occupied" if any placed
-   support_frame mount has a socket (socketA or socketB) that
-   is a descendant of that triangle mount.
-
-   Rule: each stress bridge consumes 1 pair of triangles.
-   To place a new bridge you need exactly 2 free (unoccupied)
-   triangle mounts. Adding only 1 new triangle is never enough.
-   ========================================================= */
 function getFreeBridgeableTriangleMounts() {
-  // 1. Collect all placed triangle mounts
   const allTriangleMounts = [];
   scene.traverse((o) => {
     if (o.userData?.isMount && o.userData.type === "triangle_frame") {
@@ -2491,8 +2250,7 @@ function getFreeBridgeableTriangleMounts() {
     }
   });
 
-  // 2. Collect all placed support_frame mounts and their socket nodes
-  const bridgeSockets = []; // flat list of socket scene-nodes used by bridges
+  const bridgeSockets = [];
   scene.traverse((o) => {
     if (o.userData?.isMount && o.userData.type === "support_frame") {
       if (o.userData.socket) bridgeSockets.push(o.userData.socket);
@@ -2500,7 +2258,6 @@ function getFreeBridgeableTriangleMounts() {
     }
   });
 
-  // 3. A triangle mount is "occupied" if any bridge socket is a descendant of it
   function isOccupied(triangleMount) {
     return bridgeSockets.some((s) => isDescendantOrSelf(s, triangleMount));
   }
@@ -2508,11 +2265,6 @@ function getFreeBridgeableTriangleMounts() {
   return allTriangleMounts.filter((m) => !isOccupied(m));
 }
 
-/* =========================================================
-   buildTriangleMountMap — used by resolveBestSupportSocketPair
-   Only includes FREE (unoccupied) triangle mounts that still
-   have at least 1 free SOCKET_STRESS_CONNECTOR socket.
-   ========================================================= */
 function buildTriangleMountMap() {
   const freeMounts = new Set(getFreeBridgeableTriangleMounts());
   const mountMap = new Map();
@@ -2524,7 +2276,6 @@ function buildTriangleMountMap() {
 
     let m = o.parent;
     while (m && !m.userData?.isMount) m = m.parent;
-    // Only accept sockets on FREE triangle mounts
     if (!m || !freeMounts.has(m)) return;
 
     o.updateMatrixWorld(true);
@@ -2538,11 +2289,6 @@ function buildTriangleMountMap() {
   return mountMap;
 }
 
-/* =========================================================
-   canPlaceSupportBridge
-   Returns true only when there are ≥2 free (unoccupied)
-   triangle mounts available — one for each end of the bridge.
-   ========================================================= */
 function canPlaceSupportBridge() {
   return getFreeBridgeableTriangleMounts().length >= 2;
 }
@@ -2551,20 +2297,15 @@ function resolveBestSupportSocketPair(clickedSocket) {
   scene.updateMatrixWorld(true);
   clickedSocket.updateMatrixWorld(true);
 
-  // ── 1. Build mount → sockets map (ghost-aware) ────────────────────────────
   const mountMap = buildTriangleMountMap();
   const mounts = [...mountMap.keys()];
 
-  // ── Hard block: need ≥2 distinct triangle mounts ─────────────────────────
-  // Never fall back to single-socket snapping — return null to block placement.
   if (mounts.length < 2) return null;
 
-  // ── 2. Identify which mount owns the clicked socket ───────────────────────
   let clickedMount = clickedSocket.parent;
   while (clickedMount && !clickedMount.userData?.isMount)
     clickedMount = clickedMount.parent;
 
-  // mountA = the triangle the user hovered; mountB = the closest OTHER triangle
   let mountA =
     clickedMount && mountMap.has(clickedMount) ? clickedMount : mounts[0];
 
@@ -2583,14 +2324,10 @@ function resolveBestSupportSocketPair(clickedSocket) {
     }
   }
 
-  // Still couldn't find a partner (shouldn't happen given mounts.length ≥ 2)
   if (!mountB) return null;
 
   const centreB = mountCentre(mountB);
 
-  // ── 3. Pick the inner-facing socket from each mount ───────────────────────
-  // For mountA: socket closest to mountB's centre
-  // For mountB: socket closest to mountA's centre
   const pickClosest = (arr, target) => {
     let best = arr[0];
     let bestD = best.pos.distanceTo(target);
@@ -2616,7 +2353,7 @@ function resolveBestSupportSocketPair(clickedSocket) {
 }
 
 /* =========================================================
-   SUPPORT FRAME 2-POINT SNAP — FIX v35 + v36
+   SUPPORT FRAME 2-POINT SNAP
    ========================================================= */
 
 function findOppositeTriangleSocket(socket) {
@@ -2659,8 +2396,6 @@ function applyTwoPointSupportSnap(
   posB,
   manualSteps,
 ) {
-  // Support frames are ALWAYS flat — only Y rotation is ever applied.
-  // Reset fully so world-space connector reads start clean.
   mountGroup.rotation.set(0, 0, 0);
   mountGroup.position.set(0, 0, 0);
   mountGroup.updateMatrixWorld(true);
@@ -2673,17 +2408,14 @@ function applyTwoPointSupportSnap(
     if (n === "SOCKET_STRESS_SUPPORT_R") connR = o;
   });
 
-  // Target Y: midpoint of anchor sockets, kept flat (no Y-tilt from sockets).
   const targetY = posB ? (posA.y + posB.y) / 2 : posA.y;
 
   if (connL && connR && posB) {
-    // Read connector positions at identity rotation
     const lWorld0 = new THREE.Vector3();
     const rWorld0 = new THREE.Vector3();
     connL.getWorldPosition(lWorld0);
     connR.getWorldPosition(rWorld0);
 
-    // All span math in XZ only — Y differences must never affect yaw
     const connSpanX = rWorld0.x - lWorld0.x;
     const connSpanZ = rWorld0.z - lWorld0.z;
     const targetSpanX = posB.x - posA.x;
@@ -2693,13 +2425,12 @@ function applyTwoPointSupportSnap(
     const toAngle = Math.atan2(targetSpanX, targetSpanZ);
     const baseYaw = toAngle - fromAngle;
 
-    // Try both 180-degree flips; pick the one with best XZ alignment
     let bestYaw = baseYaw;
     let bestConnector = connL;
     let bestError = Infinity;
 
     for (const yaw of [baseYaw, baseYaw + Math.PI]) {
-      mountGroup.rotation.set(0, yaw, 0); // ONLY Y rotation
+      mountGroup.rotation.set(0, yaw, 0);
       mountGroup.updateMatrixWorld(true);
 
       for (const [snap, other] of [
@@ -2712,7 +2443,6 @@ function applyTwoPointSupportSnap(
         other.getWorldPosition(oW);
         const dx = posA.x - sW.x;
         const dz = posA.z - sW.z;
-        // Error computed purely in XZ plane
         const err = Math.hypot(oW.x + dx - posB.x, oW.z + dz - posB.z);
         if (err < bestError) {
           bestError = err;
@@ -2722,18 +2452,15 @@ function applyTwoPointSupportSnap(
       }
     }
 
-    // Apply final yaw — ONLY Y axis, never X or Z
     mountGroup.rotation.set(0, bestYaw + manualSteps * (Math.PI / 2), 0);
     mountGroup.updateMatrixWorld(true);
 
-    // Translate XZ so bestConnector aligns to posA
     const cWorld = new THREE.Vector3();
     bestConnector.getWorldPosition(cWorld);
     mountGroup.position.x += posA.x - cWorld.x;
     mountGroup.position.z += posA.z - cWorld.z;
     mountGroup.updateMatrixWorld(true);
 
-    // Set Y: use connector midpoint, force flat
     const lW = new THREE.Vector3();
     const rW = new THREE.Vector3();
     connL.getWorldPosition(lW);
@@ -2741,12 +2468,10 @@ function applyTwoPointSupportSnap(
     const connMidY = (lW.y + rW.y) / 2;
     mountGroup.position.y += targetY - connMidY + SUPPORT_SNAP_Y_ADJUST;
 
-    // Final safety clamp — ensure X and Z rotation are exactly zero
     mountGroup.rotation.set(0, mountGroup.rotation.y, 0);
     return;
   }
 
-  // Single-connector fallback
   const firstConn = connL || connR;
   if (firstConn) {
     mountGroup.rotation.set(0, manualSteps * (Math.PI / 2), 0);
@@ -2812,7 +2537,7 @@ function onMouseMove(e) {
   updateMouse(e);
   raycaster.setFromCamera(mouse, camera);
 
-  // ── UNIFIED FRAME ──────────────────────────────────────────────────────────
+  // ── UNIFIED FRAME ─────────────────────────────────────────────────────────
   if (placementMode === "frame") {
     const supportHit = raycaster.intersectObjects(frameOnSupportMarkers)[0];
     if (supportHit) {
@@ -2858,7 +2583,6 @@ function onMouseMove(e) {
     ghost.rotation.set(0, 0, 0);
     return;
   }
-  // ─────────────────────────────────────────────────────────────────────────
 
   if (placementMode === "wheel") {
     const hit = raycaster.intersectObjects(wheelMarkers)[0];
@@ -2870,7 +2594,7 @@ function onMouseMove(e) {
     return;
   }
 
-  // ── MOTOR ──────────────────────────────────────────────────────────────────
+  // ── MOTOR ─────────────────────────────────────────────────────────────────
   if (placementMode === "motor") {
     const hit = raycaster.intersectObjects(motorMarkers)[0];
 
@@ -2907,15 +2631,11 @@ function onMouseMove(e) {
     return;
   }
 
-  // ── SUPPORT — raycast ONLY against stressConnectorMarkers ─────────────────
-  // v38: Hard gate — if fewer than 2 distinct triangle mounts have free
-  // stress-connector sockets, hide the ghost and bail out entirely.
+  // ── SUPPORT ───────────────────────────────────────────────────────────────
   if (placementMode === "support") {
     const targets = stressConnectorMarkers;
 
-    // Upfront check: do we even have a valid pair available?
     if (!canPlaceSupportBridge()) {
-      // Reset any hovered marker and park ghost off-screen
       if (hoveredTriangleMarker) {
         hoveredTriangleMarker.material = MAT_TRI_ACTIVE;
         hoveredTriangleMarker.scale.setScalar(1.5);
@@ -2948,13 +2668,9 @@ function onMouseMove(e) {
       updateShortcutBar();
     }
 
-    // Resolve the best-aligned socket pair regardless of which socket was hovered.
-    // Returns null when fewer than 2 distinct triangle mounts are available —
-    // in that case we hide the ghost and show a warning rather than snapping wrongly.
     const pair = resolveBestSupportSocketPair(rawSocket);
     if (!pair) {
-      // Not enough triangle mounts — hide ghost, warn user
-      ghost.position.set(0, -9999, 0); // move off-screen
+      ghost.position.set(0, -9999, 0);
       showHudMessage(
         "⚠ Need 2 Triangular Frames from different mounts to place a bridge",
       );
@@ -2971,7 +2687,7 @@ function onMouseMove(e) {
     return;
   }
 
-  // ── TRIANGLE — raycast ONLY against triangleSocketMarkers (SOCKET_TRIANGLE) ──
+  // ── TRIANGLE ──────────────────────────────────────────────────────────────
   const targets = triangleSocketMarkers;
 
   const hit = raycaster.intersectObjects(targets)[0];
@@ -3010,7 +2726,7 @@ function onMouseMove(e) {
 }
 
 /* =========================================================
-   CLICK HANDLER — persistent placement mode
+   CLICK HANDLER
    ========================================================= */
 
 function onClick(e) {
@@ -3019,7 +2735,6 @@ function onClick(e) {
   updateMouse(e);
   raycaster.setFromCamera(mouse, camera);
 
-  // ── BROWSE MODE: select parts ──────────────────────────────────────────
   if (!placementMode) {
     const hits = raycaster.intersectObjects(scene.children, true);
     for (const h of hits) {
@@ -3043,7 +2758,6 @@ function onClick(e) {
     return;
   }
 
-  // ── UNIFIED FRAME ────────────────────────────────────────────────────────
   if (placementMode === "frame") {
     const supportHit = raycaster.intersectObjects(frameOnSupportMarkers)[0];
     if (supportHit) {
@@ -3075,10 +2789,7 @@ function onClick(e) {
     return;
   }
 
-  // ── SUPPORT BRIDGE — use resolveBestSupportSocketPair for correct axis snap
-  // v36: always resolve to the best-aligned pair, no matter which socket was clicked
   if (placementMode === "support") {
-    // Hard gate — must have ≥2 distinct triangle mounts with free sockets
     if (!canPlaceSupportBridge()) {
       showHudMessage(
         "⚠ Need 2 Triangular Frames on separate mounts to place a bridge",
@@ -3091,7 +2802,6 @@ function onClick(e) {
 
     const rawSocket = hit.object.userData.socket;
 
-    // Resolve best pair — returns null if fewer than 2 distinct triangle mounts
     const pair = resolveBestSupportSocketPair(rawSocket);
     if (!pair) {
       showHudMessage(
@@ -3116,7 +2826,6 @@ function onClick(e) {
     return;
   }
 
-  // ── WHEEL ──────────────────────────────────────────────────────────────
   if (placementMode === "wheel") {
     const hit = raycaster.intersectObjects(wheelMarkers)[0];
     if (!hit) return;
@@ -3137,7 +2846,6 @@ function onClick(e) {
     return;
   }
 
-  // ── MOTOR ──────────────────────────────────────────────────────────────
   if (placementMode === "motor") {
     const hit = raycaster.intersectObjects(motorMarkers)[0];
     if (!hit) return;
@@ -3159,7 +2867,6 @@ function onClick(e) {
     return;
   }
 
-  // ── TRIANGLE — ONLY triangleSocketMarkers (SOCKET_TRIANGLE) ───────────────
   if (placementMode === "triangle") {
     const hit = raycaster.intersectObjects(triangleSocketMarkers)[0];
     if (!hit) return;
@@ -3258,10 +2965,6 @@ function placeFrame(socket) {
   pushUndo(mount, usedUuids, "frame");
 }
 
-/* =========================================================
-   MOTOR PLACEMENT
-   ========================================================= */
-
 function placeMotor(socket, autoBaseYaw = 0, manualSteps = 0) {
   const mount = new THREE.Group();
   mount.userData = { isMount: true, socket, type: "motor" };
@@ -3289,10 +2992,6 @@ function placeMotor(socket, autoBaseYaw = 0, manualSteps = 0) {
   addToInventory("motor");
   pushUndo(mount, [socket.uuid], "motor");
 }
-
-/* =========================================================
-   WHEEL PLACEMENT
-   ========================================================= */
 
 function startWheelPlacement() {
   hideIdleArrows();
@@ -3433,10 +3132,6 @@ function placeTriangle(socket, autoBaseYaw = 0, manualSteps = 0) {
   pushUndo(mount, [socket.uuid], "triangle_frame");
 }
 
-/* =========================================================
-   PLACE RECTANGULAR FRAME ON SUPPORT FRAME
-   ========================================================= */
-
 function placeFrameOnSupport(socket, rotationSteps) {
   socket.updateMatrixWorld(true);
   const posSupA = new THREE.Vector3();
@@ -3575,10 +3270,6 @@ function placeFrameOnSupport(socket, rotationSteps) {
   pushUndo(mount, fosUuids, "frame");
 }
 
-/* =========================================================
-   SUPPORT FRAME BRIDGE — ORIGINAL (kept for compatibility)
-   ========================================================= */
-
 function placeSupportBridge(socket, manualSteps = 0) {
   const support = supportTemplate.clone(true);
   makeSolid(support);
@@ -3611,13 +3302,6 @@ function placeSupportBridge(socket, manualSteps = 0) {
     "support_frame",
   );
 }
-
-/* =========================================================
-   SUPPORT FRAME BRIDGE — v36: from pre-resolved pair
-   =========================================================
-   Called from onClick after resolveBestSupportSocketPair has
-   already determined the correct socketA / posA / socketB / posB.
-   ========================================================= */
 
 function placeSupportBridgeFromPair(
   socketA,
@@ -3748,6 +3432,14 @@ function performUndo() {
 
   socketUuids.forEach((uuid) => usedSockets.delete(uuid));
 
+  // Clear stale hover references before rebuilding markers
+  if (hoveredMotorMarker) {
+    hoveredMotorMarker = null;
+  }
+  if (hoveredTriangleMarker) {
+    hoveredTriangleMarker = null;
+  }
+
   scene.remove(mount);
   removeFromInventory(type);
 
@@ -3762,14 +3454,12 @@ function performUndo() {
    ========================================================= */
 
 function onKeyDown(e) {
-  // ── Block F5 (accidental refresh) — v35 ──────────────────────────────────
   if (e.key === "F5") {
     e.preventDefault();
     e.stopPropagation();
     showHudMessage("USE CTRL+R OR BROWSER REFRESH TO RELOAD");
     return;
   }
-  // ─────────────────────────────────────────────────────────────────────────
 
   if (isFinalized) return;
 
@@ -3790,7 +3480,6 @@ function onKeyDown(e) {
     return;
   }
 
-  // ── ARROW KEYS: rotation in placement modes ───────────────────────────────
   if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
     if (!placementMode) return;
     e.preventDefault();
@@ -3831,7 +3520,6 @@ function onKeyDown(e) {
         const rawSocket = hoveredTriangleMarker.userData.socket;
         rawSocket.updateMatrixWorld(true);
 
-        // Use the best pair for the ghost preview too — guard against null
         const pair = resolveBestSupportSocketPair(rawSocket);
         if (!pair) return;
         const { posA, posB } = pair;
@@ -3873,7 +3561,6 @@ function onKeyDown(e) {
   if (e.key === "Numpad0" || (e.key === "0" && e.altKey))
     applyCameraPreset("perspective");
 
-  // ── DELETE with dependency check ──────────────────────────────────────────
   if ((e.key === "Delete" || e.key === "Backspace") && selectedMount) {
     const mountToDelete = selectedMount;
 
@@ -3914,7 +3601,7 @@ function onKeyDown(e) {
 }
 
 /* =========================================================
-   COLOR LEGEND — interactive, mode-aware
+   COLOR LEGEND
    ========================================================= */
 
 const LEGEND_MODE_MAP = {
@@ -4110,38 +3797,7 @@ function animate() {
    HOVER HIGHLIGHT + TOOLTIP
    ========================================================= */
 
-function showTooltip(mount, clientX, clientY) {
-  if (!tooltipEl || !mount) return;
-  const type = mount.userData.type ?? "unknown";
-  const label = PART_LABELS[type] ?? type.replace(/_/g, " ").toUpperCase();
-  const cost = PART_COSTS[type];
-  const costStr = cost != null ? `₹${cost.toLocaleString()}` : "—";
-
-  const deps = getDependentMounts(mount);
-  const depWarning =
-    deps.length > 0
-      ? `<br><span style="color:#cc6600;font-size:10px">⚠ ${deps.length} dependent${deps.length !== 1 ? "s" : ""} — delete those first</span>`
-      : "";
-
-  tooltipEl.innerHTML =
-    `<span style="color:#cc2200;font-weight:700;letter-spacing:0.15em;font-family:'Orbitron',sans-serif;font-size:10px">${label.toUpperCase()}</span><br>` +
-    `<span style="color:#606870">Unit cost: </span><span style="color:#d0d8e0">${costStr}</span>` +
-    depWarning;
-
-  const TW = tooltipEl.offsetWidth || 180;
-  const TH = tooltipEl.offsetHeight || 52;
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  let tx = clientX + 16;
-  let ty = clientY - 12;
-  if (tx + TW > vw - 10) tx = clientX - TW - 10;
-  if (ty + TH > vh - 10) ty = vh - TH - 10;
-  if (ty < 8) ty = 8;
-
-  tooltipEl.style.left = tx + "px";
-  tooltipEl.style.top = ty + "px";
-  tooltipEl.style.display = "block";
-}
+function showTooltip(_m, _x, _y) {}
 
 function hideTooltip() {
   if (tooltipEl) tooltipEl.style.display = "none";

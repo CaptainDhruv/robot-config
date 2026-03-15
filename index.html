@@ -80,24 +80,18 @@
           </div>
         </section>
 
-        <!-- ACTIONS — collapsible -->
+        <!-- ACTIONS — collapsible (Edit only; Finalize moved to right panel) -->
         <section class="panel-section">
           <button class="section-toggle" data-target="sec-actions">
             ACTIONS
             <span class="chevron">▼</span>
           </button>
           <div class="section-body" id="sec-actions">
-            <div class="action-row">
+            <div class="action-row action-row-single">
               <button id="editBtn" class="btn btn-secondary">
                 <div class="btn-inner">
                   <span class="btn-icon">◈</span>
-                  <span class="btn-action-label">Edit</span>
-                </div>
-              </button>
-              <button id="finalizeBtn" class="btn btn-primary">
-                <div class="btn-inner">
-                  <span class="btn-icon">◼</span>
-                  <span class="btn-action-label">Finalize</span>
+                  <span class="btn-action-label">Edit Design</span>
                 </div>
               </button>
             </div>
@@ -177,28 +171,6 @@
       <!-- ═══════ VIEWPORT ═══════ -->
       <main class="viewport">
         <canvas id="app"></canvas>
-
-        <!-- INSTRUCTION PANEL -->
-        <section
-          class="instruction-section"
-          id="instructionSection"
-          style="display: none"
-        >
-          <div class="instruction-header">
-            <span class="instruction-icon" id="instructionIcon">●</span>
-            <span class="instruction-title" id="instructionTitle"
-              >INSTRUCTIONS</span
-            >
-            <button
-              class="instruction-close"
-              id="instructionClose"
-              title="Cancel placement (Esc)"
-            >
-              ✕
-            </button>
-          </div>
-          <div class="instruction-body" id="instructionBody"></div>
-        </section>
 
         <!-- COLOR LEGEND -->
         <div class="color-legend" id="colorLegend">
@@ -293,12 +265,12 @@
           </button>
         </div>
 
-        <!-- SAVE & PRINT -->
+        <!-- FINALIZE + PRINT — primary CTA now lives here -->
         <div class="save-print-section">
-          <button id="saveDesignBtn" class="btn btn-save">
+          <button id="finalizeBtn" class="btn btn-primary btn-finalize-large">
             <div class="btn-inner">
-              <span class="btn-icon">▣</span>
-              <span class="btn-action-label">Save Design</span>
+              <span class="btn-icon">◼</span>
+              <span class="btn-action-label">Finalize Design</span>
             </div>
           </button>
           <button id="printDesignBtn" class="btn btn-print">
