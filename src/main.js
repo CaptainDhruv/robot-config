@@ -353,15 +353,8 @@ function captureFromAngle(presetKey) {
    INSTRUCTION PANEL — DISABLED (no-ops)
    ========================================================= */
 
-// Instruction panel has been removed. These are kept as no-ops
-// so all existing call sites continue to work without errors.
-function showInstructionPanel(_mode) {
-  // intentionally empty — panel removed per design update
-}
-
-function hideInstructionPanel() {
-  // intentionally empty — panel removed per design update
-}
+function showInstructionPanel(_mode) {}
+function hideInstructionPanel() {}
 
 /* =========================================================
    HOVER / TOOLTIP STATE
@@ -392,7 +385,6 @@ const mouse = new THREE.Vector2();
    SOCKET MARKERS — LARGER SIZE + WIDER PROXIMITY
    ========================================================= */
 
-// ── Increased from 0.04 → 0.09 for bigger, easier-to-hit sockets ──
 const socketGeo = new THREE.SphereGeometry(0.09, 12, 12);
 const frameMat = new THREE.MeshBasicMaterial({ color: 0xd0d8e0 });
 const motorMat = new THREE.MeshBasicMaterial({ color: 0xdd2200 });
@@ -1365,14 +1357,29 @@ const SHORTCUT_DEFS = {
 
 let shortcutBarEl = null;
 
+// ── Helper: read the computed --panel-w CSS variable in pixels ───────────────
+function getPanelWidthPx() {
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue("--panel-w")
+    .trim();
+  // raw is e.g. "300px" or "240px" — parse it
+  return parseFloat(raw) || 300;
+}
+
 function initShortcutBar() {
   shortcutBarEl = document.createElement("div");
   shortcutBarEl.id = "shortcut-bar";
+
+  // NOTE: left/right are set dynamically from the CSS variable so the bar
+  // always sits exactly between the two panels, regardless of viewport size.
+  // The CSS rule `#shortcut-bar { left: var(--panel-w) !important; right: var(--panel-w) !important; }`
+  // handles this automatically — we still set initial values here as a fallback.
+  const pw = getPanelWidthPx();
   Object.assign(shortcutBarEl.style, {
     position: "fixed",
     bottom: "0",
-    left: "300px",
-    right: "300px",
+    left: `${pw}px`,
+    right: `${pw}px`,
     height: "34px",
     background: "rgba(15,15,15,0.96)",
     borderTop: "1px solid rgba(204,34,0,0.2)",
@@ -1385,6 +1392,13 @@ function initShortcutBar() {
     overflow: "hidden",
   });
   document.body.appendChild(shortcutBarEl);
+
+  // Keep the shortcut bar aligned when the window resizes
+  window.addEventListener("resize", () => {
+    const newPw = getPanelWidthPx();
+    shortcutBarEl.style.left = `${newPw}px`;
+    shortcutBarEl.style.right = `${newPw}px`;
+  });
 
   if (!document.getElementById("sb-kf")) {
     const s = document.createElement("style");
@@ -1836,37 +1850,22 @@ function rebuildSocketMarkers() {
 
   scene.updateMatrixWorld(true);
 
-  // ── Proximity deduplication ───────────────────────────────────────────────
-  // suppressedSockets never touches usedSockets so undo always restores fully.
-  //
-  // KEY FIX: SOCKET_MOTOR nodes are NEVER proximity-suppressed.
-  // Motor sockets live on the frame surface and will always be near used
-  // SOCKET_FRAME nodes — suppressing them by proximity incorrectly hides them.
-  // Only SOCKET_FRAME and similar co-planar frame sockets need dedup.
-  // ─────────────────────────────────────────────────────────────────────────
   const suppressedSockets = new Set();
 
-  // Pass 1: collect world positions of explicitly-used FRAME sockets only
-  // (motor sockets are intentionally excluded from the suppression source list)
   const SOCKET_MERGE_DIST = 0.12;
   const usedFramePositions = [];
   scene.traverse((o) => {
     if (!o.name || !isSocketNode(o.name)) return;
     if (!usedSockets.has(o.uuid)) return;
-    // Only frame-type sockets contribute to proximity suppression
     if (!o.name.startsWith("SOCKET_FRAME")) return;
     const wp = new THREE.Vector3();
     o.getWorldPosition(wp);
     usedFramePositions.push(wp);
   });
 
-  // Pass 2: suppress free FRAME sockets within merge distance of a used frame position.
-  // SOCKET_MOTOR and WHEEL_SOCKET are explicitly skipped — they must never be
-  // proximity-suppressed since they live on the frame surface by design.
   if (usedFramePositions.length > 0) {
     scene.traverse((o) => {
       if (!o.name || !isSocketNode(o.name)) return;
-      // Never proximity-suppress motor or wheel sockets
       if (o.name.startsWith("SOCKET_MOTOR")) return;
       if (o.name.startsWith("WHEEL_SOCKET")) return;
       if (usedSockets.has(o.uuid) || suppressedSockets.has(o.uuid)) return;
@@ -1882,9 +1881,6 @@ function rebuildSocketMarkers() {
     });
   }
 
-  // Pass 3: cross-mount deduplication for SOCKET_FRAME connector joints only.
-  // Again, SOCKET_MOTOR is excluded — motor sockets on different mounts
-  // should never suppress each other.
   const FRAME_JOINT_DIST = 0.25;
   const mountFrameSockets = [];
   scene.traverse((o) => {
@@ -1911,7 +1907,6 @@ function rebuildSocketMarkers() {
       }
     }
   }
-  // ─────────────────────────────────────────────────────────────────────────
 
   scene.traverse((o) => {
     if (!o.name || usedSockets.has(o.uuid)) return;
@@ -1949,7 +1944,6 @@ function isSocketNode(name) {
   );
 }
 
-// ── Active socket materials ────────────────────────────────────────────────
 const MAT_FRAME_ACTIVE = new THREE.MeshBasicMaterial({ color: 0xe8eef4 });
 const MAT_FRAME_DIM = new THREE.MeshBasicMaterial({
   color: 0x2a2e32,
@@ -1996,8 +1990,6 @@ function addMarker(socket, list, mat) {
 function applySocketHighlights() {
   const mode = placementMode;
 
-  // Each marker group: visible ONLY when its mode is active.
-  // When mode is null (browse) or a different mode, markers are hidden entirely.
   const frameActive = mode === "frame";
   frameMarkers.forEach((m) => {
     m.visible = frameActive;
@@ -2537,7 +2529,6 @@ function onMouseMove(e) {
   updateMouse(e);
   raycaster.setFromCamera(mouse, camera);
 
-  // ── UNIFIED FRAME ─────────────────────────────────────────────────────────
   if (placementMode === "frame") {
     const supportHit = raycaster.intersectObjects(frameOnSupportMarkers)[0];
     if (supportHit) {
@@ -2594,7 +2585,6 @@ function onMouseMove(e) {
     return;
   }
 
-  // ── MOTOR ─────────────────────────────────────────────────────────────────
   if (placementMode === "motor") {
     const hit = raycaster.intersectObjects(motorMarkers)[0];
 
@@ -2631,7 +2621,6 @@ function onMouseMove(e) {
     return;
   }
 
-  // ── SUPPORT ───────────────────────────────────────────────────────────────
   if (placementMode === "support") {
     const targets = stressConnectorMarkers;
 
@@ -2687,7 +2676,6 @@ function onMouseMove(e) {
     return;
   }
 
-  // ── TRIANGLE ──────────────────────────────────────────────────────────────
   const targets = triangleSocketMarkers;
 
   const hit = raycaster.intersectObjects(targets)[0];
@@ -3432,13 +3420,8 @@ function performUndo() {
 
   socketUuids.forEach((uuid) => usedSockets.delete(uuid));
 
-  // Clear stale hover references before rebuilding markers
-  if (hoveredMotorMarker) {
-    hoveredMotorMarker = null;
-  }
-  if (hoveredTriangleMarker) {
-    hoveredTriangleMarker = null;
-  }
+  if (hoveredMotorMarker) hoveredMotorMarker = null;
+  if (hoveredTriangleMarker) hoveredTriangleMarker = null;
 
   scene.remove(mount);
   removeFromInventory(type);

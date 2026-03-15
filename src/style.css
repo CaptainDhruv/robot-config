@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════════
    ROBOT CONFIGURATOR — INDUSTRIAL / HEAVY MACHINERY THEME
    Gunmetal · Steel White · Warning Red
+   FULLY RESPONSIVE — panels scale with viewport
    ═══════════════════════════════════════════════════ */
 
 @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Exo+2:wght@300;400;500;600;700;800&display=swap");
@@ -84,7 +85,12 @@ body::after {
   --c-wheel: #c02010;
   --c-wheel-d: rgba(192, 32, 16, 0.12);
 
-  --panel-w: 300px;
+  /* ── RESPONSIVE PANEL WIDTH ──
+     Clamps between 180px (tiny screens) and 300px (large screens)
+     Uses 18vw as the fluid value so panels shrink on small viewports
+  */
+  --panel-w: clamp(180px, 18vw, 300px);
+
   --font-hud: "Orbitron", sans-serif;
   --font-mono: "Share Tech Mono", monospace;
   --font-ui: "Rajdhani", sans-serif;
@@ -230,7 +236,8 @@ body::after {
 
 /* ── LOGO ── */
 .logo-header {
-  padding: 20px 18px 16px 20px;
+  padding: clamp(10px, 1.5vh, 20px) clamp(10px, 1.2vw, 18px)
+    clamp(8px, 1.2vh, 16px) clamp(12px, 1.5vw, 20px);
   border-bottom: 1px solid var(--border-red);
   flex-shrink: 0;
   position: relative;
@@ -267,7 +274,7 @@ body::after {
 }
 .logo {
   font-family: var(--font-hud);
-  font-size: 12.5px;
+  font-size: clamp(9px, 0.85vw, 12.5px);
   font-weight: 700;
   letter-spacing: 0.18em;
   color: var(--steel-bright);
@@ -277,7 +284,7 @@ body::after {
 }
 .logo-sub {
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: clamp(7px, 0.65vw, 9.5px);
   color: var(--text-lo);
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -305,13 +312,14 @@ body::after {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 12px 16px 10px 18px;
+  padding: clamp(8px, 1vh, 12px) clamp(10px, 1vw, 16px) clamp(6px, 0.8vh, 10px)
+    clamp(12px, 1.2vw, 18px);
   display: flex;
   align-items: center;
   gap: 8px;
   color: var(--text-mid);
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: clamp(7.5px, 0.65vw, 9.5px);
   letter-spacing: 0.22em;
   text-transform: uppercase;
   transition:
@@ -343,7 +351,8 @@ body::after {
 }
 
 .section-body {
-  padding: 8px 12px 12px;
+  padding: clamp(4px, 0.6vh, 8px) clamp(6px, 0.8vw, 12px)
+    clamp(6px, 0.9vh, 12px);
   overflow: hidden;
   max-height: 800px;
   opacity: 1;
@@ -380,12 +389,12 @@ body::after {
 }
 
 /* ═══════════════════════════════════════════════════
-   BRUTALIST COMPONENT BUTTONS
+   BRUTALIST COMPONENT BUTTONS — RESPONSIVE
    ═══════════════════════════════════════════════════ */
 
 .btn {
   width: 100%;
-  margin-bottom: 6px;
+  margin-bottom: clamp(3px, 0.4vh, 6px);
   border: none;
   cursor: crosshair;
   position: relative;
@@ -410,12 +419,12 @@ body::after {
 }
 
 .btn-glyph {
-  width: 48px;
-  min-height: 52px;
+  width: clamp(32px, 3.5vw, 48px);
+  min-height: clamp(36px, 4.5vh, 52px);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 19px;
+  font-size: clamp(13px, 1.4vw, 19px);
   flex-shrink: 0;
   border-right: 2px solid;
   position: relative;
@@ -428,8 +437,9 @@ body::after {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 3px;
-  padding: 10px 10px 10px 12px;
+  gap: clamp(1px, 0.3vh, 3px);
+  padding: clamp(6px, 0.8vh, 10px) clamp(6px, 0.6vw, 10px)
+    clamp(6px, 0.8vh, 10px) clamp(8px, 0.8vw, 12px);
   min-width: 0;
   position: relative;
   z-index: 1;
@@ -437,7 +447,7 @@ body::after {
 
 .btn-label {
   font-family: var(--font-hud);
-  font-size: 10.5px;
+  font-size: clamp(7.5px, 0.7vw, 10.5px);
   font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -449,7 +459,7 @@ body::after {
 
 .btn-desc {
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: clamp(6px, 0.55vw, 8px);
   letter-spacing: 0.06em;
   opacity: 0.45;
   line-height: 1;
@@ -459,11 +469,11 @@ body::after {
 
 .btn-tag {
   font-family: var(--font-hud);
-  font-size: 7px;
+  font-size: clamp(5.5px, 0.5vw, 7px);
   font-weight: 700;
   letter-spacing: 0.08em;
   writing-mode: vertical-rl;
-  padding: 8px 6px;
+  padding: clamp(4px, 0.6vh, 8px) clamp(3px, 0.4vw, 6px);
   flex-shrink: 0;
   align-self: stretch;
   display: flex;
@@ -498,7 +508,7 @@ body::after {
   animation: pulse-ring 1.2s ease-out infinite;
 }
 
-/* ── MOTOR — warning red ── */
+/* ── MOTOR ── */
 .btn-motor .btn-inner {
   background: #1a0500;
   border-color: var(--c-motor);
@@ -541,7 +551,7 @@ body::after {
   color: #111;
 }
 
-/* ── FRAME — steel grey ── */
+/* ── FRAME ── */
 .btn-frame .btn-inner {
   background: #111418;
   border-color: #6a7480;
@@ -578,7 +588,7 @@ body::after {
   color: #0a0c0e;
 }
 
-/* ── TRIANGLE — light steel ── */
+/* ── TRIANGLE ── */
 .btn-triangle .btn-inner {
   background: #131518;
   border-color: #8090a0;
@@ -615,7 +625,7 @@ body::after {
   color: #0a0c0e;
 }
 
-/* ── SUPPORT — gunmetal ── */
+/* ── SUPPORT ── */
 .btn-support .btn-inner {
   background: #111314;
   border-color: #5a6268;
@@ -652,7 +662,7 @@ body::after {
   color: #0a0c0e;
 }
 
-/* ── WHEEL — deep red ── */
+/* ── WHEEL ── */
 .btn-wheel .btn-inner {
   background: #180400;
   border-color: #c02010;
@@ -694,55 +704,50 @@ body::after {
 }
 
 /* ═══════════════════════════════════════════════════
-   ACTION BUTTONS — BRUTALIST (Edit only in left panel)
+   ACTION BUTTONS
    ═══════════════════════════════════════════════════ */
 
 .action-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: clamp(4px, 0.5vh, 8px);
   padding: 2px 0;
 }
-
-/* Single-button action row (Edit only) */
 .action-row-single {
   grid-template-columns: 1fr;
 }
-
 .action-row .btn {
   margin-bottom: 0;
 }
-
 .action-row .btn .btn-glyph,
 .action-row .btn .btn-tag,
 .action-row .btn .btn-body {
   display: none;
 }
-
 .action-row .btn .btn-inner {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 11px 10px;
+  padding: clamp(7px, 0.9vh, 11px) 10px;
 }
 
 .btn-icon {
-  font-size: 15px;
+  font-size: clamp(11px, 1.2vw, 15px);
   line-height: 1;
   flex-shrink: 0;
 }
 
 .btn-action-label {
   font-family: var(--font-hud);
-  font-size: 9.5px;
+  font-size: clamp(7px, 0.65vw, 9.5px);
   font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
-/* PRIMARY — used for Finalize */
+/* PRIMARY */
 .btn-primary .btn-inner {
   background: var(--red);
   border: 2px solid var(--red);
@@ -760,7 +765,7 @@ body::after {
   transform: translate(4px, 4px);
 }
 
-/* SECONDARY — Edit */
+/* SECONDARY */
 .btn-secondary .btn-inner {
   background: #111;
   border: 2px solid #4a5058;
@@ -818,7 +823,7 @@ canvas#app {
 }
 
 /* ═══════════════════════════════════════════════════
-   CAMERA PRESETS
+   CAMERA PRESETS — RESPONSIVE
    ═══════════════════════════════════════════════════ */
 .panel-section-camera {
   border-bottom: none;
@@ -828,7 +833,7 @@ canvas#app {
 .sidebar-cam-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 5px;
+  gap: clamp(3px, 0.4vw, 5px);
   padding: 2px 0 4px;
 }
 
@@ -848,8 +853,8 @@ canvas#app {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  padding: 8px 4px 7px;
+  gap: clamp(1px, 0.3vh, 3px);
+  padding: clamp(5px, 0.7vh, 8px) 4px clamp(4px, 0.6vh, 7px);
   position: relative;
   box-shadow: 3px 3px 0 #3a1008;
 }
@@ -871,12 +876,12 @@ canvas#app {
   box-shadow: none;
 }
 .sidebar-cam-icon {
-  font-size: 14px;
+  font-size: clamp(10px, 1.1vw, 14px);
   line-height: 1;
 }
 .sidebar-cam-label {
   font-family: var(--font-mono);
-  font-size: 7px;
+  font-size: clamp(5.5px, 0.5vw, 7px);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 700;
@@ -884,7 +889,7 @@ canvas#app {
 
 .cam-hint {
   font-family: var(--font-mono);
-  font-size: 8.5px;
+  font-size: clamp(7px, 0.6vw, 8.5px);
   color: var(--text-lo);
   letter-spacing: 0.1em;
   text-align: center;
@@ -895,7 +900,8 @@ canvas#app {
 
 /* ── BASKET HEADER ── */
 .basket-header {
-  padding: 18px 18px 14px 20px;
+  padding: clamp(10px, 1.4vh, 18px) clamp(10px, 1.2vw, 18px)
+    clamp(8px, 1.1vh, 14px) clamp(12px, 1.5vw, 20px);
   border-bottom: 1px solid var(--border-red);
   display: flex;
   align-items: center;
@@ -921,7 +927,7 @@ canvas#app {
 }
 .basket-title {
   font-family: var(--font-hud);
-  font-size: 12.5px;
+  font-size: clamp(9px, 0.85vw, 12.5px);
   font-weight: 700;
   letter-spacing: 0.14em;
   color: var(--steel-bright);
@@ -929,17 +935,17 @@ canvas#app {
 }
 .basket-count {
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: clamp(7px, 0.65vw, 9.5px);
   color: var(--text-lo);
   background: var(--bg-row);
-  padding: 3px 10px;
+  padding: 3px clamp(6px, 0.7vw, 10px);
   border: 1px solid var(--border);
   letter-spacing: 0.1em;
 }
 
 /* ── BASKET ITEMS ── */
 .basket-section {
-  padding: 12px 14px;
+  padding: clamp(6px, 0.9vh, 12px) clamp(8px, 0.9vw, 14px);
   flex: 1;
   overflow-y: auto;
   min-height: 0;
@@ -947,14 +953,14 @@ canvas#app {
 .basket-items {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: clamp(3px, 0.4vh, 5px);
 }
 .basket-items > * {
   font-family: var(--font-display);
-  font-size: 12.5px;
+  font-size: clamp(10px, 0.9vw, 12.5px);
   font-weight: 500;
   color: var(--text-hi);
-  padding: 8px 12px;
+  padding: clamp(5px, 0.7vh, 8px) clamp(8px, 0.9vw, 12px);
   background: var(--bg-row);
   border: 1px solid var(--border);
   border-left: 3px solid var(--red);
@@ -993,13 +999,13 @@ canvas#app {
 
 /* ── BASKET FOOTER ── */
 .basket-footer {
-  padding: 14px 18px;
+  padding: clamp(8px, 1.1vh, 14px) clamp(10px, 1.2vw, 18px);
   border-top: 1px solid var(--border-red);
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: clamp(7px, 0.65vw, 9.5px);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--text-lo);
@@ -1007,22 +1013,21 @@ canvas#app {
 }
 .price {
   font-family: var(--font-hud);
-  font-size: 22px;
+  font-size: clamp(14px, 1.5vw, 22px);
   color: var(--steel-bright);
   text-shadow: 0 0 16px rgba(216, 224, 232, 0.2);
   letter-spacing: 0.06em;
 }
 
 /* ═══════════════════════════════════════════════════
-   PAYMENT + FINALIZE/PRINT — BRUTALIST
+   PAYMENT + FINALIZE/PRINT
    ═══════════════════════════════════════════════════ */
 
 .payment-section {
-  padding: 12px 14px;
+  padding: clamp(6px, 0.9vh, 12px) clamp(8px, 0.9vw, 14px);
   border-top: 1px solid var(--border);
   flex-shrink: 0;
 }
-
 .payment-section .btn {
   margin-bottom: 0;
 }
@@ -1037,18 +1042,18 @@ canvas#app {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 13px 16px;
+  padding: clamp(9px, 1.1vh, 13px) 16px;
 }
 
 .save-print-section {
-  padding: 10px 14px 14px;
+  padding: clamp(6px, 0.8vh, 10px) clamp(8px, 0.9vw, 14px)
+    clamp(8px, 1.1vh, 14px);
   border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: clamp(4px, 0.5vh, 7px);
   flex-shrink: 0;
 }
-
 .save-print-section .btn {
   margin-bottom: 0;
 }
@@ -1062,22 +1067,22 @@ canvas#app {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 12px;
-  padding: 12px 14px;
+  gap: clamp(8px, 1vw, 12px);
+  padding: clamp(8px, 1vh, 12px) clamp(10px, 1vw, 14px);
 }
 
-/* FINALIZE — larger, more prominent in right panel */
+/* FINALIZE — larger */
 .btn-finalize-large .btn-inner {
-  padding: 15px 14px !important;
+  padding: clamp(10px, 1.3vh, 15px) 14px !important;
   justify-content: center !important;
   box-shadow: 5px 5px 0 #660000 !important;
 }
 .btn-finalize-large .btn-action-label {
-  font-size: 11px !important;
+  font-size: clamp(8px, 0.75vw, 11px) !important;
   letter-spacing: 0.22em !important;
 }
 .btn-finalize-large .btn-icon {
-  font-size: 17px !important;
+  font-size: clamp(12px, 1.2vw, 17px) !important;
 }
 .btn-finalize-large:hover .btn-inner {
   box-shadow: 8px 8px 0 #660000 !important;
@@ -1117,7 +1122,7 @@ canvas#app {
 }
 
 /* ═══════════════════════════════════════════════════
-   COLOR LEGEND
+   COLOR LEGEND — RESPONSIVE
    ═══════════════════════════════════════════════════ */
 
 @keyframes legendIn {
@@ -1152,8 +1157,8 @@ canvas#app {
   clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  padding: 10px 12px;
-  min-width: 240px;
+  padding: clamp(6px, 0.8vh, 10px) clamp(8px, 0.8vw, 12px);
+  min-width: clamp(160px, 16vw, 240px);
   animation: legendIn 0.4s ease both;
   pointer-events: auto;
 }
@@ -1173,11 +1178,11 @@ canvas#app {
 
 .legend-title {
   font-family: var(--font-mono);
-  font-size: 8.5px;
+  font-size: clamp(7px, 0.65vw, 8.5px);
   letter-spacing: 0.24em;
   color: var(--red);
   text-transform: uppercase;
-  margin-bottom: 8px;
+  margin-bottom: clamp(4px, 0.6vh, 8px);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1191,14 +1196,14 @@ canvas#app {
 .legend-items {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: clamp(3px, 0.4vh, 5px);
 }
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: clamp(5px, 0.6vw, 9px);
   animation: legendItemIn 0.25s ease both;
-  padding: 3px 0;
+  padding: clamp(2px, 0.3vh, 3px) 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   cursor: default;
 }
@@ -1210,8 +1215,8 @@ canvas#app {
 }
 
 .legend-dot {
-  width: 9px;
-  height: 9px;
+  width: clamp(6px, 0.6vw, 9px);
+  height: clamp(6px, 0.6vw, 9px);
   border-radius: 50%;
   flex-shrink: 0;
   animation: legendPulse 2.5s ease-in-out infinite;
@@ -1228,7 +1233,7 @@ canvas#app {
 
 .legend-text {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: clamp(7px, 0.6vw, 9px);
   color: var(--text-mid);
   letter-spacing: 0.03em;
   line-height: 1.35;
@@ -1276,6 +1281,17 @@ canvas#app {
 }
 .color-legend.mode-active .legend-item.legend-relevant {
   opacity: 1;
+}
+
+/* ═══════════════════════════════════════════════════
+   SHORTCUT BAR — RESPONSIVE
+   ═══════════════════════════════════════════════════ */
+
+/* The shortcut bar is injected via JS using inline styles with left/right
+   set to 300px. We override those via CSS to use the CSS variable. */
+#shortcut-bar {
+  left: var(--panel-w) !important;
+  right: var(--panel-w) !important;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1333,7 +1349,7 @@ canvas#app {
 }
 .idle-arrow-label {
   font-family: var(--font-mono);
-  font-size: 8.5px;
+  font-size: clamp(7px, 0.65vw, 8.5px);
   letter-spacing: 0.14em;
   color: var(--red);
   text-transform: uppercase;
@@ -1347,4 +1363,70 @@ canvas#app {
 /* ── UTILITY ── */
 .hidden {
   display: none !important;
+}
+
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS
+   Large monitors: panels can be a bit wider
+   Medium screens (laptops): balanced layout
+   Small screens: collapse to minimal panels
+   ═══════════════════════════════════════════════════ */
+
+/* Large monitors ≥ 1600px — allow slightly wider panels */
+@media (min-width: 1600px) {
+  :root {
+    --panel-w: clamp(260px, 16vw, 320px);
+  }
+}
+
+/* Standard laptops 1024–1599px — default clamp handles this */
+
+/* Small laptops / tablets in landscape 768–1023px */
+@media (max-width: 1023px) {
+  :root {
+    --panel-w: clamp(160px, 20vw, 240px);
+  }
+
+  .btn-desc {
+    display: none;
+  } /* hide desc text to save space */
+
+  .sidebar-cam-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3px;
+  }
+
+  .color-legend {
+    min-width: clamp(140px, 14vw, 200px);
+  }
+  .legend-text {
+    display: none;
+  } /* hide legend text, keep dot + bold label only */
+  .legend-item {
+    gap: 5px;
+  }
+}
+
+/* Very small screens < 768px — collapse panels further */
+@media (max-width: 767px) {
+  :root {
+    --panel-w: clamp(130px, 22vw, 180px);
+  }
+
+  .logo-sub {
+    display: none;
+  }
+  .btn-tag {
+    display: none;
+  }
+  .cam-hint {
+    display: none;
+  }
+  .basket-count {
+    display: none;
+  }
+
+  .sidebar-cam-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
