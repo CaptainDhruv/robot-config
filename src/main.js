@@ -984,7 +984,7 @@ function bindCameraButtons() {
     }
   });
 
-  const perspBtn = document.querySelector('[data-cam="perspective"]');
+  const perspBtn = document.querySelector('[data-cam="front"]');
   if (perspBtn) perspBtn.classList.add("active");
 }
 
@@ -1164,7 +1164,203 @@ function onEdit() {
 }
 
 function onProceedToPayment() {
-  alert("Proceeding to payment...");
+  const existing = document.getElementById("payment-confirm-popup");
+  if (existing) existing.remove();
+
+  const overlay = document.createElement("div");
+  overlay.id = "payment-confirm-popup";
+  Object.assign(overlay.style, {
+    position: "fixed",
+    top: "0",
+    left: "0",
+    width: "100vw",
+    height: "100vh",
+    background: "rgba(0,0,0,0.82)",
+    zIndex: "9999999",
+    pointerEvents: "all",
+  });
+
+  Object.assign(box.style, {
+    position: "fixed",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    zIndex: "10000000",
+    background: "#18202e",
+    border: "2px solid #d05818",
+    padding: "36px 44px",
+    maxWidth: "480px",
+    width: "92%",
+    fontFamily: "'Share Tech Mono', monospace",
+    color: "#c8d8e4",
+    textAlign: "center",
+    clipPath: "polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%)",
+    boxShadow: "0 0 50px rgba(208,88,24,0.25), 0 20px 60px rgba(0,0,0,0.6)",
+  });
+
+  // top accent line
+  const topLine = document.createElement("div");
+  Object.assign(topLine.style, {
+    position: "absolute",
+    top: "0",
+    left: "0",
+    right: "0",
+    height: "2px",
+    background: "linear-gradient(90deg, transparent, #d05818, transparent)",
+  });
+  box.appendChild(topLine);
+
+  const badge = document.createElement("div");
+  badge.textContent = "⚠  PAYMENT CONFIRMATION";
+  Object.assign(badge.style, {
+    fontSize: "9px",
+    letterSpacing: "0.24em",
+    color: "#d05818",
+    marginBottom: "20px",
+    fontWeight: "700",
+    fontFamily: "'Orbitron', sans-serif",
+  });
+
+  const title = document.createElement("div");
+  title.textContent = "Proceeding to Payment";
+  Object.assign(title.style, {
+    fontSize: "16px",
+    fontFamily: "'Orbitron', sans-serif",
+    fontWeight: "700",
+    color: "#d8e8f4",
+    letterSpacing: "0.1em",
+    marginBottom: "14px",
+  });
+
+  const msg = document.createElement("div");
+  msg.textContent =
+    "Are you sure your design is final? Once you proceed, you will be taken to payment and the build cannot be modified.";
+  Object.assign(msg.style, {
+    fontSize: "12px",
+    lineHeight: "1.7",
+    color: "#6a8098",
+    marginBottom: "28px",
+    letterSpacing: "0.04em",
+  });
+
+  // parts summary
+  const counts = {};
+  scene.traverse((o) => {
+    if (!o.userData?.isMount) return;
+    const t = o.userData.type ?? "unknown";
+    counts[t] = (counts[t] ?? 0) + 1;
+  });
+  const totalParts = Object.values(counts).reduce((a, b) => a + b, 0);
+  const totalCost = document.getElementById("totalPrice")?.textContent ?? "0";
+
+  const summary = document.createElement("div");
+  Object.assign(summary.style, {
+    background: "rgba(208,88,24,0.07)",
+    border: "1px solid rgba(208,88,24,0.22)",
+    padding: "12px 18px",
+    marginBottom: "26px",
+    display: "flex",
+    justifyContent: "space-around",
+    gap: "16px",
+  });
+
+  const makeStatBlock = (label, value) => {
+    const block = document.createElement("div");
+    Object.assign(block.style, { textAlign: "center" });
+    const valEl = document.createElement("div");
+    valEl.textContent = value;
+    Object.assign(valEl.style, {
+      fontFamily: "'Orbitron', sans-serif",
+      fontSize: "18px",
+      fontWeight: "700",
+      color: "#d05818",
+      letterSpacing: "0.06em",
+      lineHeight: "1",
+    });
+    const lblEl = document.createElement("div");
+    lblEl.textContent = label;
+    Object.assign(lblEl.style, {
+      fontSize: "8px",
+      letterSpacing: "0.15em",
+      color: "#384858",
+      marginTop: "4px",
+      textTransform: "uppercase",
+    });
+    block.appendChild(valEl);
+    block.appendChild(lblEl);
+    return block;
+  };
+
+  summary.appendChild(makeStatBlock("PARTS", totalParts));
+  const divider = document.createElement("div");
+  Object.assign(divider.style, {
+    width: "1px",
+    background: "rgba(208,88,24,0.2)",
+    flexShrink: "0",
+  });
+  summary.appendChild(divider);
+  summary.appendChild(makeStatBlock("TOTAL COST", "₹" + totalCost));
+
+  const btnRow = document.createElement("div");
+  Object.assign(btnRow.style, {
+    display: "flex",
+    gap: "12px",
+    justifyContent: "center",
+  });
+
+  function makeBtn(label, primary) {
+    const b = document.createElement("button");
+    b.textContent = label;
+    Object.assign(b.style, {
+      background: primary ? "#d05818" : "transparent",
+      border: "2px solid #d05818",
+      color: primary ? "#0e1018" : "#d05818",
+      fontFamily: "'Orbitron', sans-serif",
+      fontSize: "9px",
+      letterSpacing: "0.2em",
+      padding: "11px 26px",
+      cursor: "pointer",
+      textTransform: "uppercase",
+      transition: "all 0.15s",
+      boxShadow: primary ? "4px 4px 0 #5a2008" : "none",
+    });
+    b.onmouseover = () => {
+      b.style.background = "#d05818";
+      b.style.color = "#0e1018";
+      b.style.boxShadow = "4px 4px 0 #5a2008";
+    };
+    b.onmouseout = () => {
+      b.style.background = primary ? "#d05818" : "transparent";
+      b.style.color = primary ? "#0e1018" : "#d05818";
+      b.style.boxShadow = primary ? "4px 4px 0 #5a2008" : "none";
+    };
+    return b;
+  }
+
+  const cancelBtn = makeBtn("GO BACK", false);
+  cancelBtn.onclick = () => overlay.remove();
+
+  const confirmBtn = makeBtn("YES, PROCEED", true);
+  confirmBtn.onclick = () => {
+    overlay.remove();
+    showHudMessage("REDIRECTING TO PAYMENT...");
+  };
+
+  btnRow.appendChild(cancelBtn);
+  btnRow.appendChild(confirmBtn);
+
+  box.appendChild(badge);
+  box.appendChild(title);
+  box.appendChild(msg);
+  box.appendChild(summary);
+  box.appendChild(btnRow);
+  overlay.appendChild(box);
+
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+
+  document.body.appendChild(overlay);
 }
 
 /* =========================================================
@@ -1398,34 +1594,94 @@ function getPanelWidthPx() {
   return parseFloat(raw) || 300;
 }
 
+let shortcutBarVisible = false;
+
+function toggleShortcutBar() {
+  shortcutBarVisible = !shortcutBarVisible;
+  if (shortcutBarEl) {
+    shortcutBarEl.style.transform = shortcutBarVisible
+      ? "translateY(0)"
+      : "translateY(100%)";
+    shortcutBarEl.style.opacity = shortcutBarVisible ? "1" : "0";
+  }
+  const helpBtn = document.getElementById("help-toggle-btn");
+  if (helpBtn) {
+    helpBtn.classList.toggle("help-btn-active", shortcutBarVisible);
+    helpBtn.title = shortcutBarVisible ? "Hide shortcuts" : "Show shortcuts";
+  }
+}
+
 function initShortcutBar() {
   shortcutBarEl = document.createElement("div");
   shortcutBarEl.id = "shortcut-bar";
 
-  // NOTE: left/right are set dynamically from the CSS variable so the bar
-  // always sits exactly between the two panels, regardless of viewport size.
-  // The CSS rule `#shortcut-bar { left: var(--panel-w) !important; right: var(--panel-w) !important; }`
-  // handles this automatically — we still set initial values here as a fallback.
   const pw = getPanelWidthPx();
   Object.assign(shortcutBarEl.style, {
     position: "fixed",
     bottom: "0",
     left: `${pw}px`,
     right: `${pw}px`,
-    height: "34px",
-    background: "rgba(18,26,42,0.97)",
-    borderTop: "1px solid rgba(208,88,24,0.35)",
+    height: "40px",
+    background: "rgba(12,18,28,0.98)",
+    borderTop: "1px solid rgba(208,88,24,0.45)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     gap: "0",
     zIndex: "9000",
-    backdropFilter: "blur(6px)",
+    backdropFilter: "blur(8px)",
     overflow: "hidden",
+    transform: "translateY(100%)",
+    opacity: "0",
+    transition: "transform 0.25s ease, opacity 0.2s ease",
+    boxShadow: "0 -4px 24px rgba(0,0,0,0.5)",
   });
   document.body.appendChild(shortcutBarEl);
 
-  // Keep the shortcut bar aligned when the window resizes
+  // ── Help toggle button ────────────────────────────────────────────────────
+  const helpBtn = document.createElement("button");
+  helpBtn.id = "help-toggle-btn";
+  helpBtn.title = "Show shortcuts";
+  helpBtn.innerHTML = "?";
+  Object.assign(helpBtn.style, {
+    position: "fixed",
+    bottom: "10px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    width: "32px",
+    height: "32px",
+    background: "rgba(12,18,28,0.95)",
+    border: "2px solid rgba(208,88,24,0.6)",
+    color: "#d05818",
+    fontFamily: "'Orbitron', sans-serif",
+    fontSize: "13px",
+    fontWeight: "700",
+    cursor: "pointer",
+    zIndex: "9001",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "all 0.15s ease",
+    backdropFilter: "blur(6px)",
+    lineHeight: "1",
+    clipPath: "polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,0 100%)",
+  });
+  helpBtn.addEventListener("click", toggleShortcutBar);
+  helpBtn.addEventListener("mouseover", () => {
+    if (!shortcutBarVisible) {
+      helpBtn.style.background = "#d05818";
+      helpBtn.style.color = "#0e1018";
+    }
+  });
+  helpBtn.addEventListener("mouseout", () => {
+    if (!shortcutBarVisible) {
+      helpBtn.style.background = "rgba(12,18,28,0.95)";
+      helpBtn.style.color = "#d05818";
+    }
+  });
+  document.body.appendChild(helpBtn);
+
+  // Keep bar + button aligned on resize
   window.addEventListener("resize", () => {
     const newPw = getPanelWidthPx();
     shortcutBarEl.style.left = `${newPw}px`;
@@ -1440,13 +1696,14 @@ function initShortcutBar() {
         from { opacity:0; transform:translateY(4px); }
         to   { opacity:1; transform:translateY(0); }
       }
-      .sb-sep { width:1px; height:16px; background:rgba(204,34,0,0.15); flex-shrink:0; margin:0; }
-      .sb-item { display:flex; align-items:center; gap:6px; padding:0 14px; height:100%; animation:sbItemIn 0.18s ease both; cursor:default; flex-shrink:0; transition: background 0.15s; }
-      .sb-item:hover { background:rgba(204,34,0,0.06); }
-      .sb-key { font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700; letter-spacing:0.08em; color:#cc2200; background:rgba(204,34,0,0.12); border:1px solid rgba(204,34,0,0.3); padding:2px 6px; white-space:nowrap; line-height:1.4; }
-      .sb-action { font-family:'Share Tech Mono',monospace; font-size:9.5px; letter-spacing:0.06em; color:#5a6268; text-transform:uppercase; white-space:nowrap; }
-      .sb-mode-label { font-family:'Orbitron',sans-serif; font-size:8px; font-weight:700; letter-spacing:0.18em; padding:0 16px; text-transform:uppercase; flex-shrink:0; white-space:nowrap; }
-      .sb-chain-label { font-family:'Share Tech Mono',monospace; font-size:9px; letter-spacing:0.1em; color:#cc2200; padding:0 12px; flex-shrink:0; white-space:nowrap; display:flex; align-items:center; gap:6px; }
+      .sb-sep { width:1px; height:18px; background:rgba(208,88,24,0.2); flex-shrink:0; margin:0; }
+      .sb-item { display:flex; align-items:center; gap:7px; padding:0 16px; height:100%; animation:sbItemIn 0.18s ease both; cursor:default; flex-shrink:0; transition:background 0.15s; }
+      .sb-item:hover { background:rgba(208,88,24,0.07); }
+      .sb-key { font-family:'Orbitron',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.1em; color:#e87030; background:rgba(208,88,24,0.15); border:1.5px solid rgba(208,88,24,0.5); padding:3px 8px; white-space:nowrap; line-height:1.4; }
+      .sb-action { font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:0.08em; color:#8aacbf; text-transform:uppercase; white-space:nowrap; }
+      .sb-mode-label { font-family:'Orbitron',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.2em; padding:0 18px; text-transform:uppercase; flex-shrink:0; white-space:nowrap; border-right:1px solid rgba(208,88,24,0.25); height:100%; display:flex; align-items:center; }
+      .sb-chain-label { font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:0.1em; color:#e87030; padding:0 14px; flex-shrink:0; white-space:nowrap; display:flex; align-items:center; gap:7px; border-right:1px solid rgba(208,88,24,0.2); }
+      #help-toggle-btn.help-btn-active { background:#d05818 !important; color:#0e1018 !important; border-color:#d05818 !important; bottom:40px !important; }
     `;
     document.head.appendChild(s);
   }
@@ -1473,7 +1730,7 @@ function updateShortcutBar() {
   const modeLabel = document.createElement("div");
   modeLabel.className = "sb-mode-label";
   modeLabel.style.color = mc.color;
-  modeLabel.style.borderRight = `1px solid rgba(204,34,0,0.15)`;
+  modeLabel.style.borderRight = `1px solid rgba(208,88,24,0.25)`;
   modeLabel.textContent = mc.label;
   shortcutBarEl.appendChild(modeLabel);
 
