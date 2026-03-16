@@ -391,7 +391,7 @@ const mouse = new THREE.Vector2();
 const socketGeo = new THREE.SphereGeometry(0.09, 12, 12);
 const frameMat = new THREE.MeshBasicMaterial({ color: 0xd06010 }); // burnt orange — frame
 const motorMat = new THREE.MeshBasicMaterial({ color: 0xe87830 }); // bright orange — motor
-const supportFrameSocketMat = new THREE.MeshBasicMaterial({ color: 0x3a9090 }); // teal — support
+const supportFrameSocketMat = new THREE.MeshBasicMaterial({ color: 0xd06010 }); // orange — support
 const wheelSocketMat = new THREE.MeshBasicMaterial({ color: 0xb84a14 }); // deep amber — wheel
 
 let frameMarkers = [];
@@ -898,7 +898,7 @@ async function init() {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.15;
   // ── CHANGED: was 0x252525 — new slate-blue-grey gives contrast for dark parts ──
-  renderer.setClearColor(0x2e3548, 1);
+  renderer.setClearColor(0x4a5c78, 1);
 
   controls = createControls(camera, renderer.domElement);
   controls.minDistance = 1.0;
@@ -1020,8 +1020,8 @@ function frameObject(object) {
 function setupLights() {
   // ── CHANGED: background and fog now use slate-blue-grey 0x2e3548
   //    instead of near-black 0x252525, so dark motor/wheel parts are visible ──
-  scene.background = new THREE.Color(0x2e3548);
-  scene.fog = new THREE.FogExp2(0x2e3548, 0.032); // slightly reduced density too
+  scene.background = new THREE.Color(0x4a5c78);
+  scene.fog = new THREE.FogExp2(0x4a5c78, 0.028);
 
   scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.55));
 
@@ -1095,6 +1095,65 @@ function bindUI() {
   bind("editBtn", onEdit);
   bind("proceedPaymentBtn", onProceedToPayment);
   bind("printDesignBtn", printDesign);
+
+  // ── Rotation control buttons ───────────────────────────────────────────────
+  const rotLeftBtn = document.getElementById("rotLeftBtn");
+  const rotRightBtn = document.getElementById("rotRightBtn");
+  const rotFlipBtn = document.getElementById("rotFlipBtn");
+
+  if (rotLeftBtn)
+    rotLeftBtn.addEventListener("click", () => {
+      if (placementMode === "motor") {
+        motorManualRotSteps -= 1;
+        const deg = (((motorManualRotSteps % 4) + 4) % 4) * 90;
+        showHudMessage(`Motor: +${deg}°`);
+        updateShortcutBar();
+        updateRotationDisplay();
+        if (ghost) {
+          ghost.rotation.set(
+            0,
+            motorAutoBaseYaw + motorManualRotSteps * (Math.PI / 2),
+            0,
+          );
+          motorRotationGroup.rotation.set(0, 0, 0);
+        }
+      }
+    });
+
+  if (rotRightBtn)
+    rotRightBtn.addEventListener("click", () => {
+      if (placementMode === "motor") {
+        motorManualRotSteps += 1;
+        const deg = (((motorManualRotSteps % 4) + 4) % 4) * 90;
+        showHudMessage(`Motor: +${deg}°`);
+        updateShortcutBar();
+        updateRotationDisplay();
+        if (ghost) {
+          ghost.rotation.set(
+            0,
+            motorAutoBaseYaw + motorManualRotSteps * (Math.PI / 2),
+            0,
+          );
+          motorRotationGroup.rotation.set(0, 0, 0);
+        }
+      }
+    });
+
+  if (rotFlipBtn)
+    rotFlipBtn.addEventListener("click", () => {
+      if (placementMode === "triangle" && ghost) {
+        triangleManualRotSteps = (triangleManualRotSteps + 1) % 2;
+        const deg = triangleManualRotSteps * 180;
+        showHudMessage(`Triangle: ${deg}°`);
+        updateShortcutBar();
+        updateRotationDisplay();
+        ghost.rotation.set(
+          0,
+          triangleAutoBaseYaw + triangleManualRotSteps * Math.PI,
+          0,
+        );
+      }
+    });
 
   tooltipEl = document.createElement("div");
   tooltipEl.id = "part-tooltip";
@@ -2039,6 +2098,7 @@ function clearGhost() {
   }
 
   hideInstructionPanel();
+  hideRotationControls();
   clearQueuedIntent();
   updateShortcutBar();
   updateLegendHighlight();
@@ -2247,9 +2307,9 @@ const MAT_MOTOR_DIM = new THREE.MeshBasicMaterial({
   transparent: true,
   opacity: 0.18,
 });
-const MAT_SUPPORT_ACTIVE = new THREE.MeshBasicMaterial({ color: 0x3a9090 }); // teal
+const MAT_SUPPORT_ACTIVE = new THREE.MeshBasicMaterial({ color: 0xd06010 }); // orange (was teal)
 const MAT_SUPPORT_DIM = new THREE.MeshBasicMaterial({
-  color: 0x0e2020,
+  color: 0x2a1a08,
   transparent: true,
   opacity: 0.18,
 });
@@ -2259,14 +2319,14 @@ const MAT_WHEEL_DIM = new THREE.MeshBasicMaterial({
   transparent: true,
   opacity: 0.18,
 });
-const MAT_TRI_ACTIVE = new THREE.MeshBasicMaterial({ color: 0x38b0b0 }); // bright teal
+const MAT_TRI_ACTIVE = new THREE.MeshBasicMaterial({ color: 0xe87030 }); // orange (was teal)
 const MAT_TRI_DIM = new THREE.MeshBasicMaterial({
-  color: 0x0e2828,
+  color: 0x2a1004,
   transparent: true,
   opacity: 0.18,
 });
-const MAT_MOTOR_HOVER = new THREE.MeshBasicMaterial({ color: 0xffb060 }); // warm amber highlight
-const MAT_TRI_HOVER = new THREE.MeshBasicMaterial({ color: 0x60e8e8 }); // teal highlight
+const MAT_MOTOR_HOVER = new THREE.MeshBasicMaterial({ color: 0xffcc60 }); // warm yellow highlight
+const MAT_TRI_HOVER = new THREE.MeshBasicMaterial({ color: 0xffaa40 }); // amber highlight
 
 let hoveredMotorMarker = null;
 
@@ -2346,34 +2406,55 @@ function getValidStressConnectorSockets() {
 function applySocketHighlights() {
   const mode = placementMode;
 
-  const frameActive = mode === "frame";
+  // ── Hide ALL markers first — then selectively show the active mode only ──
   frameMarkers.forEach((m) => {
-    m.visible = frameActive;
-    m.material = MAT_FRAME_ACTIVE;
-    m.scale.setScalar(1.5);
+    m.visible = false;
   });
   frameOnSupportMarkers.forEach((m) => {
-    m.visible = frameActive;
-    m.material = MAT_SUPPORT_ACTIVE;
-    m.scale.setScalar(1.5);
+    m.visible = false;
   });
-
-  const motorActive = mode === "motor";
   motorMarkers.forEach((m) => {
-    m.visible = motorActive;
-    m.material = MAT_MOTOR_ACTIVE;
-    m.scale.setScalar(1.5);
+    m.visible = false;
   });
-
-  // ── Triangle mode: show only triangle attachment sockets, hide stress connectors ──
-  const triPlaceActive = mode === "triangle";
   triangleSocketMarkers.forEach((m) => {
-    m.visible = triPlaceActive;
-    m.material = MAT_TRI_ACTIVE;
-    m.scale.setScalar(1.5);
+    m.visible = false;
+  });
+  stressConnectorMarkers.forEach((m) => {
+    m.visible = false;
+  });
+  wheelMarkers.forEach((m) => {
+    m.visible = false;
   });
 
-  // ── Support mode: show only stress connectors that have a valid bridge partner ──
+  if (mode === "frame") {
+    frameMarkers.forEach((m) => {
+      m.visible = true;
+      m.material = MAT_FRAME_ACTIVE;
+      m.scale.setScalar(1.5);
+    });
+    frameOnSupportMarkers.forEach((m) => {
+      m.visible = true;
+      m.material = MAT_SUPPORT_ACTIVE;
+      m.scale.setScalar(1.5);
+    });
+  }
+
+  if (mode === "motor") {
+    motorMarkers.forEach((m) => {
+      m.visible = true;
+      m.material = MAT_MOTOR_ACTIVE;
+      m.scale.setScalar(1.5);
+    });
+  }
+
+  if (mode === "triangle") {
+    triangleSocketMarkers.forEach((m) => {
+      m.visible = true;
+      m.material = MAT_TRI_ACTIVE;
+      m.scale.setScalar(1.5);
+    });
+  }
+
   if (mode === "support") {
     const validSet = new Set(getValidStressConnectorSockets());
     stressConnectorMarkers.forEach((m) => {
@@ -2381,23 +2462,17 @@ function applySocketHighlights() {
         m.visible = true;
         m.material = MAT_TRI_ACTIVE;
         m.scale.setScalar(1.5);
-      } else {
-        // Invalid socket — hide it entirely so user cannot interact with it
-        m.visible = false;
       }
-    });
-  } else {
-    stressConnectorMarkers.forEach((m) => {
-      m.visible = false;
     });
   }
 
-  const wheelActive = mode === "wheel";
-  wheelMarkers.forEach((m) => {
-    m.visible = wheelActive;
-    m.material = MAT_WHEEL_ACTIVE;
-    m.scale.setScalar(1.5);
-  });
+  if (mode === "wheel") {
+    wheelMarkers.forEach((m) => {
+      m.visible = true;
+      m.material = MAT_WHEEL_ACTIVE;
+      m.scale.setScalar(1.5);
+    });
+  }
 
   hoveredMotorMarker = null;
 }
@@ -2405,6 +2480,50 @@ function applySocketHighlights() {
 /* =========================================================
    PLACEMENT MODES
    ========================================================= */
+
+/* =========================================================
+   ROTATION CONTROLS PANEL — show/hide per placement mode
+   ========================================================= */
+
+function showRotationControls(mode) {
+  const section = document.getElementById("rotation-section");
+  if (!section) return;
+  section.style.display = "block";
+
+  const title = document.getElementById("rot-section-title");
+  const flipRow = document.getElementById("rot-flip-row");
+  const stepRow = document.getElementById("rot-step-row");
+  const degEl = document.getElementById("rot-current-deg");
+
+  if (mode === "triangle") {
+    if (title) title.textContent = "FLIP TRIANGLE";
+    if (flipRow) flipRow.style.display = "flex";
+    if (stepRow) stepRow.style.display = "none";
+    if (degEl) degEl.textContent = triangleManualRotSteps === 0 ? "0°" : "180°";
+  } else if (mode === "motor") {
+    if (title) title.textContent = "ROTATE MOTOR";
+    if (flipRow) flipRow.style.display = "none";
+    if (stepRow) stepRow.style.display = "flex";
+    const deg = (((motorManualRotSteps % 4) + 4) % 4) * 90;
+    if (degEl) degEl.textContent = `+${deg}°`;
+  }
+}
+
+function hideRotationControls() {
+  const section = document.getElementById("rotation-section");
+  if (section) section.style.display = "none";
+}
+
+function updateRotationDisplay() {
+  const degEl = document.getElementById("rot-current-deg");
+  if (!degEl) return;
+  if (placementMode === "motor") {
+    const deg = (((motorManualRotSteps % 4) + 4) % 4) * 90;
+    degEl.textContent = `+${deg}°`;
+  } else if (placementMode === "triangle") {
+    degEl.textContent = triangleManualRotSteps === 0 ? "0°" : "180°";
+  }
+}
 
 function startMotorPlacement() {
   hideIdleArrows();
@@ -2444,6 +2563,7 @@ function startMotorPlacement() {
   motorRotationGroup.add(m);
   ghost.add(motorRotationGroup);
   scene.add(ghost);
+  showRotationControls("motor");
 }
 
 function startFramePlacement() {
@@ -2488,6 +2608,7 @@ function startTrianglePlacement() {
   ghost = triangleTemplate.clone(true);
   makeGhost(ghost);
   scene.add(ghost);
+  showRotationControls("triangle");
 }
 
 function startSupportPlacement() {
@@ -3993,6 +4114,7 @@ function onKeyDown(e) {
       const totalDeg = (((motorManualRotSteps % 4) + 4) % 4) * 90;
       showHudMessage(`Motor manual offset: +${totalDeg}°`);
       updateShortcutBar();
+      updateRotationDisplay();
       if (ghost) {
         const finalYaw = motorAutoBaseYaw + motorManualRotSteps * (Math.PI / 2);
         ghost.rotation.set(0, finalYaw, 0);
@@ -4005,6 +4127,7 @@ function onKeyDown(e) {
       const totalDeg = triangleManualRotSteps * 180;
       showHudMessage(`Triangle manual offset: +${totalDeg}°`);
       updateShortcutBar();
+      updateRotationDisplay();
       ghost.rotation.set(
         0,
         triangleAutoBaseYaw + triangleManualRotSteps * Math.PI,

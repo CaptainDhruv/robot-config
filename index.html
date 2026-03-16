@@ -135,6 +135,44 @@
             <div class="cam-hint">Alt+0–7 or click to switch</div>
           </div>
         </section>
+
+        <!-- ROTATION CONTROLS — shown only during motor/triangle placement -->
+        <section
+          class="panel-section rotation-section"
+          id="rotation-section"
+          style="display: none"
+        >
+          <div class="rotation-header">
+            <span class="rotation-section-icon">↻</span>
+            <span id="rot-section-title">ROTATE COMPONENT</span>
+          </div>
+          <div class="rotation-body">
+            <!-- Motor: 90° step buttons -->
+            <div class="rot-step-row" id="rot-step-row">
+              <button class="btn-rot" id="rotLeftBtn" title="Rotate -90°">
+                <span class="btn-rot-icon">↺</span>
+                <span class="btn-rot-label">−90°</span>
+              </button>
+              <div class="rot-deg-display" id="rot-current-deg">+0°</div>
+              <button class="btn-rot" id="rotRightBtn" title="Rotate +90°">
+                <span class="btn-rot-icon">↻</span>
+                <span class="btn-rot-label">+90°</span>
+              </button>
+            </div>
+            <!-- Triangle: flip 180° button -->
+            <div class="rot-flip-row" id="rot-flip-row" style="display: none">
+              <button
+                class="btn-rot btn-rot-flip"
+                id="rotFlipBtn"
+                title="Flip 180°"
+              >
+                <span class="btn-rot-icon">⇅</span>
+                <span class="btn-rot-label">FLIP 180°</span>
+              </button>
+              <div class="rot-deg-display" id="rot-current-deg">0°</div>
+            </div>
+          </div>
+        </section>
       </aside>
 
       <!-- ═══════ VIEWPORT ═══════ -->
