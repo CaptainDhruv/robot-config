@@ -48,6 +48,9 @@ let motorManualRotSteps = 0;
 let triangleAutoBaseYaw = 0;
 let triangleManualRotSteps = 0;
 let hoveredTriangleMarker = null;
+// ── Tracks the UUID of the last triangle socket hovered so that returning to
+//    the same socket after briefly leaving does NOT reset the manual rotation.
+let lastHoveredTriangleSocketUUID = null;
 
 // ── Support auto-orientation state (1-click placement) ───────────────────────
 let supportManualRotSteps = 0;
@@ -386,10 +389,10 @@ const mouse = new THREE.Vector2();
    ========================================================= */
 
 const socketGeo = new THREE.SphereGeometry(0.09, 12, 12);
-const frameMat = new THREE.MeshBasicMaterial({ color: 0xd0d8e0 });
-const motorMat = new THREE.MeshBasicMaterial({ color: 0xdd2200 });
-const supportFrameSocketMat = new THREE.MeshBasicMaterial({ color: 0x909aaa });
-const wheelSocketMat = new THREE.MeshBasicMaterial({ color: 0xff3010 });
+const frameMat = new THREE.MeshBasicMaterial({ color: 0xd06010 }); // burnt orange — frame
+const motorMat = new THREE.MeshBasicMaterial({ color: 0xe87830 }); // bright orange — motor
+const supportFrameSocketMat = new THREE.MeshBasicMaterial({ color: 0x3a9090 }); // teal — support
+const wheelSocketMat = new THREE.MeshBasicMaterial({ color: 0xb84a14 }); // deep amber — wheel
 
 let frameMarkers = [];
 let motorMarkers = [];
@@ -894,7 +897,8 @@ async function init() {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.15;
-  renderer.setClearColor(0x252525, 1);
+  // ── CHANGED: was 0x252525 — new slate-blue-grey gives contrast for dark parts ──
+  renderer.setClearColor(0x2e3548, 1);
 
   controls = createControls(camera, renderer.domElement);
   controls.minDistance = 1.0;
@@ -1014,8 +1018,10 @@ function frameObject(object) {
    ========================================================= */
 
 function setupLights() {
-  scene.background = new THREE.Color(0x252525);
-  scene.fog = new THREE.FogExp2(0x252525, 0.042);
+  // ── CHANGED: background and fog now use slate-blue-grey 0x2e3548
+  //    instead of near-black 0x252525, so dark motor/wheel parts are visible ──
+  scene.background = new THREE.Color(0x2e3548);
+  scene.fog = new THREE.FogExp2(0x2e3548, 0.032); // slightly reduced density too
 
   scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.55));
 
@@ -1046,21 +1052,23 @@ function setupGrid() {
 
   const gridY = lowestY;
 
-  const gridMajor = new THREE.GridHelper(60, 60, 0x2a2a2a, 0x1e1e1e);
+  // ── CHANGED: grid lines are lighter so they read against the new bg colour ──
+  const gridMajor = new THREE.GridHelper(60, 60, 0x3d4a60, 0x303d52);
   gridMajor.position.y = gridY;
   gridMajor.material.transparent = true;
-  gridMajor.material.opacity = 0.65;
+  gridMajor.material.opacity = 0.75;
   scene.add(gridMajor);
 
-  const gridMinor = new THREE.GridHelper(60, 240, 0x181818, 0x181818);
+  const gridMinor = new THREE.GridHelper(60, 240, 0x283040, 0x283040);
   gridMinor.position.y = gridY - 0.001;
   gridMinor.material.transparent = true;
-  gridMinor.material.opacity = 0.4;
+  gridMinor.material.opacity = 0.45;
   scene.add(gridMinor);
 
+  // ── CHANGED: ground plane is a slightly darker tint of the new background ──
   const groundGeo = new THREE.PlaneGeometry(60, 60);
   const groundMat = new THREE.MeshBasicMaterial({
-    color: 0x0d0d0d,
+    color: 0x1e2535,
     transparent: true,
     opacity: 0.92,
     depthWrite: false,
@@ -1124,12 +1132,35 @@ function onFinalize() {
   isFinalized = true;
   clearGhost();
   document.getElementById("paymentSection")?.classList.remove("hidden");
+  // Swap the button label/icon to "Edit Design" and re-wire it
+  const btn = document.getElementById("finalizeBtn");
+  if (btn) {
+    btn.innerHTML = `<div class="btn-inner">
+      <span class="btn-icon">◈</span>
+      <span class="btn-action-label">Edit Design</span>
+    </div>`;
+    // Remove all existing listeners by replacing with a clone, then re-add
+    const fresh = btn.cloneNode(true);
+    btn.parentNode.replaceChild(fresh, btn);
+    fresh.addEventListener("click", onEdit);
+  }
 }
 
 function onEdit() {
   if (!isFinalized) return;
   isFinalized = false;
   document.getElementById("paymentSection")?.classList.add("hidden");
+  // Swap the button back to "Finalize Design" and re-wire it
+  const btn = document.getElementById("finalizeBtn");
+  if (btn) {
+    btn.innerHTML = `<div class="btn-inner">
+      <span class="btn-icon">◼</span>
+      <span class="btn-action-label">Finalize Design</span>
+    </div>`;
+    const fresh = btn.cloneNode(true);
+    btn.parentNode.replaceChild(fresh, btn);
+    fresh.addEventListener("click", onFinalize);
+  }
 }
 
 function onProceedToPayment() {
@@ -1382,8 +1413,8 @@ function initShortcutBar() {
     left: `${pw}px`,
     right: `${pw}px`,
     height: "34px",
-    background: "rgba(15,15,15,0.96)",
-    borderTop: "1px solid rgba(204,34,0,0.2)",
+    background: "rgba(18,26,42,0.97)",
+    borderTop: "1px solid rgba(208,88,24,0.35)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1743,6 +1774,7 @@ function clearGhost() {
 
   triangleAutoBaseYaw = 0;
   triangleManualRotSteps = 0;
+  lastHoveredTriangleSocketUUID = null;
   if (hoveredTriangleMarker) {
     hoveredTriangleMarker.material = MAT_TRI_ACTIVE;
     hoveredTriangleMarker.scale.setScalar(1.5);
@@ -1946,38 +1978,38 @@ function isSocketNode(name) {
   );
 }
 
-const MAT_FRAME_ACTIVE = new THREE.MeshBasicMaterial({ color: 0xe8eef4 });
+const MAT_FRAME_ACTIVE = new THREE.MeshBasicMaterial({ color: 0xd06010 }); // burnt orange
 const MAT_FRAME_DIM = new THREE.MeshBasicMaterial({
-  color: 0x2a2e32,
+  color: 0x2a1a08,
   transparent: true,
   opacity: 0.22,
 });
-const MAT_MOTOR_ACTIVE = new THREE.MeshBasicMaterial({ color: 0xff2200 });
+const MAT_MOTOR_ACTIVE = new THREE.MeshBasicMaterial({ color: 0xe87830 }); // bright orange
 const MAT_MOTOR_DIM = new THREE.MeshBasicMaterial({
-  color: 0x2a0a00,
+  color: 0x2a1004,
   transparent: true,
   opacity: 0.18,
 });
-const MAT_SUPPORT_ACTIVE = new THREE.MeshBasicMaterial({ color: 0xb0bcc8 });
+const MAT_SUPPORT_ACTIVE = new THREE.MeshBasicMaterial({ color: 0x3a9090 }); // teal
 const MAT_SUPPORT_DIM = new THREE.MeshBasicMaterial({
-  color: 0x1e2228,
+  color: 0x0e2020,
   transparent: true,
   opacity: 0.18,
 });
-const MAT_WHEEL_ACTIVE = new THREE.MeshBasicMaterial({ color: 0xff3010 });
+const MAT_WHEEL_ACTIVE = new THREE.MeshBasicMaterial({ color: 0xb84a14 }); // deep amber
 const MAT_WHEEL_DIM = new THREE.MeshBasicMaterial({
-  color: 0x280a00,
+  color: 0x1e0a04,
   transparent: true,
   opacity: 0.18,
 });
-const MAT_TRI_ACTIVE = new THREE.MeshBasicMaterial({ color: 0x8090a0 });
+const MAT_TRI_ACTIVE = new THREE.MeshBasicMaterial({ color: 0x38b0b0 }); // bright teal
 const MAT_TRI_DIM = new THREE.MeshBasicMaterial({
-  color: 0x181c20,
+  color: 0x0e2828,
   transparent: true,
   opacity: 0.18,
 });
-const MAT_MOTOR_HOVER = new THREE.MeshBasicMaterial({ color: 0xffffff });
-const MAT_TRI_HOVER = new THREE.MeshBasicMaterial({ color: 0xffffff });
+const MAT_MOTOR_HOVER = new THREE.MeshBasicMaterial({ color: 0xffb060 }); // warm amber highlight
+const MAT_TRI_HOVER = new THREE.MeshBasicMaterial({ color: 0x60e8e8 }); // teal highlight
 
 let hoveredMotorMarker = null;
 
@@ -1987,6 +2019,71 @@ function addMarker(socket, list, mat) {
   m.userData.socket = socket;
   list.push(m);
   scene.add(m);
+}
+
+/* =========================================================
+   VALID STRESS CONNECTOR FILTER
+   Returns the subset of stressConnectorMarkers whose socket
+   has a valid, alignment-passing bridge partner — these are
+   the only ones that should be clickable in support mode.
+   ========================================================= */
+
+function getValidStressConnectorSockets() {
+  scene.updateMatrixWorld(true);
+  const valid = [];
+
+  for (const marker of stressConnectorMarkers) {
+    const socketA = marker.userData.socket;
+    if (!socketA) continue;
+    if (usedSockets.has(socketA.uuid)) continue;
+
+    // Build a minimal pair object to run the alignment check
+    socketA.updateMatrixWorld(true);
+    const posA = new THREE.Vector3();
+    socketA.getWorldPosition(posA);
+
+    // Find the best partner socket (same logic as resolveBestSupportSocketPair
+    // but lightweight — just needs posB and socketB for the alignment check)
+    let mountA = socketA.parent;
+    while (mountA && !mountA.userData?.isMount) mountA = mountA.parent;
+
+    let bestSocketB = null;
+    let bestPosB = null;
+    let bestDist = Infinity;
+
+    scene.traverse((o) => {
+      if (!o.name?.startsWith("SOCKET_STRESS_CONNECTOR")) return;
+      if (usedSockets.has(o.uuid)) return;
+      if (o === socketA) return;
+      let m = o.parent;
+      while (m && !m.userData?.isMount) m = m.parent;
+      if (m === mountA) return;
+      if (m?.userData?.type !== "triangle_frame") return;
+      o.updateMatrixWorld(true);
+      const wp = new THREE.Vector3();
+      o.getWorldPosition(wp);
+      const d = wp.distanceTo(posA);
+      if (d < bestDist) {
+        bestDist = d;
+        bestSocketB = o;
+        bestPosB = wp.clone();
+      }
+    });
+
+    if (!bestSocketB) continue; // no partner at all
+
+    const pair = {
+      socketA,
+      posA,
+      socketB: bestSocketB,
+      posB: bestPosB,
+    };
+
+    const result = checkSupportBridgeAlignment(pair);
+    if (result.ok) valid.push(marker);
+  }
+
+  return valid;
 }
 
 function applySocketHighlights() {
@@ -2011,12 +2108,32 @@ function applySocketHighlights() {
     m.scale.setScalar(1.5);
   });
 
-  const triActive = mode === "triangle" || mode === "support";
-  triangleMarkers.forEach((m) => {
-    m.visible = triActive;
+  // ── Triangle mode: show only triangle attachment sockets, hide stress connectors ──
+  const triPlaceActive = mode === "triangle";
+  triangleSocketMarkers.forEach((m) => {
+    m.visible = triPlaceActive;
     m.material = MAT_TRI_ACTIVE;
     m.scale.setScalar(1.5);
   });
+
+  // ── Support mode: show only stress connectors that have a valid bridge partner ──
+  if (mode === "support") {
+    const validSet = new Set(getValidStressConnectorSockets());
+    stressConnectorMarkers.forEach((m) => {
+      if (validSet.has(m)) {
+        m.visible = true;
+        m.material = MAT_TRI_ACTIVE;
+        m.scale.setScalar(1.5);
+      } else {
+        // Invalid socket — hide it entirely so user cannot interact with it
+        m.visible = false;
+      }
+    });
+  } else {
+    stressConnectorMarkers.forEach((m) => {
+      m.visible = false;
+    });
+  }
 
   const wheelActive = mode === "wheel";
   wheelMarkers.forEach((m) => {
@@ -2169,6 +2286,7 @@ function restartPlacementMode(mode) {
   if (mode === "triangle") {
     triangleAutoBaseYaw = 0;
     triangleManualRotSteps = 0;
+    lastHoveredTriangleSocketUUID = null;
     if (hoveredTriangleMarker) {
       hoveredTriangleMarker.material = MAT_TRI_ACTIVE;
       hoveredTriangleMarker.scale.setScalar(1.5);
@@ -2344,6 +2462,117 @@ function resolveBestSupportSocketPair(clickedSocket) {
     socketB: entryB.socket,
     posB: entryB.pos.clone(),
   };
+}
+
+/* =========================================================
+   SUPPORT BRIDGE ALIGNMENT VALIDATION
+   Checks that the two triangle frames chosen for a support
+   bridge face each other across the build — i.e. their
+   outward directions from their respective parent rectangular
+   frames are roughly opposite (~180°), not perpendicular
+   (~90°, which produces the diagonal bridge in Image 1).
+   ========================================================= */
+
+/**
+ * Returns { ok: true } when the pair is valid, or
+ * { ok: false, reason: string } when the build rule is violated.
+ *
+ * Rule enforced:
+ *   The outward-facing direction of each triangle frame
+ *   (computed as the vector from its parent rect-frame centre
+ *   to the triangle's own centre, projected onto XZ) must be
+ *   roughly OPPOSITE to one another (dot product < -0.3,
+ *   i.e. angle > ~107°).  Adjacent-side placements produce a
+ *   dot product near 0 (90°) and are rejected.
+ *
+ *   Y-level parity is also checked as a secondary guard.
+ */
+function checkSupportBridgeAlignment(pair) {
+  const ALIGN_Y_TOLERANCE = 0.55; // world units — generous same-height check
+  const FACING_DOT_THRESHOLD = -0.3; // dot < this value ⟹ roughly opposite
+
+  const { posA, posB, socketA, socketB } = pair;
+
+  // ── Helper: walk up to the nearest isMount ancestor ────────────────────
+  function getParentMount(node) {
+    let o = node;
+    while (o) {
+      if (o.userData?.isMount) return o;
+      o = o.parent;
+    }
+    return null;
+  }
+
+  const triMountA = getParentMount(socketA);
+  const triMountB = getParentMount(socketB);
+
+  // ── Rule 1: Y-level parity ──────────────────────────────────────────────
+  const yDiff = Math.abs(posA.y - posB.y);
+  if (yDiff > ALIGN_Y_TOLERANCE) {
+    return {
+      ok: false,
+      reason:
+        "The two Triangular Frames are not at the same height.\n\n" +
+        "Both triangles must be attached to frames at the same level so " +
+        "the Support Bridge can span horizontally between them.",
+    };
+  }
+
+  // ── Rule 2: Triangles must face each other (opposite sides) ────────────
+  // For each triangle, find its parent rectangular-frame mount, then compute
+  // the outward direction: triangle-centre minus rect-frame-centre (XZ only).
+  if (triMountA && triMountB) {
+    scene.updateMatrixWorld(true);
+
+    function getOutwardDir(triMount) {
+      // The triangle's own world-space centre
+      const triCentre = new THREE.Box3()
+        .setFromObject(triMount)
+        .getCenter(new THREE.Vector3());
+
+      // Walk up one more level to find the rect-frame this triangle sits on
+      const parentSocket = triMount.userData?.socket;
+      if (!parentSocket) return null;
+
+      const rectMount = getParentMount(parentSocket.parent ?? parentSocket);
+      if (!rectMount || rectMount === triMount) return null;
+
+      const rectCentre = new THREE.Box3()
+        .setFromObject(rectMount)
+        .getCenter(new THREE.Vector3());
+
+      // Outward vector from rect-frame centre → triangle centre, XZ only
+      const dir = new THREE.Vector3(
+        triCentre.x - rectCentre.x,
+        0,
+        triCentre.z - rectCentre.z,
+      );
+
+      return dir.lengthSq() > 0.001 ? dir.normalize() : null;
+    }
+
+    const dirA = getOutwardDir(triMountA);
+    const dirB = getOutwardDir(triMountB);
+
+    if (dirA && dirB) {
+      const dot = dirA.dot(dirB); // -1 = perfectly opposite, 0 = 90°, +1 = same
+
+      if (dot > FACING_DOT_THRESHOLD) {
+        // dot > -0.3 means the two triangles are NOT facing each other —
+        // they are either on adjacent sides (~0) or the same side (~+1).
+        return {
+          ok: false,
+          reason:
+            "The two Triangular Frames must face each other on opposite sides.\n\n" +
+            "Place both Triangular Frames on parallel, opposing sides of the " +
+            "rectangular frame so the Support Bridge spans straight across — " +
+            "not at a diagonal or on the same side.",
+        };
+      }
+    }
+  }
+
+  return { ok: true };
 }
 
 /* =========================================================
@@ -2667,6 +2896,15 @@ function onMouseMove(e) {
       );
       return;
     }
+
+    // ── Alignment check: hide ghost and warn if triangles are misaligned ──
+    const alignResult = checkSupportBridgeAlignment(pair);
+    if (!alignResult.ok) {
+      ghost.position.set(0, -9999, 0);
+      showHudMessage("⚠ TRIANGLE ALIGNMENT REQUIRED — see build rules");
+      return;
+    }
+
     const { posA, posB } = pair;
 
     ghost.position.set(0, 0, 0);
@@ -2683,10 +2921,11 @@ function onMouseMove(e) {
   const hit = raycaster.intersectObjects(targets)[0];
 
   if (hoveredTriangleMarker && hoveredTriangleMarker !== hit?.object) {
+    // Leaving a socket — restore its visual but do NOT reset manual rotation.
+    // The rotation is preserved so the user can hover away and come back.
     hoveredTriangleMarker.material = MAT_TRI_ACTIVE;
     hoveredTriangleMarker.scale.setScalar(1.5);
     hoveredTriangleMarker = null;
-    triangleManualRotSteps = 0;
     updateShortcutBar();
   }
 
@@ -2696,11 +2935,23 @@ function onMouseMove(e) {
   socket.updateMatrixWorld(true);
 
   if (hit.object !== hoveredTriangleMarker) {
+    // Entering a socket marker — only reset rotation if it is a DIFFERENT
+    // socket from the last one the user had the cursor on.
+    const incomingUUID = socket.uuid;
+    const isNewSocket = incomingUUID !== lastHoveredTriangleSocketUUID;
+
     hoveredTriangleMarker = hit.object;
     hoveredTriangleMarker.material = MAT_TRI_HOVER;
     hoveredTriangleMarker.scale.setScalar(2.0);
-    triangleManualRotSteps = 0;
-    triangleAutoBaseYaw = computeTriangleAutoYaw(socket);
+    lastHoveredTriangleSocketUUID = incomingUUID;
+
+    if (isNewSocket) {
+      // Genuinely different socket: reset rotation and recompute auto-yaw.
+      triangleManualRotSteps = 0;
+      triangleAutoBaseYaw = computeTriangleAutoYaw(socket);
+    }
+    // If returning to the same socket, keep triangleManualRotSteps and
+    // triangleAutoBaseYaw exactly as the user left them.
     updateShortcutBar();
   }
 
@@ -2799,6 +3050,15 @@ function onClick(e) {
       );
       return;
     }
+
+    // ── Alignment validation before allowing placement ───────────────────
+    const alignResult = checkSupportBridgeAlignment(pair);
+    if (!alignResult.ok) {
+      showPopup(alignResult.reason);
+      return;
+    }
+    // ────────────────────────────────────────────────────────────────────
+
     const { socketA, posA, socketB, posB } = pair;
 
     if (usedSockets.has(socketA.uuid)) return;

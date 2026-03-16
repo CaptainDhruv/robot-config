@@ -83,24 +83,6 @@
           </div>
         </section>
 
-        <!-- ACTIONS — collapsible -->
-        <section class="panel-section">
-          <button class="section-toggle" data-target="sec-actions">
-            ACTIONS
-            <span class="chevron">▼</span>
-          </button>
-          <div class="section-body" id="sec-actions">
-            <div class="action-row action-row-single">
-              <button id="editBtn" class="btn btn-secondary">
-                <div class="btn-inner">
-                  <span class="btn-icon">◈</span>
-                  <span class="btn-action-label">Edit Design</span>
-                </div>
-              </button>
-            </div>
-          </div>
-        </section>
-
         <!-- CAMERA PRESETS -->
         <section class="panel-section panel-section-camera">
           <button class="section-toggle" data-target="sec-camera">
@@ -111,14 +93,6 @@
             <div class="sidebar-cam-grid">
               <button
                 class="sidebar-cam-btn active"
-                data-cam="perspective"
-                title="Perspective View"
-              >
-                <span class="sidebar-cam-icon">◈</span>
-                <span class="sidebar-cam-label">PERSP</span>
-              </button>
-              <button
-                class="sidebar-cam-btn"
                 data-cam="front"
                 title="Front View"
               >
@@ -132,14 +106,6 @@
               <button class="sidebar-cam-btn" data-cam="top" title="Top View">
                 <span class="sidebar-cam-icon">⊡</span>
                 <span class="sidebar-cam-label">TOP</span>
-              </button>
-              <button
-                class="sidebar-cam-btn"
-                data-cam="bottom"
-                title="Bottom View"
-              >
-                <span class="sidebar-cam-icon">⊡</span>
-                <span class="sidebar-cam-label">BTM</span>
               </button>
               <button
                 class="sidebar-cam-btn"
@@ -175,70 +141,6 @@
       <main class="viewport">
         <canvas id="app"></canvas>
 
-        <!-- COLOR LEGEND -->
-        <div class="color-legend" id="colorLegend">
-          <div class="legend-title">SOCKET GUIDE</div>
-          <div class="legend-items" id="legendItems">
-            <div class="legend-item">
-              <span
-                class="legend-dot"
-                style="background: #d8e0e8; box-shadow: 0 0 6px #d8e0e8"
-              ></span>
-              <span class="legend-text"
-                ><strong>WHITE</strong> — Frame socket · connects Rect. &amp;
-                Tri. Frames</span
-              >
-            </div>
-            <div class="legend-item">
-              <span
-                class="legend-dot"
-                style="background: #ff2200; box-shadow: 0 0 6px #ff2200"
-              ></span>
-              <span class="legend-text"
-                ><strong>RED</strong> — Motor socket · click to attach a Motor
-                Housing</span
-              >
-            </div>
-            <div class="legend-item">
-              <span
-                class="legend-dot"
-                style="background: #8090a0; box-shadow: 0 0 6px #8090a0"
-              ></span>
-              <span class="legend-text"
-                ><strong>GREY</strong> — Triangle socket · for Tri. Frame or
-                Support Frame</span
-              >
-            </div>
-            <div class="legend-item">
-              <span
-                class="legend-dot"
-                style="background: #b0bcc8; box-shadow: 0 0 6px #b0bcc8"
-              ></span>
-              <span class="legend-text"
-                ><strong>STEEL</strong> — Support socket · attach Rect. Frame to
-                Support</span
-              >
-            </div>
-            <div class="legend-item">
-              <span
-                class="legend-dot"
-                style="background: #ff3010; box-shadow: 0 0 6px #ff3010"
-              ></span>
-              <span class="legend-text"
-                ><strong>HOT RED</strong> — Wheel socket · snap a Wheel onto a
-                Motor</span
-              >
-            </div>
-          </div>
-          <button
-            class="legend-collapse-btn"
-            id="legendToggle"
-            title="Collapse"
-          >
-            ◀
-          </button>
-        </div>
-
         <!-- IDLE ARROWS container -->
         <div id="idle-arrows"></div>
       </main>
@@ -268,7 +170,7 @@
           </button>
         </div>
 
-        <!-- FINALIZE + PRINT -->
+        <!-- FINALIZE (toggles to EDIT DESIGN after clicking) + PRINT -->
         <div class="save-print-section">
           <button id="finalizeBtn" class="btn btn-primary btn-finalize-large">
             <div class="btn-inner">

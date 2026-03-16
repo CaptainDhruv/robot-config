@@ -1,6 +1,10 @@
 /* ═══════════════════════════════════════════════════
-   ROBOT CONFIGURATOR — INDUSTRIAL / HEAVY MACHINERY THEME
-   Gunmetal · Steel White · Warning Red
+   ROBOT CONFIGURATOR — SLATE / AMBER / TEAL THEME
+   Palette pulled directly from the robot model:
+     • Burnt orange  #d05818  — frame struts
+     • Slate blue    #2e3548  — viewport background
+     • Deep teal     #1e4040  — wheel trim
+     • Cold grey     #8090a0  — structural parts
    FULLY RESPONSIVE — panels scale with viewport
    ═══════════════════════════════════════════════════ */
 
@@ -20,8 +24,8 @@ body {
   width: 100%;
   overflow: hidden;
   font-family: "Rajdhani", sans-serif;
-  background: #0f0f0f;
-  color: #b0b8c0;
+  background: #141c28;
+  color: #90a8bc;
   cursor: crosshair;
 }
 
@@ -34,61 +38,67 @@ body::after {
     0deg,
     transparent,
     transparent 2px,
-    rgba(0, 0, 0, 0.07) 2px,
-    rgba(0, 0, 0, 0.07) 4px
+    rgba(0, 0, 0, 0.06) 2px,
+    rgba(0, 0, 0, 0.06) 4px
   );
   pointer-events: none;
   z-index: 9999;
 }
 
 :root {
-  --bg-base: #0f0f0f;
-  --bg-panel: #141414;
-  --bg-panel-r: #111111;
-  --bg-row: #1a1a1a;
-  --bg-row-h: #222222;
+  /* ── Panel backgrounds — pulled from viewport slate ── */
+  --bg-base: #141c28;
+  --bg-panel: #18202e;
+  --bg-panel-r: #161e2c;
+  --bg-row: #1e2838;
+  --bg-row-h: #243040;
 
-  --border: #2a2a2a;
-  --border-hi: #3a3a3a;
-  --border-red: #4a1008;
+  /* ── Borders — blue-steel tones ── */
+  --border: #28384a;
+  --border-hi: #344858;
+  --border-amb: #3a2810; /* warm amber-side border */
 
-  --text-hi: #e8eaec;
-  --text-mid: #7a8490;
-  --text-lo: #404850;
-  --text-red: #cc3320;
-  --text-danger: #e03020;
+  /* ── Text ── */
+  --text-hi: #d8e8f4;
+  --text-mid: #6a8098;
+  --text-lo: #384858;
+  --text-amb: #b85020;
+  --text-danger: #d04828;
 
-  --red: #cc2200;
-  --red-bright: #e83a1a;
-  --red-dim: rgba(204, 34, 0, 0.1);
-  --red-glow: rgba(204, 34, 0, 0.22);
-  --red-border: rgba(204, 34, 0, 0.35);
+  /* ── Primary accent: burnt orange (robot frame colour) ── */
+  --amb: #d05818;
+  --amb-bright: #e87030;
+  --amb-dim: rgba(208, 88, 24, 0.1);
+  --amb-glow: rgba(208, 88, 24, 0.2);
+  --amb-border: rgba(208, 88, 24, 0.35);
 
-  --steel: #8090a0;
-  --steel-dim: rgba(128, 144, 160, 0.1);
-  --steel-hi: #c0ccd8;
-  --steel-bright: #d8e0e8;
+  /* ── Secondary accent: teal (robot wheel colour) ── */
+  --teal: #2a6868;
+  --teal-bright: #3a8888;
+  --teal-dim: rgba(42, 104, 104, 0.12);
+  --teal-border: rgba(42, 104, 104, 0.35);
 
-  --gun: #3a4048;
-  --gun-dim: rgba(58, 64, 72, 0.15);
+  /* ── Cold steel (structural parts) ── */
+  --steel: #7a90a4;
+  --steel-dim: rgba(122, 144, 164, 0.1);
+  --steel-hi: #a8bcc8;
+  --steel-bright: #c8d8e4;
 
-  --c-motor: #cc2200;
-  --c-motor-d: rgba(204, 34, 0, 0.12);
-  --c-frame: #7a8090;
-  --c-frame-d: rgba(122, 128, 144, 0.12);
-  --c-tri: #a0a8b0;
-  --c-tri-d: rgba(160, 168, 176, 0.12);
-  --c-sup: #606870;
-  --c-sup-d: rgba(96, 104, 112, 0.12);
-  --c-att: #505860;
-  --c-att-d: rgba(80, 88, 96, 0.12);
-  --c-wheel: #c02010;
-  --c-wheel-d: rgba(192, 32, 16, 0.12);
+  /* ── Component colour tokens ── */
+  --c-motor: #d05818;
+  --c-motor-d: rgba(208, 88, 24, 0.12);
+  --c-frame: #6a7a8a;
+  --c-frame-d: rgba(106, 122, 138, 0.12);
+  --c-tri: #8a9aaa;
+  --c-tri-d: rgba(138, 154, 170, 0.12);
+  --c-sup: #2a6868;
+  --c-sup-d: rgba(42, 104, 104, 0.12);
+  --c-att: #405060;
+  --c-att-d: rgba(64, 80, 96, 0.12);
+  --c-wheel: #b84a14;
+  --c-wheel-d: rgba(184, 74, 20, 0.12);
 
-  /* ── RESPONSIVE PANEL WIDTH ──
-     Clamps between 180px (tiny screens) and 300px (large screens)
-     Uses 18vw as the fluid value so panels shrink on small viewports
-  */
+  /* ── Responsive panel width ── */
   --panel-w: clamp(180px, 18vw, 300px);
 
   --font-hud: "Orbitron", sans-serif;
@@ -192,6 +202,15 @@ body::after {
     transform: scale(1);
   }
 }
+@keyframes teal-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(42, 104, 104, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(42, 104, 104, 0);
+  }
+}
 
 /* ── LAYOUT ── */
 .app-shell {
@@ -222,29 +241,29 @@ body::after {
 }
 
 .panel-left {
-  background: linear-gradient(160deg, #181818 0%, #141414 100%);
+  background: linear-gradient(160deg, #1c2438 0%, #18202e 100%);
   border-right: 1px solid var(--border);
   clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
-  box-shadow: inset -1px 0 0 rgba(204, 34, 0, 0.06);
+  box-shadow: inset -1px 0 0 rgba(208, 88, 24, 0.05);
 }
 .panel-right {
-  background: linear-gradient(160deg, #161616 0%, #111111 100%);
+  background: linear-gradient(160deg, #1a2236 0%, #161e2c 100%);
   border-left: 1px solid var(--border);
   clip-path: polygon(12px 0, 100% 0, 100% 100%, 0 100%, 0 12px);
-  box-shadow: inset 1px 0 0 rgba(204, 34, 0, 0.06);
+  box-shadow: inset 1px 0 0 rgba(208, 88, 24, 0.05);
 }
 
 /* ── LOGO ── */
 .logo-header {
   padding: clamp(10px, 1.5vh, 20px) clamp(10px, 1.2vw, 18px)
     clamp(8px, 1.2vh, 16px) clamp(12px, 1.5vw, 20px);
-  border-bottom: 1px solid var(--border-red);
+  border-bottom: 1px solid var(--border-amb);
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
   background: linear-gradient(
     135deg,
-    rgba(204, 34, 0, 0.05) 0%,
+    rgba(208, 88, 24, 0.06) 0%,
     transparent 60%
   );
 }
@@ -255,7 +274,7 @@ body::after {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(204, 34, 0, 0.05) 50%,
+    rgba(208, 88, 24, 0.05) 50%,
     transparent 100%
   );
   background-size: 200% 100%;
@@ -269,8 +288,8 @@ body::after {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--red), transparent);
-  opacity: 0.5;
+  background: linear-gradient(90deg, transparent, var(--amb), transparent);
+  opacity: 0.45;
 }
 .logo {
   font-family: var(--font-hud);
@@ -278,7 +297,7 @@ body::after {
   font-weight: 700;
   letter-spacing: 0.18em;
   color: var(--steel-bright);
-  text-shadow: 0 0 20px rgba(216, 224, 232, 0.2);
+  text-shadow: 0 0 20px rgba(200, 216, 228, 0.18);
   line-height: 1.2;
   text-transform: uppercase;
 }
@@ -295,7 +314,7 @@ body::after {
 }
 .logo-sub::before {
   content: "●";
-  color: var(--red-bright);
+  color: var(--amb-bright);
   font-size: 7px;
   animation: blink 2.5s ease-in-out infinite;
 }
@@ -306,7 +325,6 @@ body::after {
   flex-shrink: 0;
   overflow: hidden;
 }
-
 .section-toggle {
   width: 100%;
   background: none;
@@ -328,14 +346,14 @@ body::after {
   position: relative;
 }
 .section-toggle:hover {
-  background: rgba(204, 34, 0, 0.04);
+  background: rgba(208, 88, 24, 0.04);
   color: var(--steel-hi);
 }
 .section-toggle::before {
   content: "";
   width: 7px;
   height: 7px;
-  border: 1px solid var(--border-red);
+  border: 1px solid var(--border-amb);
   transform: rotate(45deg);
   flex-shrink: 0;
   opacity: 0.7;
@@ -389,7 +407,7 @@ body::after {
 }
 
 /* ═══════════════════════════════════════════════════
-   BRUTALIST COMPONENT BUTTONS — RESPONSIVE
+   COMPONENT BUTTONS
    ═══════════════════════════════════════════════════ */
 
 .btn {
@@ -408,7 +426,6 @@ body::after {
     transform 0.08s ease,
     box-shadow 0.08s ease;
 }
-
 .btn-inner {
   display: flex;
   align-items: stretch;
@@ -417,7 +434,6 @@ body::after {
   position: relative;
   overflow: hidden;
 }
-
 .btn-glyph {
   width: clamp(32px, 3.5vw, 48px);
   min-height: clamp(36px, 4.5vh, 52px);
@@ -431,7 +447,6 @@ body::after {
   z-index: 1;
   transition: background 0.1s;
 }
-
 .btn-body {
   flex: 1;
   display: flex;
@@ -444,7 +459,6 @@ body::after {
   position: relative;
   z-index: 1;
 }
-
 .btn-label {
   font-family: var(--font-hud);
   font-size: clamp(7.5px, 0.7vw, 10.5px);
@@ -456,7 +470,6 @@ body::after {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 .btn-desc {
   font-family: var(--font-mono);
   font-size: clamp(6px, 0.55vw, 8px);
@@ -466,7 +479,6 @@ body::after {
   white-space: nowrap;
   text-transform: uppercase;
 }
-
 .btn-tag {
   font-family: var(--font-hud);
   font-size: clamp(5.5px, 0.5vw, 7px);
@@ -486,7 +498,6 @@ body::after {
     background 0.1s,
     color 0.1s;
 }
-
 .btn:hover {
   transform: translate(-3px, -3px);
   z-index: 2;
@@ -508,196 +519,196 @@ body::after {
   animation: pulse-ring 1.2s ease-out infinite;
 }
 
-/* ── MOTOR ── */
+/* ── MOTOR — golden yellow, matches motor housing colour ── */
 .btn-motor .btn-inner {
-  background: #1a0500;
-  border-color: var(--c-motor);
-  color: #ff4422;
-  box-shadow: 4px 4px 0 var(--c-motor);
+  background: #1e1800;
+  border-color: #f9b100;
+  color: #f9b100;
+  box-shadow: 4px 4px 0 #5a3a00;
 }
 .btn-motor .btn-glyph {
-  background: #2a0800;
-  border-color: var(--c-motor);
-  color: #ff4422;
+  background: #2a2200;
+  border-color: #f9b100;
+  color: #f9b100;
 }
 .btn-motor .btn-tag {
-  border-color: var(--c-motor);
-  color: var(--c-motor);
-  background: #1a0500;
+  border-color: #f9b100;
+  color: #f9b100;
+  background: #1e1800;
 }
 .btn-motor:hover .btn-inner {
-  background: var(--c-motor);
-  color: #111;
-  box-shadow: 7px 7px 0 #660000;
+  background: #f9b100;
+  color: #0e0c00;
+  box-shadow: 7px 7px 0 #5a3a00;
 }
 .btn-motor:hover .btn-glyph {
-  background: #a81c00;
-  color: #111;
-  border-color: #a81c00;
+  background: #c08800;
+  color: #0e0c00;
+  border-color: #c08800;
 }
 .btn-motor:hover .btn-tag {
-  background: #a81c00;
-  color: #111;
-  border-color: #a81c00;
+  background: #c08800;
+  color: #0e0c00;
+  border-color: #c08800;
 }
 .btn-motor:hover .btn-desc {
   opacity: 0.7;
 }
 .btn-motor.active-mode .btn-inner {
-  background: var(--c-motor);
-  color: #111;
+  background: #f9b100;
+  color: #0e0c00;
 }
 .btn-motor.active-mode .btn-glyph {
-  color: #111;
+  color: #0e0c00;
 }
 
-/* ── FRAME ── */
+/* ── FRAME — grey #797979, matches rectangular frame colour ── */
 .btn-frame .btn-inner {
-  background: #111418;
-  border-color: #6a7480;
-  color: #c0c8d4;
-  box-shadow: 4px 4px 0 #404850;
+  background: #111314;
+  border-color: #797979;
+  color: #b0b0b0;
+  box-shadow: 4px 4px 0 #3a3a3a;
 }
 .btn-frame .btn-glyph {
-  background: #1a1e24;
-  border-color: #6a7480;
-  color: #909aa8;
+  background: #1a1c1e;
+  border-color: #797979;
+  color: #797979;
 }
 .btn-frame .btn-tag {
-  border-color: #6a7480;
-  color: #6a7480;
-  background: #111418;
+  border-color: #797979;
+  color: #797979;
+  background: #111314;
 }
 .btn-frame:hover .btn-inner {
-  background: #8090a0;
-  color: #0a0c0e;
-  box-shadow: 7px 7px 0 #3a4048;
+  background: #797979;
+  color: #0a0a0a;
+  box-shadow: 7px 7px 0 #3a3a3a;
 }
 .btn-frame:hover .btn-glyph {
-  background: #606870;
-  color: #0a0c0e;
-  border-color: #606870;
+  background: #555555;
+  color: #0a0a0a;
+  border-color: #555555;
 }
 .btn-frame:hover .btn-tag {
-  background: #606870;
-  color: #0a0c0e;
-  border-color: #606870;
+  background: #555555;
+  color: #0a0a0a;
+  border-color: #555555;
 }
 .btn-frame.active-mode .btn-inner {
-  background: #8090a0;
-  color: #0a0c0e;
+  background: #797979;
+  color: #0a0a0a;
 }
 
-/* ── TRIANGLE ── */
+/* ── TRIANGLE — light grey-mauve #ADA7AB, matches triangular frame colour ── */
 .btn-triangle .btn-inner {
-  background: #131518;
-  border-color: #8090a0;
-  color: #c8d0d8;
-  box-shadow: 4px 4px 0 #505860;
+  background: #18161a;
+  border-color: #ada7ab;
+  color: #d0ccd0;
+  box-shadow: 4px 4px 0 #585058;
 }
 .btn-triangle .btn-glyph {
-  background: #1c1f24;
-  border-color: #8090a0;
-  color: #a8b0b8;
+  background: #201e22;
+  border-color: #ada7ab;
+  color: #ada7ab;
 }
 .btn-triangle .btn-tag {
-  border-color: #8090a0;
-  color: #8090a0;
-  background: #131518;
+  border-color: #ada7ab;
+  color: #ada7ab;
+  background: #18161a;
 }
 .btn-triangle:hover .btn-inner {
-  background: #a0a8b0;
-  color: #0a0c0e;
-  box-shadow: 7px 7px 0 #404850;
+  background: #ada7ab;
+  color: #0a0a0a;
+  box-shadow: 7px 7px 0 #585058;
 }
 .btn-triangle:hover .btn-glyph {
-  background: #707880;
-  color: #0a0c0e;
-  border-color: #707880;
+  background: #807880;
+  color: #0a0a0a;
+  border-color: #807880;
 }
 .btn-triangle:hover .btn-tag {
-  background: #707880;
-  color: #0a0c0e;
-  border-color: #707880;
+  background: #807880;
+  color: #0a0a0a;
+  border-color: #807880;
 }
 .btn-triangle.active-mode .btn-inner {
-  background: #a0a8b0;
-  color: #0a0c0e;
+  background: #ada7ab;
+  color: #0a0a0a;
 }
 
-/* ── SUPPORT ── */
+/* ── SUPPORT — orange #FF770E, matches stress bridge colour ── */
 .btn-support .btn-inner {
-  background: #111314;
-  border-color: #5a6268;
-  color: #909aa4;
-  box-shadow: 4px 4px 0 #303438;
+  background: #1e0e00;
+  border-color: #ff770e;
+  color: #ff770e;
+  box-shadow: 4px 4px 0 #5a2800;
 }
 .btn-support .btn-glyph {
-  background: #181c1e;
-  border-color: #5a6268;
-  color: #707880;
+  background: #281400;
+  border-color: #ff770e;
+  color: #ff770e;
 }
 .btn-support .btn-tag {
-  border-color: #5a6268;
-  color: #5a6268;
-  background: #111314;
+  border-color: #ff770e;
+  color: #ff770e;
+  background: #1e0e00;
 }
 .btn-support:hover .btn-inner {
-  background: #606870;
-  color: #0a0c0e;
-  box-shadow: 7px 7px 0 #282c30;
+  background: #ff770e;
+  color: #0e0800;
+  box-shadow: 7px 7px 0 #5a2800;
 }
 .btn-support:hover .btn-glyph {
-  background: #404850;
-  color: #0a0c0e;
-  border-color: #404850;
+  background: #c05800;
+  color: #0e0800;
+  border-color: #c05800;
 }
 .btn-support:hover .btn-tag {
-  background: #404850;
-  color: #0a0c0e;
-  border-color: #404850;
+  background: #c05800;
+  color: #0e0800;
+  border-color: #c05800;
 }
 .btn-support.active-mode .btn-inner {
-  background: #606870;
-  color: #0a0c0e;
+  background: #ff770e;
+  color: #0e0800;
 }
 
-/* ── WHEEL ── */
+/* ── WHEEL — charcoal slate #36454F, matches wheel tyre colour ── */
 .btn-wheel .btn-inner {
-  background: #180400;
-  border-color: #c02010;
-  color: #e06050;
-  box-shadow: 4px 4px 0 #5a0a00;
+  background: #0a0e10;
+  border-color: #36454f;
+  color: #6a8898;
+  box-shadow: 4px 4px 0 #1a2228;
 }
 .btn-wheel .btn-glyph {
-  background: #240600;
-  border-color: #c02010;
-  color: #c04030;
+  background: #101820;
+  border-color: #36454f;
+  color: #36454f;
 }
 .btn-wheel .btn-tag {
-  border-color: #c02010;
-  color: #c02010;
-  background: #180400;
+  border-color: #36454f;
+  color: #36454f;
+  background: #0a0e10;
 }
 .btn-wheel:hover .btn-inner {
-  background: #c02010;
-  color: #111;
-  box-shadow: 7px 7px 0 #5a0a00;
+  background: #36454f;
+  color: #e0eaf0;
+  box-shadow: 7px 7px 0 #1a2228;
 }
 .btn-wheel:hover .btn-glyph {
-  background: #8a1508;
-  color: #111;
-  border-color: #8a1508;
+  background: #222e36;
+  color: #e0eaf0;
+  border-color: #222e36;
   animation: spin-slow 1s linear infinite;
 }
 .btn-wheel:hover .btn-tag {
-  background: #8a1508;
-  color: #111;
-  border-color: #8a1508;
+  background: #222e36;
+  color: #e0eaf0;
+  border-color: #222e36;
 }
 .btn-wheel.active-mode .btn-inner {
-  background: #c02010;
-  color: #111;
+  background: #36454f;
+  color: #e0eaf0;
 }
 .btn-wheel.active-mode .btn-glyph {
   animation: spin-slow 1s linear infinite;
@@ -738,7 +749,6 @@ body::after {
   line-height: 1;
   flex-shrink: 0;
 }
-
 .btn-action-label {
   font-family: var(--font-hud);
   font-size: clamp(7px, 0.65vw, 9.5px);
@@ -747,42 +757,42 @@ body::after {
   text-transform: uppercase;
 }
 
-/* PRIMARY */
+/* PRIMARY — burnt orange */
 .btn-primary .btn-inner {
-  background: var(--red);
-  border: 2px solid var(--red);
-  color: #111;
-  box-shadow: 4px 4px 0 #660000;
+  background: var(--amb);
+  border: 2px solid var(--amb);
+  color: #0e1018;
+  box-shadow: 4px 4px 0 #5a2008;
 }
 .btn-primary:hover .btn-inner {
-  background: #111;
-  color: var(--red-bright);
-  border-color: var(--red-bright);
-  box-shadow: 7px 7px 0 #660000;
+  background: #0e1018;
+  color: var(--amb-bright);
+  border-color: var(--amb-bright);
+  box-shadow: 7px 7px 0 #5a2008;
 }
 .btn-primary:active .btn-inner {
   box-shadow: none;
   transform: translate(4px, 4px);
 }
 
-/* SECONDARY */
+/* SECONDARY — steel-blue */
 .btn-secondary .btn-inner {
-  background: #111;
-  border: 2px solid #4a5058;
-  color: #8090a0;
-  box-shadow: 4px 4px 0 #252a30;
+  background: #18202e;
+  border: 2px solid #344858;
+  color: #6a8098;
+  box-shadow: 4px 4px 0 #1a2838;
 }
 .btn-secondary:hover .btn-inner {
-  background: #4a5058;
-  color: #e8eef4;
-  border-color: #8090a0;
-  box-shadow: 7px 7px 0 #252a30;
+  background: #344858;
+  color: var(--steel-bright);
+  border-color: #6a8098;
+  box-shadow: 7px 7px 0 #1a2838;
 }
 
 /* ── VIEWPORT ── */
 .viewport {
   position: relative;
-  background: #0f0f0f;
+  background: #1a2030;
   overflow: hidden;
 }
 .viewport::before {
@@ -790,8 +800,8 @@ body::after {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(200, 200, 200, 0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(200, 200, 200, 0.018) 1px, transparent 1px);
+    linear-gradient(rgba(160, 200, 240, 0.014) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(160, 200, 240, 0.014) 1px, transparent 1px);
   background-size: 48px 48px;
   pointer-events: none;
   z-index: 0;
@@ -800,7 +810,7 @@ body::after {
   content: "";
   position: absolute;
   inset: 12px;
-  border: 1px solid rgba(204, 34, 0, 0.07);
+  border: 1px solid rgba(208, 88, 24, 0.06);
   clip-path: polygon(
     0 24px,
     24px 0,
@@ -823,24 +833,23 @@ canvas#app {
 }
 
 /* ═══════════════════════════════════════════════════
-   CAMERA PRESETS — RESPONSIVE
+   CAMERA PRESETS
    ═══════════════════════════════════════════════════ */
+
 .panel-section-camera {
   border-bottom: none;
   flex-shrink: 0;
 }
-
 .sidebar-cam-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: clamp(3px, 0.4vw, 5px);
   padding: 2px 0 4px;
 }
-
 .sidebar-cam-btn {
-  background: #111;
-  border: 2px solid #3a1008;
-  color: #6a2a20;
+  background: #18202e;
+  border: 2px solid #2a3848;
+  color: #3a5060;
   font-family: var(--font-mono);
   cursor: pointer;
   transition:
@@ -856,20 +865,20 @@ canvas#app {
   gap: clamp(1px, 0.3vh, 3px);
   padding: clamp(5px, 0.7vh, 8px) 4px clamp(4px, 0.6vh, 7px);
   position: relative;
-  box-shadow: 3px 3px 0 #3a1008;
+  box-shadow: 3px 3px 0 #1a2838;
 }
 .sidebar-cam-btn:hover {
-  background: var(--red);
-  border-color: var(--red);
-  color: #111;
+  background: var(--amb);
+  border-color: var(--amb);
+  color: #0e1018;
   transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0 #660000;
+  box-shadow: 5px 5px 0 #5a2008;
 }
 .sidebar-cam-btn.active {
-  background: var(--red);
-  border-color: var(--red);
-  color: #111;
-  box-shadow: 3px 3px 0 #660000;
+  background: var(--amb);
+  border-color: var(--amb);
+  color: #0e1018;
+  box-shadow: 3px 3px 0 #5a2008;
 }
 .sidebar-cam-btn:active {
   transform: translate(0, 0);
@@ -886,7 +895,6 @@ canvas#app {
   text-transform: uppercase;
   font-weight: 700;
 }
-
 .cam-hint {
   font-family: var(--font-mono);
   font-size: clamp(7px, 0.6vw, 8.5px);
@@ -902,7 +910,7 @@ canvas#app {
 .basket-header {
   padding: clamp(10px, 1.4vh, 18px) clamp(10px, 1.2vw, 18px)
     clamp(8px, 1.1vh, 14px) clamp(12px, 1.5vw, 20px);
-  border-bottom: 1px solid var(--border-red);
+  border-bottom: 1px solid var(--border-amb);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -911,7 +919,7 @@ canvas#app {
   overflow: hidden;
   background: linear-gradient(
     135deg,
-    rgba(204, 34, 0, 0.04) 0%,
+    rgba(208, 88, 24, 0.05) 0%,
     transparent 60%
   );
 }
@@ -922,8 +930,8 @@ canvas#app {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--red), transparent);
-  opacity: 0.45;
+  background: linear-gradient(90deg, transparent, var(--amb), transparent);
+  opacity: 0.4;
 }
 .basket-title {
   font-family: var(--font-hud);
@@ -931,7 +939,7 @@ canvas#app {
   font-weight: 700;
   letter-spacing: 0.14em;
   color: var(--steel-bright);
-  text-shadow: 0 0 16px rgba(216, 224, 232, 0.15);
+  text-shadow: 0 0 16px rgba(200, 216, 228, 0.14);
 }
 .basket-count {
   font-family: var(--font-mono);
@@ -963,7 +971,7 @@ canvas#app {
   padding: clamp(5px, 0.7vh, 8px) clamp(8px, 0.9vw, 12px);
   background: var(--bg-row);
   border: 1px solid var(--border);
-  border-left: 3px solid var(--red);
+  border-left: 3px solid var(--amb);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -977,10 +985,9 @@ canvas#app {
   background: var(--bg-row-h);
   border-color: var(--border-hi);
 }
-
 .basket-divider {
   height: 1px;
-  background: var(--border-red);
+  background: var(--border-amb);
   margin: 4px 0;
   position: relative;
 }
@@ -991,7 +998,7 @@ canvas#app {
   top: -9px;
   font-family: var(--font-mono);
   font-size: 8.5px;
-  color: var(--text-red);
+  color: var(--text-amb);
   letter-spacing: 0.15em;
   background: var(--bg-panel-r);
   padding: 0 4px;
@@ -1000,7 +1007,7 @@ canvas#app {
 /* ── BASKET FOOTER ── */
 .basket-footer {
   padding: clamp(8px, 1.1vh, 14px) clamp(10px, 1.2vw, 18px);
-  border-top: 1px solid var(--border-red);
+  border-top: 1px solid var(--border-amb);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1015,12 +1022,12 @@ canvas#app {
   font-family: var(--font-hud);
   font-size: clamp(14px, 1.5vw, 22px);
   color: var(--steel-bright);
-  text-shadow: 0 0 16px rgba(216, 224, 232, 0.2);
+  text-shadow: 0 0 16px rgba(200, 216, 228, 0.18);
   letter-spacing: 0.06em;
 }
 
 /* ═══════════════════════════════════════════════════
-   PAYMENT + FINALIZE/PRINT
+   PAYMENT + FINALIZE / PRINT
    ═══════════════════════════════════════════════════ */
 
 .payment-section {
@@ -1075,7 +1082,7 @@ canvas#app {
 .btn-finalize-large .btn-inner {
   padding: clamp(10px, 1.3vh, 15px) 14px !important;
   justify-content: center !important;
-  box-shadow: 5px 5px 0 #660000 !important;
+  box-shadow: 5px 5px 0 #5a2008 !important;
 }
 .btn-finalize-large .btn-action-label {
   font-size: clamp(8px, 0.75vw, 11px) !important;
@@ -1085,21 +1092,21 @@ canvas#app {
   font-size: clamp(12px, 1.2vw, 17px) !important;
 }
 .btn-finalize-large:hover .btn-inner {
-  box-shadow: 8px 8px 0 #660000 !important;
+  box-shadow: 8px 8px 0 #5a2008 !important;
 }
 
-/* PRINT */
+/* PRINT — teal accent */
 .btn-print .btn-inner {
-  background: #111418;
-  border: 2px solid #5a6268;
-  color: var(--steel-hi);
-  box-shadow: 4px 4px 0 #282c30;
+  background: #101e1e;
+  border: 2px solid #2a5858;
+  color: #4a9898;
+  box-shadow: 4px 4px 0 #0e2626;
 }
 .btn-print:hover .btn-inner {
-  background: #8090a0;
-  color: #0a0c0e;
-  border-color: #8090a0;
-  box-shadow: 7px 7px 0 #282c30;
+  background: #2a6868;
+  color: #0a1010;
+  border-color: #3a8888;
+  box-shadow: 7px 7px 0 #0e2626;
 }
 
 /* ── PART TOOLTIP ── */
@@ -1122,7 +1129,7 @@ canvas#app {
 }
 
 /* ═══════════════════════════════════════════════════
-   COLOR LEGEND — RESPONSIVE
+   COLOR LEGEND
    ═══════════════════════════════════════════════════ */
 
 @keyframes legendIn {
@@ -1145,15 +1152,24 @@ canvas#app {
     transform: translateX(0);
   }
 }
+@keyframes legendPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
 
 .color-legend {
   position: absolute;
   bottom: 48px;
   left: 18px;
   z-index: 50;
-  background: rgba(15, 15, 15, 0.95);
-  border: 1px solid rgba(204, 34, 0, 0.22);
-  border-left: 2px solid rgba(204, 34, 0, 0.5);
+  background: rgba(18, 26, 40, 0.96);
+  border: 1px solid rgba(208, 88, 24, 0.22);
+  border-left: 2px solid rgba(208, 88, 24, 0.5);
   clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -1180,7 +1196,7 @@ canvas#app {
   font-family: var(--font-mono);
   font-size: clamp(7px, 0.65vw, 8.5px);
   letter-spacing: 0.24em;
-  color: var(--red);
+  color: var(--amb);
   text-transform: uppercase;
   margin-bottom: clamp(4px, 0.6vh, 8px);
   display: flex;
@@ -1221,16 +1237,6 @@ canvas#app {
   flex-shrink: 0;
   animation: legendPulse 2.5s ease-in-out infinite;
 }
-@keyframes legendPulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
 .legend-text {
   font-family: var(--font-mono);
   font-size: clamp(7px, 0.6vw, 9px);
@@ -1242,13 +1248,12 @@ canvas#app {
   color: var(--steel-hi);
   font-weight: 700;
 }
-
 .legend-collapse-btn {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: #111;
-  border: 2px solid rgba(204, 34, 0, 0.3);
+  background: #18202e;
+  border: 2px solid rgba(208, 88, 24, 0.3);
   color: var(--text-lo);
   font-size: 8px;
   width: 20px;
@@ -1265,16 +1270,15 @@ canvas#app {
   padding: 0;
   line-height: 1;
   border-radius: 0;
-  box-shadow: 2px 2px 0 rgba(204, 34, 0, 0.2);
+  box-shadow: 2px 2px 0 rgba(208, 88, 24, 0.18);
 }
 .legend-collapse-btn:hover {
-  color: #111;
-  background: var(--red);
-  border-color: var(--red);
+  color: #0e1018;
+  background: var(--amb);
+  border-color: var(--amb);
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 #660000;
+  box-shadow: 3px 3px 0 #5a2008;
 }
-
 .color-legend.mode-active .legend-item {
   opacity: 0.28;
   transition: opacity 0.3s;
@@ -1284,14 +1288,15 @@ canvas#app {
 }
 
 /* ═══════════════════════════════════════════════════
-   SHORTCUT BAR — RESPONSIVE
+   SHORTCUT BAR
    ═══════════════════════════════════════════════════ */
 
-/* The shortcut bar is injected via JS using inline styles with left/right
-   set to 300px. We override those via CSS to use the CSS variable. */
 #shortcut-bar {
   left: var(--panel-w) !important;
   right: var(--panel-w) !important;
+  background: rgba(18, 26, 42, 0.97) !important;
+  border-top: 1px solid rgba(208, 88, 24, 0.35) !important;
+  box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.5) !important;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1319,7 +1324,6 @@ canvas#app {
     transform: scale(1);
   }
 }
-
 .idle-arrow {
   position: fixed;
   z-index: 8000;
@@ -1336,14 +1340,14 @@ canvas#app {
 }
 .idle-arrow-line {
   height: 1.5px;
-  background: linear-gradient(90deg, transparent, var(--red));
+  background: linear-gradient(90deg, transparent, var(--amb));
   width: 36px;
   flex-shrink: 0;
 }
 .idle-arrow-head {
   font-size: 16px;
-  color: var(--red-bright);
-  filter: drop-shadow(0 0 5px var(--red));
+  color: var(--amb-bright);
+  filter: drop-shadow(0 0 5px var(--amb));
   flex-shrink: 0;
   line-height: 1;
 }
@@ -1351,13 +1355,13 @@ canvas#app {
   font-family: var(--font-mono);
   font-size: clamp(7px, 0.65vw, 8.5px);
   letter-spacing: 0.14em;
-  color: var(--red);
+  color: var(--amb);
   text-transform: uppercase;
-  background: rgba(15, 15, 15, 0.93);
-  border: 2px solid rgba(204, 34, 0, 0.5);
+  background: rgba(18, 26, 40, 0.93);
+  border: 2px solid rgba(208, 88, 24, 0.5);
   padding: 3px 8px;
   white-space: nowrap;
-  box-shadow: 3px 3px 0 rgba(204, 34, 0, 0.25);
+  box-shadow: 3px 3px 0 rgba(208, 88, 24, 0.22);
 }
 
 /* ── UTILITY ── */
@@ -1394,26 +1398,24 @@ canvas#app {
   position: fixed;
   z-index: 999990;
   min-width: 210px;
-  background: #0f0f0f;
-  border: 1px solid rgba(204, 34, 0, 0.35);
-  border-left: 3px solid var(--red);
+  background: #141c28;
+  border: 1px solid rgba(208, 88, 24, 0.35);
+  border-left: 3px solid var(--amb);
   clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.8),
-    0 8px 32px rgba(0, 0, 0, 0.7),
-    0 0 24px rgba(204, 34, 0, 0.12);
+    0 8px 32px rgba(0, 0, 0, 0.65),
+    0 0 24px rgba(208, 88, 24, 0.1);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   animation: ctxMenuIn 0.14s cubic-bezier(0.2, 0, 0, 1) both;
   overflow: hidden;
   user-select: none;
 }
-
-/* ── header strip showing part name ── */
 .ctx-header {
   padding: 9px 14px 8px;
-  background: rgba(204, 34, 0, 0.06);
-  border-bottom: 1px solid rgba(204, 34, 0, 0.18);
+  background: rgba(208, 88, 24, 0.06);
+  border-bottom: 1px solid rgba(208, 88, 24, 0.18);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1443,8 +1445,6 @@ canvas#app {
   text-transform: uppercase;
   margin-top: 2px;
 }
-
-/* ── menu items ── */
 .ctx-items {
   padding: 5px 0;
 }
@@ -1476,29 +1476,25 @@ canvas#app {
 .ctx-item:nth-child(5) {
   animation-delay: 0.15s;
 }
-
 .ctx-item:hover {
-  background: rgba(204, 34, 0, 0.08);
+  background: rgba(208, 88, 24, 0.08);
 }
 .ctx-item:active {
-  background: rgba(204, 34, 0, 0.16);
+  background: rgba(208, 88, 24, 0.16);
 }
 
-/* danger variant — delete */
 .ctx-item.ctx-danger:hover {
-  background: rgba(204, 34, 0, 0.14);
+  background: rgba(208, 88, 24, 0.14);
 }
 .ctx-item.ctx-danger .ctx-item-label {
-  color: #e85040;
+  color: #d06040;
 }
 .ctx-item.ctx-danger .ctx-item-icon {
-  color: #cc2200;
+  color: var(--amb);
 }
 .ctx-item.ctx-danger:hover .ctx-item-label {
-  color: #ff6655;
+  color: #e87850;
 }
-
-/* disabled variant */
 .ctx-item.ctx-disabled {
   opacity: 0.3;
   pointer-events: none;
@@ -1543,15 +1539,11 @@ canvas#app {
   flex-shrink: 0;
   letter-spacing: 0.06em;
 }
-
-/* ── separator ── */
 .ctx-sep {
   height: 1px;
   background: rgba(255, 255, 255, 0.05);
   margin: 4px 0;
 }
-
-/* ── cascade warning badge ── */
 .ctx-cascade-badge {
   display: inline-flex;
   align-items: center;
@@ -1559,61 +1551,49 @@ canvas#app {
   font-family: var(--font-mono);
   font-size: 7.5px;
   letter-spacing: 0.08em;
-  color: #cc2200;
-  background: rgba(204, 34, 0, 0.1);
-  border: 1px solid rgba(204, 34, 0, 0.25);
+  color: var(--amb);
+  background: rgba(208, 88, 24, 0.1);
+  border: 1px solid rgba(208, 88, 24, 0.25);
   padding: 2px 6px;
   margin-top: 3px;
 }
 
 /* ═══════════════════════════════════════════════════
    RESPONSIVE BREAKPOINTS
-   Large monitors: panels can be a bit wider
-   Medium screens (laptops): balanced layout
-   Small screens: collapse to minimal panels
    ═══════════════════════════════════════════════════ */
 
-/* Large monitors ≥ 1600px — allow slightly wider panels */
 @media (min-width: 1600px) {
   :root {
     --panel-w: clamp(260px, 16vw, 320px);
   }
 }
 
-/* Standard laptops 1024–1599px — default clamp handles this */
-
-/* Small laptops / tablets in landscape 768–1023px */
 @media (max-width: 1023px) {
   :root {
     --panel-w: clamp(160px, 20vw, 240px);
   }
-
   .btn-desc {
     display: none;
-  } /* hide desc text to save space */
-
+  }
   .sidebar-cam-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 3px;
   }
-
   .color-legend {
     min-width: clamp(140px, 14vw, 200px);
   }
   .legend-text {
     display: none;
-  } /* hide legend text, keep dot + bold label only */
+  }
   .legend-item {
     gap: 5px;
   }
 }
 
-/* Very small screens < 768px — collapse panels further */
 @media (max-width: 767px) {
   :root {
     --panel-w: clamp(130px, 22vw, 180px);
   }
-
   .logo-sub {
     display: none;
   }
@@ -1626,7 +1606,6 @@ canvas#app {
   .basket-count {
     display: none;
   }
-
   .sidebar-cam-grid {
     grid-template-columns: repeat(2, 1fr);
   }
