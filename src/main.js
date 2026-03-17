@@ -1099,52 +1099,27 @@ function bindUI() {
   // ── Rotation control buttons ───────────────────────────────────────────────
   const rotLeftBtn = document.getElementById("rotLeftBtn");
   const rotRightBtn = document.getElementById("rotRightBtn");
-  const rotFlipBtn = document.getElementById("rotFlipBtn");
 
   if (rotLeftBtn)
     rotLeftBtn.addEventListener("click", () => {
-      if (placementMode === "motor") {
-        motorManualRotSteps -= 1;
-        const deg = (((motorManualRotSteps % 4) + 4) % 4) * 90;
-        showHudMessage(`Motor: +${deg}°`);
+      if (placementMode === "triangle" && ghost) {
+        triangleManualRotSteps = (triangleManualRotSteps + 1) % 2;
+        showHudMessage(`Triangle: ${triangleManualRotSteps * 180}°`);
         updateShortcutBar();
         updateRotationDisplay();
-        if (ghost) {
-          ghost.rotation.set(
-            0,
-            motorAutoBaseYaw + motorManualRotSteps * (Math.PI / 2),
-            0,
-          );
-          motorRotationGroup.rotation.set(0, 0, 0);
-        }
+        ghost.rotation.set(
+          0,
+          triangleAutoBaseYaw + triangleManualRotSteps * Math.PI,
+          0,
+        );
       }
     });
 
   if (rotRightBtn)
     rotRightBtn.addEventListener("click", () => {
-      if (placementMode === "motor") {
-        motorManualRotSteps += 1;
-        const deg = (((motorManualRotSteps % 4) + 4) % 4) * 90;
-        showHudMessage(`Motor: +${deg}°`);
-        updateShortcutBar();
-        updateRotationDisplay();
-        if (ghost) {
-          ghost.rotation.set(
-            0,
-            motorAutoBaseYaw + motorManualRotSteps * (Math.PI / 2),
-            0,
-          );
-          motorRotationGroup.rotation.set(0, 0, 0);
-        }
-      }
-    });
-
-  if (rotFlipBtn)
-    rotFlipBtn.addEventListener("click", () => {
       if (placementMode === "triangle" && ghost) {
         triangleManualRotSteps = (triangleManualRotSteps + 1) % 2;
-        const deg = triangleManualRotSteps * 180;
-        showHudMessage(`Triangle: ${deg}°`);
+        showHudMessage(`Triangle: ${triangleManualRotSteps * 180}°`);
         updateShortcutBar();
         updateRotationDisplay();
         ghost.rotation.set(
@@ -1239,6 +1214,7 @@ function onProceedToPayment() {
     pointerEvents: "all",
   });
 
+  const box = document.createElement("div");
   Object.assign(box.style, {
     position: "fixed",
     top: "50%",
@@ -1626,8 +1602,8 @@ const SHORTCUT_DEFS = {
   ],
   triangle: [
     { key: "HOVER", action: "Auto-orient" },
-    { key: "CLICK", action: "Place triangle" },
     { key: "← →", action: "Flip 180°" },
+    { key: "CLICK", action: "Place triangle" },
     { key: "ESC", action: "Exit mode" },
   ],
   support: [
@@ -1701,7 +1677,7 @@ function initShortcutBar() {
   const helpBtn = document.createElement("button");
   helpBtn.id = "help-toggle-btn";
   helpBtn.title = "Show shortcuts";
-  helpBtn.innerHTML = "?";
+  helpBtn.innerHTML = "›";
   Object.assign(helpBtn.style, {
     position: "fixed",
     bottom: "10px",
@@ -1713,7 +1689,7 @@ function initShortcutBar() {
     border: "2px solid rgba(208,88,24,0.6)",
     color: "#d05818",
     fontFamily: "'Orbitron', sans-serif",
-    fontSize: "13px",
+    fontSize: "20px",
     fontWeight: "700",
     cursor: "pointer",
     zIndex: "9001",
@@ -2103,7 +2079,7 @@ function clearGhost() {
   updateShortcutBar();
   updateLegendHighlight();
   clearTimeout(idleTimer);
-  if (!isFinalized) idleTimer = setTimeout(showIdleArrows, IDLE_DELAY_MS);
+  // idle arrows disabled
 }
 
 function applySocketDepth(target, socket, depth) {
@@ -2348,58 +2324,12 @@ function addMarker(socket, list, mat) {
 function getValidStressConnectorSockets() {
   scene.updateMatrixWorld(true);
   const valid = [];
-
   for (const marker of stressConnectorMarkers) {
     const socketA = marker.userData.socket;
-    if (!socketA) continue;
-    if (usedSockets.has(socketA.uuid)) continue;
-
-    // Build a minimal pair object to run the alignment check
-    socketA.updateMatrixWorld(true);
-    const posA = new THREE.Vector3();
-    socketA.getWorldPosition(posA);
-
-    // Find the best partner socket (same logic as resolveBestSupportSocketPair
-    // but lightweight — just needs posB and socketB for the alignment check)
-    let mountA = socketA.parent;
-    while (mountA && !mountA.userData?.isMount) mountA = mountA.parent;
-
-    let bestSocketB = null;
-    let bestPosB = null;
-    let bestDist = Infinity;
-
-    scene.traverse((o) => {
-      if (!o.name?.startsWith("SOCKET_STRESS_CONNECTOR")) return;
-      if (usedSockets.has(o.uuid)) return;
-      if (o === socketA) return;
-      let m = o.parent;
-      while (m && !m.userData?.isMount) m = m.parent;
-      if (m === mountA) return;
-      if (m?.userData?.type !== "triangle_frame") return;
-      o.updateMatrixWorld(true);
-      const wp = new THREE.Vector3();
-      o.getWorldPosition(wp);
-      const d = wp.distanceTo(posA);
-      if (d < bestDist) {
-        bestDist = d;
-        bestSocketB = o;
-        bestPosB = wp.clone();
-      }
-    });
-
-    if (!bestSocketB) continue; // no partner at all
-
-    const pair = {
-      socketA,
-      posA,
-      socketB: bestSocketB,
-      posB: bestPosB,
-    };
-
-    const result = checkSupportBridgeAlignment(pair);
-    if (result.ok) valid.push(marker);
+    if (socketA && !usedSockets.has(socketA.uuid)) {
+      valid.push(marker);
+    }
   }
-
   return valid;
 }
 
@@ -2486,43 +2416,17 @@ function applySocketHighlights() {
    ========================================================= */
 
 function showRotationControls(mode) {
-  const section = document.getElementById("rotation-section");
-  if (!section) return;
-  section.style.display = "block";
-
-  const title = document.getElementById("rot-section-title");
-  const flipRow = document.getElementById("rot-flip-row");
-  const stepRow = document.getElementById("rot-step-row");
-  const degEl = document.getElementById("rot-current-deg");
-
-  if (mode === "triangle") {
-    if (title) title.textContent = "FLIP TRIANGLE";
-    if (flipRow) flipRow.style.display = "flex";
-    if (stepRow) stepRow.style.display = "none";
-    if (degEl) degEl.textContent = triangleManualRotSteps === 0 ? "0°" : "180°";
-  } else if (mode === "motor") {
-    if (title) title.textContent = "ROTATE MOTOR";
-    if (flipRow) flipRow.style.display = "none";
-    if (stepRow) stepRow.style.display = "flex";
-    const deg = (((motorManualRotSteps % 4) + 4) % 4) * 90;
-    if (degEl) degEl.textContent = `+${deg}°`;
-  }
+  const el = document.getElementById("viewport-rot-controls");
+  if (el) el.style.display = "flex";
 }
 
 function hideRotationControls() {
-  const section = document.getElementById("rotation-section");
-  if (section) section.style.display = "none";
+  const el = document.getElementById("viewport-rot-controls");
+  if (el) el.style.display = "none";
 }
 
 function updateRotationDisplay() {
-  const degEl = document.getElementById("rot-current-deg");
-  if (!degEl) return;
-  if (placementMode === "motor") {
-    const deg = (((motorManualRotSteps % 4) + 4) % 4) * 90;
-    degEl.textContent = `+${deg}°`;
-  } else if (placementMode === "triangle") {
-    degEl.textContent = triangleManualRotSteps === 0 ? "0°" : "180°";
-  }
+  // degree display removed — no-op kept for call-site compatibility
 }
 
 function startMotorPlacement() {
@@ -2563,7 +2467,7 @@ function startMotorPlacement() {
   motorRotationGroup.add(m);
   ghost.add(motorRotationGroup);
   scene.add(ghost);
-  showRotationControls("motor");
+  // No rotation controls for motor — keyboard arrows only
 }
 
 function startFramePlacement() {
@@ -2732,31 +2636,7 @@ function restartPlacementMode(mode) {
    SUPPORT FRAME — HELPERS
    ========================================================= */
 
-function getFreeBridgeableTriangleMounts() {
-  const allTriangleMounts = [];
-  scene.traverse((o) => {
-    if (o.userData?.isMount && o.userData.type === "triangle_frame") {
-      allTriangleMounts.push(o);
-    }
-  });
-
-  const bridgeSockets = [];
-  scene.traverse((o) => {
-    if (o.userData?.isMount && o.userData.type === "support_frame") {
-      if (o.userData.socket) bridgeSockets.push(o.userData.socket);
-      if (o.userData.socketB) bridgeSockets.push(o.userData.socketB);
-    }
-  });
-
-  function isOccupied(triangleMount) {
-    return bridgeSockets.some((s) => isDescendantOrSelf(s, triangleMount));
-  }
-
-  return allTriangleMounts.filter((m) => !isOccupied(m));
-}
-
 function buildTriangleMountMap() {
-  const freeMounts = new Set(getFreeBridgeableTriangleMounts());
   const mountMap = new Map();
 
   scene.traverse((o) => {
@@ -2766,7 +2646,7 @@ function buildTriangleMountMap() {
 
     let m = o.parent;
     while (m && !m.userData?.isMount) m = m.parent;
-    if (!m || !freeMounts.has(m)) return;
+    if (!m || m.userData.type !== "triangle_frame") return;
 
     o.updateMatrixWorld(true);
     const pos = new THREE.Vector3();
@@ -2780,7 +2660,7 @@ function buildTriangleMountMap() {
 }
 
 function canPlaceSupportBridge() {
-  return getFreeBridgeableTriangleMounts().length >= 2;
+  return buildTriangleMountMap().size >= 2;
 }
 
 function resolveBestSupportSocketPair(clickedSocket) {
@@ -2796,95 +2676,59 @@ function resolveBestSupportSocketPair(clickedSocket) {
   while (clickedMount && !clickedMount.userData?.isMount)
     clickedMount = clickedMount.parent;
 
-  let mountA =
-    clickedMount && mountMap.has(clickedMount) ? clickedMount : mounts[0];
+  if (!clickedMount || !mountMap.has(clickedMount)) return null;
 
-  const mountCentre = (mount) =>
-    new THREE.Box3().setFromObject(mount).getCenter(new THREE.Vector3());
+  const mountA = clickedMount;
+  const socketA = clickedSocket;
+  const posA = new THREE.Vector3();
+  socketA.getWorldPosition(posA);
 
-  const centreA = mountCentre(mountA);
-  let mountB = null;
-  let closestDist = Infinity;
+  let bestSocketB = null;
+  let bestPosB = null;
+  let bestScore = Infinity;
+
   for (const m of mounts) {
     if (m === mountA) continue;
-    const d = mountCentre(m).distanceTo(centreA);
-    if (d < closestDist) {
-      closestDist = d;
-      mountB = m;
+
+    for (const entry of mountMap.get(m)) {
+      const socketB = entry.socket;
+      const posB = entry.pos;
+
+      const dx = Math.abs(posA.x - posB.x);
+      const dz = Math.abs(posA.z - posB.z);
+      const yDiff = Math.abs(posA.y - posB.y);
+
+      const diagonalPenalty = dx > 0.1 && dz > 0.1 ? 5000 : 0;
+
+      const dist = posA.distanceTo(posB);
+      const score = dist + yDiff * 1000 + diagonalPenalty;
+
+      if (score < bestScore) {
+        bestScore = score;
+        bestSocketB = socketB;
+        bestPosB = posB;
+      }
     }
   }
 
-  if (!mountB) return null;
-
-  const centreB = mountCentre(mountB);
-
-  const pickClosest = (arr, target) => {
-    let best = arr[0];
-    let bestD = best.pos.distanceTo(target);
-    for (let i = 1; i < arr.length; i++) {
-      const d = arr[i].pos.distanceTo(target);
-      if (d < bestD) {
-        bestD = d;
-        best = arr[i];
-      }
-    }
-    return best;
-  };
-
-  const entryA = pickClosest(mountMap.get(mountA), centreB);
-  const entryB = pickClosest(mountMap.get(mountB), centreA);
+  if (!bestSocketB) return null;
 
   return {
-    socketA: entryA.socket,
-    posA: entryA.pos.clone(),
-    socketB: entryB.socket,
-    posB: entryB.pos.clone(),
+    socketA: socketA,
+    posA: posA,
+    socketB: bestSocketB,
+    posB: bestPosB.clone(),
   };
 }
 
 /* =========================================================
    SUPPORT BRIDGE ALIGNMENT VALIDATION
-   Checks that the two triangle frames chosen for a support
-   bridge face each other across the build — i.e. their
-   outward directions from their respective parent rectangular
-   frames are roughly opposite (~180°), not perpendicular
-   (~90°, which produces the diagonal bridge in Image 1).
    ========================================================= */
 
-/**
- * Returns { ok: true } when the pair is valid, or
- * { ok: false, reason: string } when the build rule is violated.
- *
- * Rule enforced:
- *   The outward-facing direction of each triangle frame
- *   (computed as the vector from its parent rect-frame centre
- *   to the triangle's own centre, projected onto XZ) must be
- *   roughly OPPOSITE to one another (dot product < -0.3,
- *   i.e. angle > ~107°).  Adjacent-side placements produce a
- *   dot product near 0 (90°) and are rejected.
- *
- *   Y-level parity is also checked as a secondary guard.
- */
 function checkSupportBridgeAlignment(pair) {
-  const ALIGN_Y_TOLERANCE = 0.55; // world units — generous same-height check
-  const FACING_DOT_THRESHOLD = -0.3; // dot < this value ⟹ roughly opposite
+  const ALIGN_Y_TOLERANCE = 0.55;
+  const { posA, posB } = pair;
 
-  const { posA, posB, socketA, socketB } = pair;
-
-  // ── Helper: walk up to the nearest isMount ancestor ────────────────────
-  function getParentMount(node) {
-    let o = node;
-    while (o) {
-      if (o.userData?.isMount) return o;
-      o = o.parent;
-    }
-    return null;
-  }
-
-  const triMountA = getParentMount(socketA);
-  const triMountB = getParentMount(socketB);
-
-  // ── Rule 1: Y-level parity ──────────────────────────────────────────────
   const yDiff = Math.abs(posA.y - posB.y);
   if (yDiff > ALIGN_Y_TOLERANCE) {
     return {
@@ -2896,58 +2740,14 @@ function checkSupportBridgeAlignment(pair) {
     };
   }
 
-  // ── Rule 2: Triangles must face each other (opposite sides) ────────────
-  // For each triangle, find its parent rectangular-frame mount, then compute
-  // the outward direction: triangle-centre minus rect-frame-centre (XZ only).
-  if (triMountA && triMountB) {
-    scene.updateMatrixWorld(true);
-
-    function getOutwardDir(triMount) {
-      // The triangle's own world-space centre
-      const triCentre = new THREE.Box3()
-        .setFromObject(triMount)
-        .getCenter(new THREE.Vector3());
-
-      // Walk up one more level to find the rect-frame this triangle sits on
-      const parentSocket = triMount.userData?.socket;
-      if (!parentSocket) return null;
-
-      const rectMount = getParentMount(parentSocket.parent ?? parentSocket);
-      if (!rectMount || rectMount === triMount) return null;
-
-      const rectCentre = new THREE.Box3()
-        .setFromObject(rectMount)
-        .getCenter(new THREE.Vector3());
-
-      // Outward vector from rect-frame centre → triangle centre, XZ only
-      const dir = new THREE.Vector3(
-        triCentre.x - rectCentre.x,
-        0,
-        triCentre.z - rectCentre.z,
-      );
-
-      return dir.lengthSq() > 0.001 ? dir.normalize() : null;
-    }
-
-    const dirA = getOutwardDir(triMountA);
-    const dirB = getOutwardDir(triMountB);
-
-    if (dirA && dirB) {
-      const dot = dirA.dot(dirB); // -1 = perfectly opposite, 0 = 90°, +1 = same
-
-      if (dot > FACING_DOT_THRESHOLD) {
-        // dot > -0.3 means the two triangles are NOT facing each other —
-        // they are either on adjacent sides (~0) or the same side (~+1).
-        return {
-          ok: false,
-          reason:
-            "The two Triangular Frames must face each other on opposite sides.\n\n" +
-            "Place both Triangular Frames on parallel, opposing sides of the " +
-            "rectangular frame so the Support Bridge spans straight across — " +
-            "not at a diagonal or on the same side.",
-        };
-      }
-    }
+  const dx = Math.abs(posA.x - posB.x);
+  const dz = Math.abs(posA.z - posB.z);
+  if (dx > 0.15 && dz > 0.15) {
+    return {
+      ok: false,
+      reason:
+        "Support Bridges cannot be placed diagonally. Ensure the two Triangular Frames are aligned along the same grid axis.",
+    };
   }
 
   return { ok: true };
@@ -2957,45 +2757,13 @@ function checkSupportBridgeAlignment(pair) {
    SUPPORT FRAME 2-POINT SNAP
    ========================================================= */
 
-function findOppositeTriangleSocket(socket) {
-  socket.updateMatrixWorld(true);
-  const posA = new THREE.Vector3();
-  socket.getWorldPosition(posA);
-
-  let mountA = socket.parent;
-  while (mountA && !mountA.userData?.isMount) mountA = mountA.parent;
-
-  let bestSocket = null;
-  let bestPos = null;
-  let bestDist = Infinity;
-
-  scene.traverse((o) => {
-    if (!o.name?.startsWith("SOCKET_STRESS_CONNECTOR")) return;
-    if (usedSockets.has(o.uuid)) return;
-    let m = o.parent;
-    while (m && !m.userData?.isMount) m = m.parent;
-    if (m === mountA) return;
-    if (m?.userData?.type !== "triangle_frame") return;
-    o.updateMatrixWorld(true);
-    const wp = new THREE.Vector3();
-    o.getWorldPosition(wp);
-    const d = wp.distanceTo(posA);
-    if (d < bestDist) {
-      bestDist = d;
-      bestSocket = o;
-      bestPos = wp.clone();
-    }
-  });
-
-  return bestSocket ? { socket: bestSocket, pos: bestPos } : null;
-}
-
 function applyTwoPointSupportSnap(
   mountGroup,
   connectorRoot,
   posA,
   posB,
   manualSteps,
+  sourceSocket,
 ) {
   mountGroup.rotation.set(0, 0, 0);
   mountGroup.position.set(0, 0, 0);
@@ -3029,6 +2797,35 @@ function applyTwoPointSupportSnap(
     let bestYaw = baseYaw;
     let bestConnector = connL;
     let bestError = Infinity;
+    let bestFacingScore = -Infinity;
+
+    const localExtrusionDir = new THREE.Vector3(0, 0, 1);
+    if (connectorRoot) {
+      const tempBox = new THREE.Box3().setFromObject(connectorRoot);
+      const wCenter = tempBox.getCenter(new THREE.Vector3());
+      const lCenter = connectorRoot.worldToLocal(wCenter.clone());
+      lCenter.y = 0;
+      if (lCenter.lengthSq() > 0.0001) {
+        localExtrusionDir.copy(lCenter).normalize();
+      }
+    }
+
+    let triFrontWorld = new THREE.Vector3();
+    if (sourceSocket) {
+      let triMount = sourceSocket.parent;
+      while (triMount && !triMount.userData?.isMount)
+        triMount = triMount.parent;
+      if (triMount) {
+        const triBox = new THREE.Box3().setFromObject(triMount);
+        const triCenter = triBox.getCenter(new THREE.Vector3());
+        const socketPos = new THREE.Vector3();
+        sourceSocket.getWorldPosition(socketPos);
+
+        triFrontWorld.subVectors(socketPos, triCenter);
+        triFrontWorld.y = 0;
+        if (triFrontWorld.lengthSq() > 0.0001) triFrontWorld.normalize();
+      }
+    }
 
     for (const yaw of [baseYaw, baseYaw + Math.PI]) {
       mountGroup.rotation.set(0, yaw, 0);
@@ -3045,10 +2842,43 @@ function applyTwoPointSupportSnap(
         const dx = posA.x - sW.x;
         const dz = posA.z - sW.z;
         const err = Math.hypot(oW.x + dx - posB.x, oW.z + dz - posB.z);
-        if (err < bestError) {
+
+        let bridgeFrontWorld = new THREE.Vector3();
+        if (connectorRoot) {
+          const box = new THREE.Box3().setFromObject(connectorRoot);
+          const center = box.getCenter(new THREE.Vector3());
+          const localCenter = connectorRoot.worldToLocal(center.clone());
+
+          const localSocket = new THREE.Vector3();
+          snap.getWorldPosition(localSocket);
+          connectorRoot.worldToLocal(localSocket);
+
+          let bridgeFrontLocal = new THREE.Vector3().subVectors(
+            localCenter,
+            localSocket,
+          );
+          bridgeFrontLocal.y = 0;
+          if (bridgeFrontLocal.lengthSq() > 0.0001)
+            bridgeFrontLocal.normalize();
+
+          bridgeFrontWorld = bridgeFrontLocal
+            .clone()
+            .applyEuler(new THREE.Euler(0, yaw, 0));
+        }
+
+        const facingScore = bridgeFrontWorld.dot(triFrontWorld);
+
+        if (err < bestError - 0.001) {
           bestError = err;
           bestYaw = yaw;
           bestConnector = snap;
+          bestFacingScore = facingScore;
+        } else if (Math.abs(err - bestError) <= 0.001) {
+          if (facingScore > bestFacingScore) {
+            bestFacingScore = facingScore;
+            bestYaw = yaw;
+            bestConnector = snap;
+          }
         }
       }
     }
@@ -3275,7 +3105,6 @@ function onMouseMove(e) {
       return;
     }
 
-    // ── Alignment check: hide ghost and warn if triangles are misaligned ──
     const alignResult = checkSupportBridgeAlignment(pair);
     if (!alignResult.ok) {
       ghost.position.set(0, -9999, 0);
@@ -3290,7 +3119,14 @@ function onMouseMove(e) {
     ghost.scale.set(1, 1, 1);
     ghost.updateMatrixWorld(true);
 
-    applyTwoPointSupportSnap(ghost, ghost, posA, posB, supportManualRotSteps);
+    applyTwoPointSupportSnap(
+      ghost,
+      ghost,
+      posA,
+      posB,
+      supportManualRotSteps,
+      rawSocket,
+    );
     return;
   }
 
@@ -3299,8 +3135,6 @@ function onMouseMove(e) {
   const hit = raycaster.intersectObjects(targets)[0];
 
   if (hoveredTriangleMarker && hoveredTriangleMarker !== hit?.object) {
-    // Leaving a socket — restore its visual but do NOT reset manual rotation.
-    // The rotation is preserved so the user can hover away and come back.
     hoveredTriangleMarker.material = MAT_TRI_ACTIVE;
     hoveredTriangleMarker.scale.setScalar(1.5);
     hoveredTriangleMarker = null;
@@ -3313,8 +3147,6 @@ function onMouseMove(e) {
   socket.updateMatrixWorld(true);
 
   if (hit.object !== hoveredTriangleMarker) {
-    // Entering a socket marker — only reset rotation if it is a DIFFERENT
-    // socket from the last one the user had the cursor on.
     const incomingUUID = socket.uuid;
     const isNewSocket = incomingUUID !== lastHoveredTriangleSocketUUID;
 
@@ -3324,12 +3156,8 @@ function onMouseMove(e) {
     lastHoveredTriangleSocketUUID = incomingUUID;
 
     if (isNewSocket) {
-      // Genuinely different socket: reset rotation and recompute auto-yaw.
-      triangleManualRotSteps = 0;
       triangleAutoBaseYaw = computeTriangleAutoYaw(socket);
     }
-    // If returning to the same socket, keep triangleManualRotSteps and
-    // triangleAutoBaseYaw exactly as the user left them.
     updateShortcutBar();
   }
 
@@ -3429,13 +3257,11 @@ function onClick(e) {
       return;
     }
 
-    // ── Alignment validation before allowing placement ───────────────────
     const alignResult = checkSupportBridgeAlignment(pair);
     if (!alignResult.ok) {
       showPopup(alignResult.reason);
       return;
     }
-    // ────────────────────────────────────────────────────────────────────
 
     const { socketA, posA, socketB, posB } = pair;
 
@@ -3448,6 +3274,7 @@ function onClick(e) {
       socketB,
       posB,
       supportManualRotSteps,
+      rawSocket,
     );
     restartPlacementMode("support");
     checkQueuedIntent();
@@ -3919,7 +3746,7 @@ function placeSupportBridge(socket, manualSteps = 0) {
   scene.add(mount);
   mount.updateMatrixWorld(true);
 
-  applyTwoPointSupportSnap(mount, support, posA, posB, manualSteps);
+  applyTwoPointSupportSnap(mount, support, posA, posB, manualSteps, socket);
 
   usedSockets.add(socket.uuid);
   if (socketB) usedSockets.add(socketB.uuid);
@@ -3937,6 +3764,7 @@ function placeSupportBridgeFromPair(
   socketB,
   posB,
   manualSteps = 0,
+  sourceSocket,
 ) {
   const support = supportTemplate.clone(true);
   makeSolid(support);
@@ -3955,7 +3783,7 @@ function placeSupportBridgeFromPair(
   scene.add(mount);
   mount.updateMatrixWorld(true);
 
-  applyTwoPointSupportSnap(mount, support, posA, posB, manualSteps);
+  applyTwoPointSupportSnap(mount, support, posA, posB, manualSteps, socketA);
 
   usedSockets.add(socketA.uuid);
   if (socketB) usedSockets.add(socketB.uuid);
@@ -4160,6 +3988,7 @@ function onKeyDown(e) {
           posA,
           posB,
           supportManualRotSteps,
+          rawSocket,
         );
       }
     }
@@ -4270,19 +4099,7 @@ let idleArrowsShown = false;
 const IDLE_DELAY_MS = 3000;
 
 function initIdleArrows() {
-  const reset = () => {
-    clearTimeout(idleTimer);
-    hideIdleArrows();
-    if (!placementMode && !isFinalized) {
-      idleTimer = setTimeout(showIdleArrows, IDLE_DELAY_MS);
-    }
-  };
-
-  window.addEventListener("mousemove", reset, { passive: true });
-  window.addEventListener("click", reset, { passive: true });
-  window.addEventListener("keydown", reset, { passive: true });
-
-  idleTimer = setTimeout(showIdleArrows, IDLE_DELAY_MS);
+  // Idle arrows disabled — no prompt shown
 }
 
 function getNextActionTarget() {

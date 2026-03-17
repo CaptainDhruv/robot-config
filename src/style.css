@@ -1086,16 +1086,16 @@ canvas#app {
 
 /* FINALIZE — larger */
 .btn-finalize-large .btn-inner {
-  padding: clamp(10px, 1.3vh, 15px) 14px !important;
+  padding: clamp(12px, 1.5vh, 18px) 14px !important;
   justify-content: center !important;
   box-shadow: 5px 5px 0 #5a2008 !important;
 }
 .btn-finalize-large .btn-action-label {
-  font-size: clamp(8px, 0.75vw, 11px) !important;
+  font-size: clamp(11px, 1vw, 14px) !important;
   letter-spacing: 0.22em !important;
 }
 .btn-finalize-large .btn-icon {
-  font-size: clamp(12px, 1.2vw, 17px) !important;
+  font-size: clamp(14px, 1.4vw, 19px) !important;
 }
 .btn-finalize-large:hover .btn-inner {
   box-shadow: 8px 8px 0 #5a2008 !important;
@@ -1307,113 +1307,66 @@ canvas#app {
 }
 
 /* ═══════════════════════════════════════════════════
-   ROTATION CONTROLS PANEL
+   VIEWPORT ROTATION ARROW BUTTONS
    ═══════════════════════════════════════════════════ */
 
-.rotation-section {
-  border-bottom: 1px solid var(--border);
-  animation: fadedown 0.25s ease both;
-}
-
-.rotation-header {
-  display: flex;
+#viewport-rot-controls {
+  position: fixed;
+  bottom: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
   align-items: center;
-  gap: 8px;
-  padding: clamp(8px, 1vh, 12px) clamp(10px, 1vw, 16px) clamp(6px, 0.8vh, 10px)
-    clamp(12px, 1.2vw, 18px);
-  font-family: var(--font-mono);
-  font-size: clamp(9px, 0.8vw, 11px);
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--amb);
-  border-bottom: 1px solid rgba(208, 88, 24, 0.2);
+  gap: 10px;
+  z-index: 9001;
+  animation: fadedown 0.2s ease both;
 }
 
-.rotation-section-icon {
-  font-size: 14px;
-  line-height: 1;
-  color: var(--amb);
-}
-
-.rotation-body {
-  padding: clamp(8px, 1vh, 12px) clamp(8px, 0.9vw, 14px);
-}
-
-/* ── Motor: two step buttons + degree display in the middle ── */
-.rot-step-row {
-  display: flex;
-  align-items: center;
-  gap: clamp(4px, 0.5vw, 8px);
-}
-
-/* ── Triangle: single flip button + degree display ── */
-.rot-flip-row {
-  display: flex;
-  align-items: center;
-  gap: clamp(4px, 0.5vw, 8px);
-}
-
-.btn-rot {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: clamp(8px, 1vh, 12px) 6px;
-  background: #1a2234;
-  border: 2px solid rgba(208, 88, 24, 0.45);
+.vp-rot-btn {
+  height: 44px;
+  padding: 0 18px;
+  background: rgba(12, 18, 28, 0.96);
+  border: 2px solid rgba(208, 88, 24, 0.7);
   color: #e87030;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   transition:
     background 0.12s,
     border-color 0.12s,
     transform 0.08s,
     box-shadow 0.08s;
-  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%);
-  box-shadow: 3px 3px 0 rgba(208, 88, 24, 0.2);
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+  box-shadow: 3px 3px 0 rgba(90, 32, 8, 0.5);
+  backdrop-filter: blur(6px);
 }
-.btn-rot:hover {
+.vp-rot-btn:hover {
   background: #d05818;
   border-color: #d05818;
   color: #0e1018;
   transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0 rgba(90, 32, 8, 0.6);
+  box-shadow: 5px 5px 0 rgba(90, 32, 8, 0.7);
 }
-.btn-rot:active {
+.vp-rot-btn:active {
   transform: translate(0, 0);
   box-shadow: none;
 }
 
-.btn-rot-flip {
-  flex: 1;
-}
-
-.btn-rot-icon {
-  font-size: clamp(16px, 1.5vw, 22px);
+.vp-rot-icon {
+  font-size: 18px;
   line-height: 1;
-}
-.btn-rot-label {
-  font-family: var(--font-hud);
-  font-size: clamp(7px, 0.62vw, 9px);
   font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
 }
 
-.rot-deg-display {
-  flex-shrink: 0;
-  min-width: clamp(36px, 3.5vw, 50px);
-  text-align: center;
+.vp-rot-label {
   font-family: var(--font-hud);
-  font-size: clamp(13px, 1.2vw, 17px);
+  font-size: 9px;
   font-weight: 700;
-  color: #e8f0f8;
-  letter-spacing: 0.06em;
-  padding: 4px 2px;
-  background: rgba(208, 88, 24, 0.08);
-  border: 1px solid rgba(208, 88, 24, 0.25);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  line-height: 1;
 }
 
 /* ═══════════════════════════════════════════════════
