@@ -340,8 +340,28 @@ function captureFromAngle(presetKey) {
   controls.target.copy(lookAtPos);
   controls.update();
 
+  // ── Switch to clean white background, hide floor ──────────────────────────
+  const savedBg = scene.background ? scene.background.clone() : null;
+  const savedFog = scene.fog;
+  scene.background = new THREE.Color(0xffffff);
+  scene.fog = null;
+  renderer.setClearColor(0xffffff, 1);
+  if (sceneGridMajor) sceneGridMajor.visible = false;
+  if (sceneGridMinor) sceneGridMinor.visible = false;
+  if (sceneGround) sceneGround.visible = false;
+  // ─────────────────────────────────────────────────────────────────────────
+
   renderer.render(scene, camera);
   const dataURL = renderer.domElement.toDataURL("image/png");
+
+  // ── Restore scene state ───────────────────────────────────────────────────
+  scene.background = savedBg ?? new THREE.Color(0x4a5c78);
+  scene.fog = savedFog;
+  renderer.setClearColor(0x4a5c78, 1);
+  if (sceneGridMajor) sceneGridMajor.visible = true;
+  if (sceneGridMinor) sceneGridMinor.visible = true;
+  if (sceneGround) sceneGround.visible = true;
+  // ─────────────────────────────────────────────────────────────────────────
 
   camera.position.copy(savedPos);
   camera.quaternion.copy(savedQuat);
@@ -389,10 +409,10 @@ const mouse = new THREE.Vector2();
    ========================================================= */
 
 const socketGeo = new THREE.SphereGeometry(0.09, 12, 12);
-const frameMat = new THREE.MeshBasicMaterial({ color: 0xd06010 }); // burnt orange — frame
-const motorMat = new THREE.MeshBasicMaterial({ color: 0xe87830 }); // bright orange — motor
-const supportFrameSocketMat = new THREE.MeshBasicMaterial({ color: 0xd06010 }); // orange — support
-const wheelSocketMat = new THREE.MeshBasicMaterial({ color: 0xb84a14 }); // deep amber — wheel
+const frameMat = new THREE.MeshBasicMaterial({ color: 0xd06010 });
+const motorMat = new THREE.MeshBasicMaterial({ color: 0xe87830 });
+const supportFrameSocketMat = new THREE.MeshBasicMaterial({ color: 0xd06010 });
+const wheelSocketMat = new THREE.MeshBasicMaterial({ color: 0xb84a14 });
 
 let frameMarkers = [];
 let motorMarkers = [];
@@ -403,6 +423,12 @@ let triangleMarkers = [];
 
 let frameOnSupportMarkers = [];
 let wheelMarkers = [];
+
+// ── Scene floor objects — stored so captureFromAngle can hide them ────────────
+let sceneGridMajor = null;
+let sceneGridMinor = null;
+let sceneGround = null;
+// ─────────────────────────────────────────────────────────────────────────────
 
 /* =========================================================
    SUPPORT SOCKET PAIRS (TRIANGLE)
@@ -897,7 +923,6 @@ async function init() {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.15;
-  // ── CHANGED: was 0x252525 — new slate-blue-grey gives contrast for dark parts ──
   renderer.setClearColor(0x4a5c78, 1);
 
   controls = createControls(camera, renderer.domElement);
@@ -955,7 +980,6 @@ async function init() {
   window.addEventListener("resize", onWindowResize);
   onWindowResize();
 
-  // ── Accidental-refresh guard ───────────────────────────────────────────────
   window.addEventListener("beforeunload", (e) => {
     const totalPlaced =
       countPlaced("frame") +
@@ -1018,8 +1042,6 @@ function frameObject(object) {
    ========================================================= */
 
 function setupLights() {
-  // ── CHANGED: background and fog now use slate-blue-grey 0x2e3548
-  //    instead of near-black 0x252525, so dark motor/wheel parts are visible ──
   scene.background = new THREE.Color(0x4a5c78);
   scene.fog = new THREE.FogExp2(0x4a5c78, 0.028);
 
@@ -1052,20 +1074,18 @@ function setupGrid() {
 
   const gridY = lowestY;
 
-  // ── CHANGED: grid lines are lighter so they read against the new bg colour ──
-  const gridMajor = new THREE.GridHelper(60, 60, 0x3d4a60, 0x303d52);
-  gridMajor.position.y = gridY;
-  gridMajor.material.transparent = true;
-  gridMajor.material.opacity = 0.75;
-  scene.add(gridMajor);
+  sceneGridMajor = new THREE.GridHelper(60, 60, 0x3d4a60, 0x303d52);
+  sceneGridMajor.position.y = gridY;
+  sceneGridMajor.material.transparent = true;
+  sceneGridMajor.material.opacity = 0.75;
+  scene.add(sceneGridMajor);
 
-  const gridMinor = new THREE.GridHelper(60, 240, 0x283040, 0x283040);
-  gridMinor.position.y = gridY - 0.001;
-  gridMinor.material.transparent = true;
-  gridMinor.material.opacity = 0.45;
-  scene.add(gridMinor);
+  sceneGridMinor = new THREE.GridHelper(60, 240, 0x283040, 0x283040);
+  sceneGridMinor.position.y = gridY - 0.001;
+  sceneGridMinor.material.transparent = true;
+  sceneGridMinor.material.opacity = 0.45;
+  scene.add(sceneGridMinor);
 
-  // ── CHANGED: ground plane is a slightly darker tint of the new background ──
   const groundGeo = new THREE.PlaneGeometry(60, 60);
   const groundMat = new THREE.MeshBasicMaterial({
     color: 0x1e2535,
@@ -1073,10 +1093,10 @@ function setupGrid() {
     opacity: 0.92,
     depthWrite: false,
   });
-  const ground = new THREE.Mesh(groundGeo, groundMat);
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.y = gridY - 0.002;
-  scene.add(ground);
+  sceneGround = new THREE.Mesh(groundGeo, groundMat);
+  sceneGround.rotation.x = -Math.PI / 2;
+  sceneGround.position.y = gridY - 0.002;
+  scene.add(sceneGround);
 }
 
 /* =========================================================
@@ -1096,7 +1116,6 @@ function bindUI() {
   bind("proceedPaymentBtn", onProceedToPayment);
   bind("printDesignBtn", printDesign);
 
-  // ── Rotation control buttons ───────────────────────────────────────────────
   const rotLeftBtn = document.getElementById("rotLeftBtn");
   const rotRightBtn = document.getElementById("rotRightBtn");
 
@@ -1166,14 +1185,12 @@ function onFinalize() {
   isFinalized = true;
   clearGhost();
   document.getElementById("paymentSection")?.classList.remove("hidden");
-  // Swap the button label/icon to "Edit Design" and re-wire it
   const btn = document.getElementById("finalizeBtn");
   if (btn) {
     btn.innerHTML = `<div class="btn-inner">
       <span class="btn-icon">◈</span>
       <span class="btn-action-label">Edit Design</span>
     </div>`;
-    // Remove all existing listeners by replacing with a clone, then re-add
     const fresh = btn.cloneNode(true);
     btn.parentNode.replaceChild(fresh, btn);
     fresh.addEventListener("click", onEdit);
@@ -1184,7 +1201,6 @@ function onEdit() {
   if (!isFinalized) return;
   isFinalized = false;
   document.getElementById("paymentSection")?.classList.add("hidden");
-  // Swap the button back to "Finalize Design" and re-wire it
   const btn = document.getElementById("finalizeBtn");
   if (btn) {
     btn.innerHTML = `<div class="btn-inner">
@@ -1233,7 +1249,6 @@ function onProceedToPayment() {
     boxShadow: "0 0 50px rgba(208,88,24,0.25), 0 20px 60px rgba(0,0,0,0.6)",
   });
 
-  // top accent line
   const topLine = document.createElement("div");
   Object.assign(topLine.style, {
     position: "absolute",
@@ -1278,7 +1293,6 @@ function onProceedToPayment() {
     letterSpacing: "0.04em",
   });
 
-  // parts summary
   const counts = {};
   scene.traverse((o) => {
     if (!o.userData?.isMount) return;
@@ -1620,12 +1634,10 @@ const SHORTCUT_DEFS = {
 
 let shortcutBarEl = null;
 
-// ── Helper: read the computed --panel-w CSS variable in pixels ───────────────
 function getPanelWidthPx() {
   const raw = getComputedStyle(document.documentElement)
     .getPropertyValue("--panel-w")
     .trim();
-  // raw is e.g. "300px" or "240px" — parse it
   return parseFloat(raw) || 300;
 }
 
@@ -1673,7 +1685,6 @@ function initShortcutBar() {
   });
   document.body.appendChild(shortcutBarEl);
 
-  // ── Help toggle button ────────────────────────────────────────────────────
   const helpBtn = document.createElement("button");
   helpBtn.id = "help-toggle-btn";
   helpBtn.title = "Show shortcuts";
@@ -1716,7 +1727,6 @@ function initShortcutBar() {
   });
   document.body.appendChild(helpBtn);
 
-  // Keep bar + button aligned on resize
   window.addEventListener("resize", () => {
     const newPw = getPanelWidthPx();
     shortcutBarEl.style.left = `${newPw}px`;
@@ -2045,6 +2055,8 @@ function clearGhost() {
   ghost = null;
   motorRotationGroup = null;
   placementMode = null;
+  // ── CURSOR: remove placement-mode class when exiting any placement mode ──
+  document.body.classList.remove("placement-mode");
   applySocketHighlights();
   frameOnSupportRotationSteps = 0;
   frameHoverType = "frame";
@@ -2079,7 +2091,6 @@ function clearGhost() {
   updateShortcutBar();
   updateLegendHighlight();
   clearTimeout(idleTimer);
-  // idle arrows disabled
 }
 
 function applySocketDepth(target, socket, depth) {
@@ -2271,38 +2282,38 @@ function isSocketNode(name) {
   );
 }
 
-const MAT_FRAME_ACTIVE = new THREE.MeshBasicMaterial({ color: 0xd06010 }); // burnt orange
+const MAT_FRAME_ACTIVE = new THREE.MeshBasicMaterial({ color: 0xd06010 });
 const MAT_FRAME_DIM = new THREE.MeshBasicMaterial({
   color: 0x2a1a08,
   transparent: true,
   opacity: 0.22,
 });
-const MAT_MOTOR_ACTIVE = new THREE.MeshBasicMaterial({ color: 0xe87830 }); // bright orange
+const MAT_MOTOR_ACTIVE = new THREE.MeshBasicMaterial({ color: 0xe87830 });
 const MAT_MOTOR_DIM = new THREE.MeshBasicMaterial({
   color: 0x2a1004,
   transparent: true,
   opacity: 0.18,
 });
-const MAT_SUPPORT_ACTIVE = new THREE.MeshBasicMaterial({ color: 0xd06010 }); // orange (was teal)
+const MAT_SUPPORT_ACTIVE = new THREE.MeshBasicMaterial({ color: 0xd06010 });
 const MAT_SUPPORT_DIM = new THREE.MeshBasicMaterial({
   color: 0x2a1a08,
   transparent: true,
   opacity: 0.18,
 });
-const MAT_WHEEL_ACTIVE = new THREE.MeshBasicMaterial({ color: 0xb84a14 }); // deep amber
+const MAT_WHEEL_ACTIVE = new THREE.MeshBasicMaterial({ color: 0xb84a14 });
 const MAT_WHEEL_DIM = new THREE.MeshBasicMaterial({
   color: 0x1e0a04,
   transparent: true,
   opacity: 0.18,
 });
-const MAT_TRI_ACTIVE = new THREE.MeshBasicMaterial({ color: 0xe87030 }); // orange (was teal)
+const MAT_TRI_ACTIVE = new THREE.MeshBasicMaterial({ color: 0xe87030 });
 const MAT_TRI_DIM = new THREE.MeshBasicMaterial({
   color: 0x2a1004,
   transparent: true,
   opacity: 0.18,
 });
-const MAT_MOTOR_HOVER = new THREE.MeshBasicMaterial({ color: 0xffcc60 }); // warm yellow highlight
-const MAT_TRI_HOVER = new THREE.MeshBasicMaterial({ color: 0xffaa40 }); // amber highlight
+const MAT_MOTOR_HOVER = new THREE.MeshBasicMaterial({ color: 0xffcc60 });
+const MAT_TRI_HOVER = new THREE.MeshBasicMaterial({ color: 0xffaa40 });
 
 let hoveredMotorMarker = null;
 
@@ -2316,9 +2327,6 @@ function addMarker(socket, list, mat) {
 
 /* =========================================================
    VALID STRESS CONNECTOR FILTER
-   Returns the subset of stressConnectorMarkers whose socket
-   has a valid, alignment-passing bridge partner — these are
-   the only ones that should be clickable in support mode.
    ========================================================= */
 
 function getValidStressConnectorSockets() {
@@ -2336,7 +2344,6 @@ function getValidStressConnectorSockets() {
 function applySocketHighlights() {
   const mode = placementMode;
 
-  // ── Hide ALL markers first — then selectively show the active mode only ──
   frameMarkers.forEach((m) => {
     m.visible = false;
   });
@@ -2411,10 +2418,6 @@ function applySocketHighlights() {
    PLACEMENT MODES
    ========================================================= */
 
-/* =========================================================
-   ROTATION CONTROLS PANEL — show/hide per placement mode
-   ========================================================= */
-
 function showRotationControls(mode) {
   const el = document.getElementById("viewport-rot-controls");
   if (el) el.style.display = "flex";
@@ -2425,9 +2428,7 @@ function hideRotationControls() {
   if (el) el.style.display = "none";
 }
 
-function updateRotationDisplay() {
-  // degree display removed — no-op kept for call-site compatibility
-}
+function updateRotationDisplay() {}
 
 function startMotorPlacement() {
   hideIdleArrows();
@@ -2451,6 +2452,8 @@ function startMotorPlacement() {
   if (_ab) _ab.classList.add("active-mode");
   clearGhost();
   placementMode = "motor";
+  // ── CURSOR: entering placement mode ──
+  document.body.classList.add("placement-mode");
   motorAutoBaseYaw = 0;
   motorManualRotSteps = 0;
   applySocketHighlights();
@@ -2467,7 +2470,6 @@ function startMotorPlacement() {
   motorRotationGroup.add(m);
   ghost.add(motorRotationGroup);
   scene.add(ghost);
-  // No rotation controls for motor — keyboard arrows only
 }
 
 function startFramePlacement() {
@@ -2486,6 +2488,8 @@ function startFramePlacement() {
   frameOnSupportRotationSteps = 0;
   frameHoverType = "frame";
   placementMode = "frame";
+  // ── CURSOR: entering placement mode ──
+  document.body.classList.add("placement-mode");
   applySocketHighlights();
   updateShortcutBar();
   updateLegendHighlight();
@@ -2505,6 +2509,8 @@ function startTrianglePlacement() {
   if (_ab) _ab.classList.add("active-mode");
   clearGhost();
   placementMode = "triangle";
+  // ── CURSOR: entering placement mode ──
+  document.body.classList.add("placement-mode");
   applySocketHighlights();
   updateShortcutBar();
   updateLegendHighlight();
@@ -2541,6 +2547,8 @@ function startSupportPlacement() {
   if (_ab) _ab.classList.add("active-mode");
   clearGhost();
   placementMode = "support";
+  // ── CURSOR: entering placement mode ──
+  document.body.classList.add("placement-mode");
   applySocketHighlights();
   updateShortcutBar();
   updateLegendHighlight();
@@ -3475,6 +3483,8 @@ function startWheelPlacement() {
 
   clearGhost();
   placementMode = "wheel";
+  // ── CURSOR: entering placement mode ──
+  document.body.classList.add("placement-mode");
   applySocketHighlights();
   updateShortcutBar();
   updateLegendHighlight();
@@ -4201,15 +4211,12 @@ function buildContextMenu(mount, screenX, screenY) {
   const glyph = PART_GLYPHS[type] ?? "◈";
   const cost = PART_COSTS[type] ?? 0;
 
-  // ── check deletion feasibility up-front so we can show cascade info ──
   const delResult = checkDeletionAllowed(mount);
   const depCount = delResult.ok ? 0 : delResult.dependents.length;
 
-  // ── build DOM ───────────────────────────────────────────────────────
   const menu = document.createElement("div");
   menu.id = "ctx-menu";
 
-  // header
   const header = document.createElement("div");
   header.className = "ctx-header";
   header.innerHTML = `
@@ -4223,7 +4230,6 @@ function buildContextMenu(mount, screenX, screenY) {
   const items = document.createElement("div");
   items.className = "ctx-items";
 
-  // ── FOCUS / FRAME CAMERA ────────────────────────────────────────────
   items.appendChild(
     makeCtxItem({
       icon: "◎",
@@ -4238,7 +4244,6 @@ function buildContextMenu(mount, screenX, screenY) {
     }),
   );
 
-  // ── SELECT (highlight) ──────────────────────────────────────────────
   const isSelected = selectedMount === mount;
   items.appendChild(
     makeCtxItem({
@@ -4248,7 +4253,6 @@ function buildContextMenu(mount, screenX, screenY) {
       kbd: "Click",
       onClick: () => {
         destroyContextMenu();
-        // find the first mesh in this mount to use for selection
         let mesh = null;
         mount.traverse((o) => {
           if (!mesh && o.isMesh) mesh = o;
@@ -4260,7 +4264,6 @@ function buildContextMenu(mount, screenX, screenY) {
 
   items.appendChild(makeSep());
 
-  // ── DELETE ──────────────────────────────────────────────────────────
   const deleteItem = makeCtxItem({
     icon: "✕",
     label: depCount > 0 ? `Delete All (${depCount + 1} parts)` : "Delete Part",
@@ -4273,7 +4276,6 @@ function buildContextMenu(mount, screenX, screenY) {
     onClick: () => {
       destroyContextMenu();
       if (depCount > 0) {
-        // show the existing cascade popup so user confirms
         showDependencyBlockedPopup(mount, delResult);
       } else {
         executeDelete(mount);
@@ -4281,7 +4283,6 @@ function buildContextMenu(mount, screenX, screenY) {
     },
   });
 
-  // cascade badge
   if (depCount > 0) {
     const badge = document.createElement("div");
     badge.className = "ctx-cascade-badge";
@@ -4293,7 +4294,6 @@ function buildContextMenu(mount, screenX, screenY) {
 
   menu.appendChild(items);
 
-  // ── POSITION — keep inside viewport ────────────────────────────────
   document.body.appendChild(menu);
   ctxMenuEl = menu;
 
@@ -4312,7 +4312,6 @@ function buildContextMenu(mount, screenX, screenY) {
   menu.style.left = `${x}px`;
   menu.style.top = `${y}px`;
 
-  // ── dismiss on outside click / ESC ──────────────────────────────────
   setTimeout(() => {
     document.addEventListener("mousedown", onCtxOutsideClick, { once: true });
     document.addEventListener("keydown", onCtxKeyDown, { capture: true });
@@ -4366,11 +4365,9 @@ function onCtxKeyDown(e) {
   }
 }
 
-// ── The actual right-click handler on the canvas ──────────────────────────
 function onContextMenu(e) {
   e.preventDefault();
 
-  // Don't open menu when in placement mode — right-click = pan there
   if (placementMode || isFinalized) return;
 
   updateMouse(e);
@@ -4379,7 +4376,6 @@ function onContextMenu(e) {
   const hits = raycaster.intersectObjects(scene.children, true);
 
   for (const h of hits) {
-    // skip socket markers
     if (
       frameMarkers.includes(h.object) ||
       motorMarkers.includes(h.object) ||
@@ -4391,7 +4387,6 @@ function onContextMenu(e) {
 
     const { mount } = resolveMeshAndMount(h.object);
     if (mount) {
-      // also select the part so user gets visual feedback
       let mesh = null;
       mount.traverse((o) => {
         if (!mesh && o.isMesh) mesh = o;
@@ -4403,11 +4398,9 @@ function onContextMenu(e) {
     }
   }
 
-  // right-clicked empty space — just close any open menu
   destroyContextMenu();
 }
 
-// ── Shared delete helper (used by both context menu and keyboard handler) ──
 function executeDelete(mount) {
   if (selectedMount === mount) {
     restoreMeshEmissive(selectedMesh, selectedOrigEm);
@@ -4437,7 +4430,6 @@ function executeDelete(mount) {
   showHudMessage(`DELETED: ${(PART_LABELS[type] ?? type).toUpperCase()}`);
 }
 
-// ── Duplicate a rectangular frame (offset slightly so it doesn't overlap) ──
 function duplicateFrame(sourceMount) {
   const frame = frameTemplate.clone(true);
   makeSolid(frame);
@@ -4445,7 +4437,6 @@ function duplicateFrame(sourceMount) {
   const mount = new THREE.Group();
   mount.userData = { isMount: true, type: "frame" };
 
-  // offset by half a frame width so it's visible but still close
   mount.position.set(
     sourceMount.position.x + 1.2,
     sourceMount.position.y,

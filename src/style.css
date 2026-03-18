@@ -1,11 +1,5 @@
 /* ═══════════════════════════════════════════════════
    ROBOT CONFIGURATOR — SLATE / AMBER / TEAL THEME
-   Palette pulled directly from the robot model:
-     • Burnt orange  #d05818  — frame struts
-     • Slate blue    #2e3548  — viewport background
-     • Deep teal     #1e4040  — wheel trim
-     • Cold grey     #8090a0  — structural parts
-   FULLY RESPONSIVE — panels scale with viewport
    ═══════════════════════════════════════════════════ */
 
 @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Exo+2:wght@300;400;500;600;700;800&display=swap");
@@ -29,7 +23,15 @@ body {
   cursor: crosshair;
 }
 
-/* ── SUBTLE SCANLINE OVERLAY ── */
+/* ── PLACEMENT MODE CURSOR ── */
+body.placement-mode,
+body.placement-mode * {
+  cursor:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%23e87030' stroke-width='1.5'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='%23e87030'/%3E%3Cline x1='16' y1='2' x2='16' y2='8' stroke='%23e87030' stroke-width='1.5' stroke-linecap='round'/%3E%3Cline x1='16' y1='24' x2='16' y2='30' stroke='%23e87030' stroke-width='1.5' stroke-linecap='round'/%3E%3Cline x1='2' y1='16' x2='8' y2='16' stroke='%23e87030' stroke-width='1.5' stroke-linecap='round'/%3E%3Cline x1='24' y1='16' x2='30' y2='16' stroke='%23e87030' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")
+      16 16,
+    crosshair !important;
+}
+
 body::after {
   content: "";
   position: fixed;
@@ -46,45 +48,32 @@ body::after {
 }
 
 :root {
-  /* ── Panel backgrounds — pulled from viewport slate ── */
   --bg-base: #141c28;
   --bg-panel: #18202e;
   --bg-panel-r: #161e2c;
   --bg-row: #1e2838;
   --bg-row-h: #243040;
-
-  /* ── Borders — blue-steel tones ── */
   --border: #28384a;
   --border-hi: #344858;
-  --border-amb: #3a2810; /* warm amber-side border */
-
-  /* ── Text ── */
+  --border-amb: #3a2810;
   --text-hi: #d8e8f4;
   --text-mid: #6a8098;
   --text-lo: #384858;
   --text-amb: #b85020;
   --text-danger: #d04828;
-
-  /* ── Primary accent: burnt orange (robot frame colour) ── */
   --amb: #d05818;
   --amb-bright: #e87030;
   --amb-dim: rgba(208, 88, 24, 0.1);
   --amb-glow: rgba(208, 88, 24, 0.2);
   --amb-border: rgba(208, 88, 24, 0.35);
-
-  /* ── Secondary accent: teal (robot wheel colour) ── */
   --teal: #2a6868;
   --teal-bright: #3a8888;
   --teal-dim: rgba(42, 104, 104, 0.12);
   --teal-border: rgba(42, 104, 104, 0.35);
-
-  /* ── Cold steel (structural parts) ── */
   --steel: #7a90a4;
   --steel-dim: rgba(122, 144, 164, 0.1);
   --steel-hi: #a8bcc8;
   --steel-bright: #c8d8e4;
-
-  /* ── Component colour tokens ── */
   --c-motor: #d05818;
   --c-motor-d: rgba(208, 88, 24, 0.12);
   --c-frame: #6a7a8a;
@@ -97,17 +86,13 @@ body::after {
   --c-att-d: rgba(64, 80, 96, 0.12);
   --c-wheel: #b84a14;
   --c-wheel-d: rgba(184, 74, 20, 0.12);
-
-  /* ── Responsive panel width ── */
   --panel-w: clamp(180px, 18vw, 300px);
-
   --font-hud: "Orbitron", sans-serif;
   --font-mono: "Share Tech Mono", monospace;
   --font-ui: "Rajdhani", sans-serif;
   --font-display: "Exo 2", sans-serif;
 }
 
-/* ── KEYFRAMES ── */
 @keyframes scan {
   0% {
     transform: translateY(-100%);
@@ -212,7 +197,6 @@ body::after {
   }
 }
 
-/* ── LAYOUT ── */
 .app-shell {
   display: grid;
   grid-template-columns: var(--panel-w) 1fr var(--panel-w);
@@ -222,7 +206,6 @@ body::after {
   animation: slide-in 0.5s ease both;
 }
 
-/* ── PANELS ── */
 .panel {
   display: flex;
   flex-direction: column;
@@ -253,7 +236,6 @@ body::after {
   box-shadow: inset 1px 0 0 rgba(208, 88, 24, 0.05);
 }
 
-/* ── LOGO ── */
 .logo-header {
   padding: clamp(10px, 1.5vh, 20px) clamp(10px, 1.2vw, 18px)
     clamp(8px, 1.2vh, 16px) clamp(12px, 1.5vw, 20px);
@@ -319,7 +301,6 @@ body::after {
   animation: blink 2.5s ease-in-out infinite;
 }
 
-/* ── COLLAPSIBLE SECTION ── */
 .panel-section {
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
@@ -367,7 +348,6 @@ body::after {
 .section-toggle.collapsed .chevron {
   transform: rotate(-90deg);
 }
-
 .section-body {
   padding: clamp(4px, 0.6vh, 8px) clamp(6px, 0.8vw, 12px)
     clamp(6px, 0.9vh, 12px);
@@ -405,10 +385,6 @@ body::after {
 .section-body.animate-in > *:nth-child(6) {
   animation-delay: 0.23s;
 }
-
-/* ═══════════════════════════════════════════════════
-   COMPONENT BUTTONS
-   ═══════════════════════════════════════════════════ */
 
 .btn {
   width: 100%;
@@ -506,7 +482,6 @@ body::after {
   transform: translate(0, 0) !important;
   animation: btn-stamp 0.1s ease both;
 }
-
 .btn.active-mode .btn-inner {
   animation: active-pulse 1.2s ease-in-out infinite;
 }
@@ -519,7 +494,7 @@ body::after {
   animation: pulse-ring 1.2s ease-out infinite;
 }
 
-/* ── MOTOR — golden yellow, matches motor housing colour ── */
+/* MOTOR */
 .btn-motor .btn-inner {
   background: #1e1800;
   border-color: #f9b100;
@@ -562,7 +537,7 @@ body::after {
   color: #0e0c00;
 }
 
-/* ── FRAME — grey #797979, matches rectangular frame colour ── */
+/* FRAME */
 .btn-frame .btn-inner {
   background: #111314;
   border-color: #797979;
@@ -599,7 +574,7 @@ body::after {
   color: #0a0a0a;
 }
 
-/* ── TRIANGLE — light grey-mauve #ADA7AB, matches triangular frame colour ── */
+/* TRIANGLE */
 .btn-triangle .btn-inner {
   background: #18161a;
   border-color: #ada7ab;
@@ -636,7 +611,7 @@ body::after {
   color: #0a0a0a;
 }
 
-/* ── SUPPORT — orange #FF770E, matches stress bridge colour ── */
+/* SUPPORT */
 .btn-support .btn-inner {
   background: #1e0e00;
   border-color: #ff770e;
@@ -673,7 +648,7 @@ body::after {
   color: #0e0800;
 }
 
-/* ── WHEEL — charcoal slate #36454F, matches wheel tyre colour ── */
+/* WHEEL */
 .btn-wheel .btn-inner {
   background: #0a0e10;
   border-color: #36454f;
@@ -714,10 +689,6 @@ body::after {
   animation: spin-slow 1s linear infinite;
 }
 
-/* ═══════════════════════════════════════════════════
-   ACTION BUTTONS
-   ═══════════════════════════════════════════════════ */
-
 .action-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -743,7 +714,6 @@ body::after {
   gap: 8px;
   padding: clamp(7px, 0.9vh, 11px) 10px;
 }
-
 .btn-icon {
   font-size: clamp(13px, 1.3vw, 17px);
   line-height: 1;
@@ -757,7 +727,7 @@ body::after {
   text-transform: uppercase;
 }
 
-/* PRIMARY — burnt orange */
+/* PRIMARY */
 .btn-primary .btn-inner {
   background: var(--amb);
   border: 2px solid var(--amb);
@@ -775,7 +745,7 @@ body::after {
   transform: translate(4px, 4px);
 }
 
-/* SECONDARY — steel-blue */
+/* SECONDARY */
 .btn-secondary .btn-inner {
   background: #18202e;
   border: 2px solid #344858;
@@ -789,7 +759,7 @@ body::after {
   box-shadow: 7px 7px 0 #1a2838;
 }
 
-/* ── VIEWPORT ── */
+/* VIEWPORT */
 .viewport {
   position: relative;
   background: #1a2030;
@@ -832,10 +802,7 @@ canvas#app {
   z-index: 1;
 }
 
-/* ═══════════════════════════════════════════════════
-   CAMERA PRESETS
-   ═══════════════════════════════════════════════════ */
-
+/* CAMERA */
 .panel-section-camera {
   border-bottom: none;
   flex-shrink: 0;
@@ -912,7 +879,6 @@ canvas#app {
   border-top: 1px solid var(--border);
 }
 
-/* ── BASKET HEADER ── */
 .basket-header {
   padding: clamp(10px, 1.4vh, 18px) clamp(10px, 1.2vw, 18px)
     clamp(8px, 1.1vh, 14px) clamp(12px, 1.5vw, 20px);
@@ -957,7 +923,6 @@ canvas#app {
   letter-spacing: 0.1em;
 }
 
-/* ── BASKET ITEMS ── */
 .basket-section {
   padding: clamp(6px, 0.9vh, 12px) clamp(8px, 0.9vw, 14px);
   flex: 1;
@@ -1010,7 +975,6 @@ canvas#app {
   padding: 0 4px;
 }
 
-/* ── BASKET FOOTER ── */
 .basket-footer {
   padding: clamp(8px, 1.1vh, 14px) clamp(10px, 1.2vw, 18px);
   border-top: 1px solid var(--border-amb);
@@ -1031,10 +995,6 @@ canvas#app {
   text-shadow: 0 0 20px rgba(200, 216, 228, 0.28);
   letter-spacing: 0.06em;
 }
-
-/* ═══════════════════════════════════════════════════
-   PAYMENT + FINALIZE / PRINT
-   ═══════════════════════════════════════════════════ */
 
 .payment-section {
   padding: clamp(6px, 0.9vh, 12px) clamp(8px, 0.9vw, 14px);
@@ -1084,7 +1044,6 @@ canvas#app {
   padding: clamp(8px, 1vh, 12px) clamp(10px, 1vw, 14px);
 }
 
-/* FINALIZE — larger */
 .btn-finalize-large .btn-inner {
   padding: clamp(12px, 1.5vh, 18px) 14px !important;
   justify-content: center !important;
@@ -1101,7 +1060,6 @@ canvas#app {
   box-shadow: 8px 8px 0 #5a2008 !important;
 }
 
-/* PRINT — teal accent */
 .btn-print .btn-inner {
   background: #101e1e;
   border: 2px solid #2a5858;
@@ -1115,14 +1073,12 @@ canvas#app {
   box-shadow: 7px 7px 0 #0e2626;
 }
 
-/* ── PART TOOLTIP ── */
 #part-tooltip {
   animation: tooltip-in 0.15s ease both;
   pointer-events: none;
   font-family: var(--font-mono) !important;
 }
 
-/* ── HUD MESSAGE ── */
 @keyframes hudMsgIn {
   from {
     opacity: 0;
@@ -1134,10 +1090,7 @@ canvas#app {
   }
 }
 
-/* ═══════════════════════════════════════════════════
-   COLOR LEGEND
-   ═══════════════════════════════════════════════════ */
-
+/* COLOR LEGEND */
 @keyframes legendIn {
   from {
     opacity: 0;
@@ -1197,7 +1150,6 @@ canvas#app {
 .color-legend.collapsed .legend-collapse-btn {
   transform: rotate(180deg);
 }
-
 .legend-title {
   font-family: var(--font-mono);
   font-size: clamp(7px, 0.65vw, 8.5px);
@@ -1214,7 +1166,6 @@ canvas#app {
   font-size: 9px;
   opacity: 0.7;
 }
-
 .legend-items {
   display: flex;
   flex-direction: column;
@@ -1235,7 +1186,6 @@ canvas#app {
 .legend-item:hover {
   background: rgba(255, 255, 255, 0.02);
 }
-
 .legend-dot {
   width: clamp(6px, 0.6vw, 9px);
   height: clamp(6px, 0.6vw, 9px);
@@ -1293,10 +1243,7 @@ canvas#app {
   opacity: 1;
 }
 
-/* ═══════════════════════════════════════════════════
-   SHORTCUT BAR + HELP BUTTON
-   ═══════════════════════════════════════════════════ */
-
+/* SHORTCUT BAR */
 #shortcut-bar {
   left: var(--panel-w) !important;
   right: var(--panel-w) !important;
@@ -1307,72 +1254,108 @@ canvas#app {
 }
 
 /* ═══════════════════════════════════════════════════
-   VIEWPORT ROTATION ARROW BUTTONS
+   VIEWPORT ROTATION — KEYBOARD ARROW KEY BUTTONS
+   Bottom-right, styled as physical key-caps
    ═══════════════════════════════════════════════════ */
 
 #viewport-rot-controls {
   position: fixed;
-  bottom: 52px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 54px;
+  right: calc(var(--panel-w) + 16px);
   display: none;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   z-index: 9001;
   animation: fadedown 0.2s ease both;
 }
 
 .vp-rot-btn {
-  height: 44px;
-  padding: 0 18px;
-  background: rgba(12, 18, 28, 0.96);
-  border: 2px solid rgba(208, 88, 24, 0.7);
+  width: 52px;
+  height: 46px;
+  padding: 0;
+  background: linear-gradient(175deg, #2a3650 0%, #1a2438 60%, #141c30 100%);
+  border: 1.5px solid rgba(208, 88, 24, 0.5);
+  border-bottom: 4px solid rgba(90, 32, 8, 0.9);
   color: #e87030;
   cursor: pointer;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 2px;
+  /* key-cap shadow stack */
+  box-shadow:
+    0 5px 0 rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 0 0 1px rgba(208, 88, 24, 0.08);
+  border-radius: 5px;
   transition:
-    background 0.12s,
-    border-color 0.12s,
-    transform 0.08s,
-    box-shadow 0.08s;
-  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
-  box-shadow: 3px 3px 0 rgba(90, 32, 8, 0.5);
+    background 0.1s,
+    color 0.1s,
+    border-color 0.1s,
+    transform 0.07s,
+    box-shadow 0.07s;
   backdrop-filter: blur(6px);
+  position: relative;
+  overflow: hidden;
 }
+
+/* subtle top-left highlight like a physical key */
+.vp-rot-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    transparent 100%
+  );
+  border-radius: 3px 3px 0 0;
+  pointer-events: none;
+}
+
 .vp-rot-btn:hover {
-  background: #d05818;
-  border-color: #d05818;
-  color: #0e1018;
-  transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0 rgba(90, 32, 8, 0.7);
+  background: linear-gradient(175deg, #3a2818 0%, #281808 60%, #1e1200 100%);
+  border-color: rgba(232, 112, 48, 0.8);
+  border-bottom-color: rgba(232, 112, 48, 0.9);
+  color: #ffb060;
+  box-shadow:
+    0 5px 0 rgba(0, 0, 0, 0.7),
+    0 0 14px rgba(208, 88, 24, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
+
 .vp-rot-btn:active {
-  transform: translate(0, 0);
-  box-shadow: none;
+  transform: translateY(4px);
+  border-bottom-width: 1px;
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.6),
+    inset 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
 .vp-rot-icon {
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1;
-  font-weight: 700;
+  font-weight: 900;
+  pointer-events: none;
+  /* Unicode arrows look better than text chars here */
 }
 
 .vp-rot-label {
   font-family: var(--font-hud);
-  font-size: 9px;
+  font-size: 6.5px;
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   line-height: 1;
+  opacity: 0.55;
+  pointer-events: none;
 }
 
-/* ═══════════════════════════════════════════════════
-   IDLE ARROWS
-   ═══════════════════════════════════════════════════ */
-
+/* IDLE ARROWS */
 @keyframes arrowBounce {
   0%,
   100% {
@@ -1434,15 +1417,11 @@ canvas#app {
   box-shadow: 3px 3px 0 rgba(208, 88, 24, 0.22);
 }
 
-/* ── UTILITY ── */
 .hidden {
   display: none !important;
 }
 
-/* ═══════════════════════════════════════════════════
-   RIGHT-CLICK CONTEXT MENU
-   ═══════════════════════════════════════════════════ */
-
+/* CONTEXT MENU */
 @keyframes ctxMenuIn {
   from {
     opacity: 0;
@@ -1463,7 +1442,6 @@ canvas#app {
     transform: translateX(0);
   }
 }
-
 #ctx-menu {
   position: fixed;
   z-index: 999990;
@@ -1518,7 +1496,6 @@ canvas#app {
 .ctx-items {
   padding: 5px 0;
 }
-
 .ctx-item {
   display: flex;
   align-items: center;
@@ -1552,7 +1529,6 @@ canvas#app {
 .ctx-item:active {
   background: rgba(208, 88, 24, 0.16);
 }
-
 .ctx-item.ctx-danger:hover {
   background: rgba(208, 88, 24, 0.14);
 }
@@ -1569,7 +1545,6 @@ canvas#app {
   opacity: 0.3;
   pointer-events: none;
 }
-
 .ctx-item-icon {
   width: 18px;
   text-align: center;
@@ -1628,16 +1603,11 @@ canvas#app {
   margin-top: 3px;
 }
 
-/* ═══════════════════════════════════════════════════
-   RESPONSIVE BREAKPOINTS
-   ═══════════════════════════════════════════════════ */
-
 @media (min-width: 1600px) {
   :root {
     --panel-w: clamp(260px, 16vw, 320px);
   }
 }
-
 @media (max-width: 1023px) {
   :root {
     --panel-w: clamp(160px, 20vw, 240px);
@@ -1659,7 +1629,6 @@ canvas#app {
     gap: 5px;
   }
 }
-
 @media (max-width: 767px) {
   :root {
     --panel-w: clamp(130px, 22vw, 180px);
