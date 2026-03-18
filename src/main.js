@@ -54,6 +54,11 @@ let lastHoveredTriangleSocketUUID = null;
 
 // ── Support auto-orientation state (1-click placement) ───────────────────────
 let supportManualRotSteps = 0;
+// ── Two-click support bridge state ───────────────────────────────────────────
+// After the user clicks the first socket, it is stored here until they click
+// the second socket on a different triangle mount.
+let supportFirstSocket = null;
+let supportFirstMarker = null; // the marker mesh that got locked
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Frame-on-support rotation (used inside unified frame mode) ───────────────
@@ -1621,10 +1626,10 @@ const SHORTCUT_DEFS = {
     { key: "ESC", action: "Exit mode" },
   ],
   support: [
-    { key: "HOVER", action: "Auto-orient" },
-    { key: "CLICK", action: "Place support" },
+    { key: "CLICK 1", action: "Pick first socket" },
+    { key: "CLICK 2", action: "Pick second socket" },
     { key: "← →", action: "Rotate 90°" },
-    { key: "ESC", action: "Exit mode" },
+    { key: "ESC", action: "Cancel / Exit" },
   ],
   wheel: [
     { key: "CLICK", action: "Snap wheel" },
@@ -2065,6 +2070,12 @@ function clearGhost() {
   motorManualRotSteps = 0;
 
   supportManualRotSteps = 0;
+  supportFirstSocket = null;
+  if (supportFirstMarker) {
+    supportFirstMarker.material = MAT_TRI_ACTIVE;
+    supportFirstMarker.scale.setScalar(1.5);
+    supportFirstMarker = null;
+  }
 
   setHoverMesh(null, null);
   hideTooltip();
@@ -2671,62 +2682,127 @@ function canPlaceSupportBridge() {
   return buildTriangleMountMap().size >= 2;
 }
 
+/* =========================================================
+   RESOLVE BEST SUPPORT SOCKET PAIR
+   ─────────────────────────────────────────────────────────
+   The support bridge must connect two SOCKET_STRESS_CONNECTOR
+   points on TWO DIFFERENT triangle mounts that are:
+     1. On the same horizontal plane (Y difference < MAX_Y_DIFF).
+     2. Colinear along either the X or Z world axis
+        (small perpendicular offset on the non-spanning axis).
+     3. The horizontal XZ distance must be larger than the Y
+        difference to ensure no near-vertical bridges form.
+
+   Vertical-axis connections are explicitly rejected.
+   ========================================================= */
+
+/* =========================================================
+   TRIANGLE OUTWARD NORMAL HELPER
+   ─────────────────────────────────────────────────────────
+   Returns the XZ-plane unit vector from the triangle mount's
+   bounding-box centre toward the given socket.
+   ========================================================= */
+
+function computeTriangleOutwardNormal(socket) {
+  let triMount = socket.parent;
+  while (triMount && !triMount.userData?.isMount) triMount = triMount.parent;
+  if (!triMount) return null;
+
+  triMount.updateMatrixWorld(true);
+  socket.updateMatrixWorld(true);
+
+  const socketPos = new THREE.Vector3();
+  socket.getWorldPosition(socketPos);
+
+  const box = new THREE.Box3().setFromObject(triMount);
+  const center = box.getCenter(new THREE.Vector3());
+
+  const outward = new THREE.Vector3(
+    socketPos.x - center.x,
+    0,
+    socketPos.z - center.z,
+  );
+  if (outward.lengthSq() < 0.0001) return null;
+  outward.normalize();
+  return outward;
+}
+
+/* =========================================================
+   RESOLVE BEST SUPPORT SOCKET PAIR — MUTUAL FACING
+   ─────────────────────────────────────────────────────────
+   For a valid bridge both sockets must face each other:
+     • A's outward normal must point roughly toward B
+     • B's outward normal must point roughly toward A
+   This eliminates cross-row and wrong-side matches
+   regardless of build orientation or triangle tilt.
+   ========================================================= */
+
 function resolveBestSupportSocketPair(clickedSocket) {
   scene.updateMatrixWorld(true);
   clickedSocket.updateMatrixWorld(true);
 
   const mountMap = buildTriangleMountMap();
   const mounts = [...mountMap.keys()];
-
   if (mounts.length < 2) return null;
 
   let clickedMount = clickedSocket.parent;
   while (clickedMount && !clickedMount.userData?.isMount)
     clickedMount = clickedMount.parent;
-
   if (!clickedMount || !mountMap.has(clickedMount)) return null;
 
-  const mountA = clickedMount;
-  const socketA = clickedSocket;
   const posA = new THREE.Vector3();
-  socketA.getWorldPosition(posA);
+  clickedSocket.getWorldPosition(posA);
+
+  const normalA = computeTriangleOutwardNormal(clickedSocket);
+  if (!normalA) return null;
+
+  // Minimum dot product for "facing" — cos(55°) ≈ 0.57
+  // Both sockets must clear this threshold toward each other.
+  const MIN_DOT = 0.45;
+  const MIN_SPAN = 0.2;
 
   let bestSocketB = null;
   let bestPosB = null;
-  let bestScore = Infinity;
+  let bestScore = -Infinity;
 
   for (const m of mounts) {
-    if (m === mountA) continue;
+    if (m === clickedMount) continue;
 
     for (const entry of mountMap.get(m)) {
-      const socketB = entry.socket;
       const posB = entry.pos;
+      const socketB = entry.socket;
 
-      const dx = Math.abs(posA.x - posB.x);
-      const dz = Math.abs(posA.z - posB.z);
-      const yDiff = Math.abs(posA.y - posB.y);
+      const toB = new THREE.Vector3(posB.x - posA.x, 0, posB.z - posA.z);
+      const horizDist = toB.length();
+      if (horizDist < MIN_SPAN) continue;
 
-      const diagonalPenalty = dx > 0.1 && dz > 0.1 ? 5000 : 0;
+      const dirAtoB = toB.clone().normalize();
+      const dirBtoA = dirAtoB.clone().negate();
 
-      const dist = posA.distanceTo(posB);
-      const score = dist + yDiff * 1000 + diagonalPenalty;
+      // A's normal must point toward B
+      const dotA = normalA.dot(dirAtoB);
 
-      if (score < bestScore) {
+      // B's normal must point toward A
+      const normalB = computeTriangleOutwardNormal(socketB);
+      const dotB = normalB ? normalB.dot(dirBtoA) : dotA; // if no normalB, rely on dotA
+
+      // Both must be facing each other
+      if (dotA < MIN_DOT || dotB < MIN_DOT) continue;
+
+      // Score: sum of both dot products (higher = more directly facing)
+      // Prefer pairs that are most mutually aligned
+      const score = dotA + dotB;
+      if (score > bestScore) {
         bestScore = score;
         bestSocketB = socketB;
-        bestPosB = posB;
+        bestPosB = posB.clone();
       }
     }
   }
 
   if (!bestSocketB) return null;
 
-  return {
-    socketA: socketA,
-    posA: posA,
-    socketB: bestSocketB,
-    posB: bestPosB.clone(),
-  };
+  return { socketA: clickedSocket, posA, socketB: bestSocketB, posB: bestPosB };
 }
 
 /* =========================================================
@@ -2734,27 +2810,16 @@ function resolveBestSupportSocketPair(clickedSocket) {
    ========================================================= */
 
 function checkSupportBridgeAlignment(pair) {
-  const ALIGN_Y_TOLERANCE = 0.55;
   const { posA, posB } = pair;
 
-  const yDiff = Math.abs(posA.y - posB.y);
-  if (yDiff > ALIGN_Y_TOLERANCE) {
+  // Sanity: the two sockets must have a meaningful horizontal span
+  const horizDist = Math.hypot(posB.x - posA.x, posB.z - posA.z);
+  if (horizDist < 0.2) {
     return {
       ok: false,
       reason:
-        "The two Triangular Frames are not at the same height.\n\n" +
-        "Both triangles must be attached to frames at the same level so " +
-        "the Support Bridge can span horizontally between them.",
-    };
-  }
-
-  const dx = Math.abs(posA.x - posB.x);
-  const dz = Math.abs(posA.z - posB.z);
-  if (dx > 0.15 && dz > 0.15) {
-    return {
-      ok: false,
-      reason:
-        "Support Bridges cannot be placed diagonally. Ensure the two Triangular Frames are aligned along the same grid axis.",
+        "The two Triangular Frame connectors are too close together to " +
+        "place a Support Bridge between them.",
     };
   }
 
@@ -3083,58 +3148,73 @@ function onMouseMove(e) {
 
     const hit = raycaster.intersectObjects(targets)[0];
 
-    if (hoveredTriangleMarker && hoveredTriangleMarker !== hit?.object) {
+    // Un-hover the previously hovered marker (unless it's locked as first socket)
+    if (
+      hoveredTriangleMarker &&
+      hoveredTriangleMarker !== hit?.object &&
+      hoveredTriangleMarker !== supportFirstMarker
+    ) {
       hoveredTriangleMarker.material = MAT_TRI_ACTIVE;
       hoveredTriangleMarker.scale.setScalar(1.5);
       hoveredTriangleMarker = null;
-      supportManualRotSteps = 0;
-      updateShortcutBar();
     }
 
-    if (!hit) return;
+    if (!hit) {
+      if (ghost) ghost.position.set(0, -9999, 0);
+      return;
+    }
 
     const rawSocket = hit.object.userData.socket;
     rawSocket.updateMatrixWorld(true);
 
-    if (hit.object !== hoveredTriangleMarker) {
+    // Highlight hovered marker (unless it's the locked first socket)
+    if (
+      hit.object !== hoveredTriangleMarker &&
+      hit.object !== supportFirstMarker
+    ) {
       hoveredTriangleMarker = hit.object;
       hoveredTriangleMarker.material = MAT_TRI_HOVER;
       hoveredTriangleMarker.scale.setScalar(2.0);
-      supportManualRotSteps = 0;
-      updateShortcutBar();
     }
 
-    const pair = resolveBestSupportSocketPair(rawSocket);
-    if (!pair) {
-      ghost.position.set(0, -9999, 0);
-      showHudMessage(
-        "⚠ Need 2 Triangular Frames from different mounts to place a bridge",
-      );
-      return;
+    // If first socket is already chosen, preview the bridge to the hovered socket
+    if (supportFirstSocket) {
+      // Make sure the hovered socket is on a different mount
+      let hoveredMount = rawSocket.parent;
+      while (hoveredMount && !hoveredMount.userData?.isMount)
+        hoveredMount = hoveredMount.parent;
+      let firstMount = supportFirstSocket.parent;
+      while (firstMount && !firstMount.userData?.isMount)
+        firstMount = firstMount.parent;
+
+      if (hoveredMount && firstMount && hoveredMount !== firstMount) {
+        const posA = new THREE.Vector3();
+        const posB = new THREE.Vector3();
+        supportFirstSocket.getWorldPosition(posA);
+        rawSocket.getWorldPosition(posB);
+
+        ghost.position.set(0, 0, 0);
+        ghost.rotation.set(0, 0, 0);
+        ghost.scale.set(1, 1, 1);
+        ghost.updateMatrixWorld(true);
+
+        applyTwoPointSupportSnap(
+          ghost,
+          ghost,
+          posA,
+          posB,
+          supportManualRotSteps,
+          supportFirstSocket,
+        );
+        return;
+      }
     }
 
-    const alignResult = checkSupportBridgeAlignment(pair);
-    if (!alignResult.ok) {
-      ghost.position.set(0, -9999, 0);
-      showHudMessage("⚠ TRIANGLE ALIGNMENT REQUIRED — see build rules");
-      return;
-    }
-
-    const { posA, posB } = pair;
-
-    ghost.position.set(0, 0, 0);
+    // No first socket yet — just float the ghost at the hovered socket position
+    const pos = new THREE.Vector3();
+    rawSocket.getWorldPosition(pos);
+    ghost.position.copy(pos);
     ghost.rotation.set(0, 0, 0);
-    ghost.scale.set(1, 1, 1);
-    ghost.updateMatrixWorld(true);
-
-    applyTwoPointSupportSnap(
-      ghost,
-      ghost,
-      posA,
-      posB,
-      supportManualRotSteps,
-      rawSocket,
-    );
     return;
   }
 
@@ -3256,25 +3336,140 @@ function onClick(e) {
     if (!hit) return;
 
     const rawSocket = hit.object.userData.socket;
+    if (usedSockets.has(rawSocket.uuid)) return;
 
-    const pair = resolveBestSupportSocketPair(rawSocket);
-    if (!pair) {
+    // ── FIRST CLICK: lock the first socket ───────────────────────────────────
+    if (!supportFirstSocket) {
+      supportFirstSocket = rawSocket;
+      supportFirstMarker = hit.object;
+      supportFirstMarker.material = new THREE.MeshBasicMaterial({
+        color: 0xffdd00,
+      });
+      supportFirstMarker.scale.setScalar(2.2);
+      showHudMessage("SOCKET A LOCKED — now click the second connector");
+      updateShortcutBar();
+      return;
+    }
+
+    // ── SECOND CLICK: validate and place ─────────────────────────────────────
+    const socketA = supportFirstSocket;
+    const socketB = rawSocket;
+
+    // Helper to reset first-socket selection state
+    function resetFirstSocket() {
+      supportFirstSocket = null;
+      if (supportFirstMarker) {
+        supportFirstMarker.material = MAT_TRI_ACTIVE;
+        supportFirstMarker.scale.setScalar(1.5);
+        supportFirstMarker = null;
+      }
+    }
+
+    // Rule: must be on different mounts
+    let mountA = socketA.parent;
+    while (mountA && !mountA.userData?.isMount) mountA = mountA.parent;
+    let mountB = socketB.parent;
+    while (mountB && !mountB.userData?.isMount) mountB = mountB.parent;
+
+    if (!mountA || !mountB || mountA === mountB) {
       showHudMessage(
-        "⚠ Need 2 Triangular Frames on different mounts to place a bridge",
+        "⚠ Both sockets are on the same Triangle Frame — pick one on a different frame",
       );
       return;
     }
 
-    const alignResult = checkSupportBridgeAlignment(pair);
-    if (!alignResult.ok) {
-      showPopup(alignResult.reason);
+    // Rule: the two triangles must be attached to DIFFERENT rectangular frames.
+    // A bridge connecting two triangles on the same frame bridges nothing — it
+    // just runs along the side of the build.
+    function getParentRectFrame(triMount) {
+      // triMount.userData.socket is the SOCKET_TRIANGLE on the rect frame
+      const attachSocket = triMount.userData?.socket;
+      if (!attachSocket) return null;
+      let p = attachSocket.parent;
+      while (p && !p.userData?.isMount) p = p.parent;
+      return p ?? null;
+    }
+
+    const rectFrameA = getParentRectFrame(mountA);
+    const rectFrameB = getParentRectFrame(mountB);
+
+    if (rectFrameA && rectFrameB && rectFrameA !== rectFrameB) {
+      showPopup(
+        "Both Triangle Frames must be attached to the same Rectangular Frame.\n\n" +
+          "A Support Bridge can only connect triangles that belong to the same frame — " +
+          "pick a connector on a triangle attached to the same rectangular frame.",
+      );
+      resetFirstSocket();
       return;
     }
 
-    const { socketA, posA, socketB, posB } = pair;
+    // Rule: neither socket already used
+    if (usedSockets.has(socketA.uuid) || usedSockets.has(socketB.uuid)) {
+      showHudMessage("⚠ One of those sockets is already used");
+      resetFirstSocket();
+      return;
+    }
 
-    if (usedSockets.has(socketA.uuid)) return;
-    if (socketB && usedSockets.has(socketB.uuid)) return;
+    // Rule: axis alignment — bridge must run along X or Z, not diagonally
+    const posA = new THREE.Vector3();
+    const posB = new THREE.Vector3();
+    socketA.getWorldPosition(posA);
+    socketB.getWorldPosition(posB);
+
+    const dx = Math.abs(posB.x - posA.x);
+    const dz = Math.abs(posB.z - posA.z);
+
+    // The spanning axis must clearly dominate. We use an absolute threshold
+    // on the minor axis (off-axis drift) rather than a ratio, so short
+    // bridges with natural socket offsets aren't incorrectly rejected.
+    // minor axis must be < 0.30 world units AND less than 30% of the major.
+    const major = Math.max(dx, dz);
+    const minor = Math.min(dx, dz);
+    const isAxisAligned = major > 0.1 && minor < 0.3 && minor / major < 0.3;
+
+    if (!isAxisAligned) {
+      showPopup(
+        "Support Bridges must run along a straight axis (X or Z).\n\n" +
+          "The two sockets you selected are diagonal to each other. " +
+          "Pick connectors that face each other directly across the build.",
+      );
+      resetFirstSocket();
+      return;
+    }
+
+    // Rule: only one bridge per triangle-mount pair
+    const existingBridgeBetween = getAllMounts().some((m) => {
+      if (m.userData.type !== "support_frame") return false;
+      const sA = m.userData.socket;
+      const sB = m.userData.socketB;
+      if (!sA) return false;
+
+      let mA = sA.parent;
+      while (mA && !mA.userData?.isMount) mA = mA.parent;
+      let mB = sB?.parent;
+      while (mB && !mB.userData?.isMount) mB = mB.parent;
+
+      return (
+        (mA === mountA && mB === mountB) || (mA === mountB && mB === mountA)
+      );
+    });
+
+    if (existingBridgeBetween) {
+      showPopup(
+        "A Support Bridge already connects these two Triangle Frames.\n\n" +
+          "Only one bridge is allowed per triangle pair.",
+      );
+      resetFirstSocket();
+      return;
+    }
+
+    // All checks passed — place the bridge
+    resetFirstSocket();
+    if (hoveredTriangleMarker) {
+      hoveredTriangleMarker.material = MAT_TRI_ACTIVE;
+      hoveredTriangleMarker.scale.setScalar(1.5);
+      hoveredTriangleMarker = null;
+    }
 
     placeSupportBridgeFromPair(
       socketA,
@@ -3282,7 +3477,7 @@ function onClick(e) {
       socketB,
       posB,
       supportManualRotSteps,
-      rawSocket,
+      socketA,
     );
     restartPlacementMode("support");
     checkQueuedIntent();
@@ -3931,6 +4126,17 @@ function onKeyDown(e) {
   }
 
   if (e.key === "Escape") {
+    if (placementMode === "support" && supportFirstSocket) {
+      // ESC during support mode cancels the first socket selection only
+      supportFirstSocket = null;
+      if (supportFirstMarker) {
+        supportFirstMarker.material = MAT_TRI_ACTIVE;
+        supportFirstMarker.scale.setScalar(1.5);
+        supportFirstMarker = null;
+      }
+      showHudMessage("SELECTION CLEARED — click a connector to start again");
+      return;
+    }
     if (placementMode) {
       clearGhost();
     } else if (selectedMount) {
