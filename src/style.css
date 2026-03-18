@@ -18,7 +18,7 @@ body {
   width: 100%;
   overflow: hidden;
   font-family: "Rajdhani", sans-serif;
-  background: #141c28;
+  background: #1e2d42;
   color: #90a8bc;
   cursor: crosshair;
 }
@@ -762,7 +762,7 @@ body::after {
 /* VIEWPORT */
 .viewport {
   position: relative;
-  background: #1a2030;
+  background: #2a3a52;
   overflow: hidden;
 }
 .viewport::before {
@@ -1090,7 +1090,7 @@ canvas#app {
   }
 }
 
-/* COLOR LEGEND */
+/* ── COLOR LEGEND ── */
 @keyframes legendIn {
   from {
     opacity: 0;
@@ -1243,119 +1243,9 @@ canvas#app {
   opacity: 1;
 }
 
-/* SHORTCUT BAR */
-#shortcut-bar {
-  left: var(--panel-w) !important;
-  right: var(--panel-w) !important;
-  height: 40px !important;
-  background: rgba(12, 18, 28, 0.98) !important;
-  border-top: 1px solid rgba(208, 88, 24, 0.45) !important;
-  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5) !important;
-}
+/* ── SHORTCUT BAR ── */
 
-/* ═══════════════════════════════════════════════════
-   VIEWPORT ROTATION — KEYBOARD ARROW KEY BUTTONS
-   Bottom-right, styled as physical key-caps
-   ═══════════════════════════════════════════════════ */
-
-#viewport-rot-controls {
-  position: fixed;
-  bottom: 54px;
-  right: calc(var(--panel-w) + 16px);
-  display: none;
-  align-items: center;
-  gap: 6px;
-  z-index: 9001;
-  animation: fadedown 0.2s ease both;
-}
-
-.vp-rot-btn {
-  width: 52px;
-  height: 46px;
-  padding: 0;
-  background: linear-gradient(175deg, #2a3650 0%, #1a2438 60%, #141c30 100%);
-  border: 1.5px solid rgba(208, 88, 24, 0.5);
-  border-bottom: 4px solid rgba(90, 32, 8, 0.9);
-  color: #e87030;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  /* key-cap shadow stack */
-  box-shadow:
-    0 5px 0 rgba(0, 0, 0, 0.65),
-    inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    inset 0 0 0 1px rgba(208, 88, 24, 0.08);
-  border-radius: 5px;
-  transition:
-    background 0.1s,
-    color 0.1s,
-    border-color 0.1s,
-    transform 0.07s,
-    box-shadow 0.07s;
-  backdrop-filter: blur(6px);
-  position: relative;
-  overflow: hidden;
-}
-
-/* subtle top-left highlight like a physical key */
-.vp-rot-btn::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 40%;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.05) 0%,
-    transparent 100%
-  );
-  border-radius: 3px 3px 0 0;
-  pointer-events: none;
-}
-
-.vp-rot-btn:hover {
-  background: linear-gradient(175deg, #3a2818 0%, #281808 60%, #1e1200 100%);
-  border-color: rgba(232, 112, 48, 0.8);
-  border-bottom-color: rgba(232, 112, 48, 0.9);
-  color: #ffb060;
-  box-shadow:
-    0 5px 0 rgba(0, 0, 0, 0.7),
-    0 0 14px rgba(208, 88, 24, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-.vp-rot-btn:active {
-  transform: translateY(4px);
-  border-bottom-width: 1px;
-  box-shadow:
-    0 1px 0 rgba(0, 0, 0, 0.6),
-    inset 0 2px 4px rgba(0, 0, 0, 0.4);
-}
-
-.vp-rot-icon {
-  font-size: 20px;
-  line-height: 1;
-  font-weight: 900;
-  pointer-events: none;
-  /* Unicode arrows look better than text chars here */
-}
-
-.vp-rot-label {
-  font-family: var(--font-hud);
-  font-size: 6.5px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  line-height: 1;
-  opacity: 0.55;
-  pointer-events: none;
-}
-
-/* IDLE ARROWS */
+/* ── IDLE ARROWS ── */
 @keyframes arrowBounce {
   0%,
   100% {
@@ -1421,7 +1311,7 @@ canvas#app {
   display: none !important;
 }
 
-/* CONTEXT MENU */
+/* ── CONTEXT MENU ── */
 @keyframes ctxMenuIn {
   from {
     opacity: 0;
@@ -1446,7 +1336,7 @@ canvas#app {
   position: fixed;
   z-index: 999990;
   min-width: 210px;
-  background: #141c28;
+  background: #1e2d42;
   border: 1px solid rgba(208, 88, 24, 0.35);
   border-left: 3px solid var(--amb);
   clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
@@ -1603,6 +1493,166 @@ canvas#app {
   margin-top: 3px;
 }
 
+/* ═══════════════════════════════════════════════════
+   ARROW KEY CLUSTER — physical keyboard style
+   Centered horizontally between the two panels
+   ═══════════════════════════════════════════════════ */
+
+#viewport-rot-controls {
+  position: fixed;
+  bottom: 54px;
+  /* Centre within the viewport area between both panels */
+  left: calc(var(--panel-w) + (100vw - 2 * var(--panel-w)) / 2);
+  transform: translateX(-50%);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  z-index: 9001;
+  animation: fadedown 0.2s ease both;
+}
+
+.arrow-key-row {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  justify-content: center;
+}
+
+/* shared key-cap base */
+.arrow-key {
+  width: 54px;
+  height: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  position: relative;
+  user-select: none;
+  transition:
+    transform 0.07s ease,
+    box-shadow 0.07s ease,
+    background 0.1s,
+    border-color 0.1s,
+    color 0.1s;
+  overflow: hidden;
+}
+
+/* inactive keys (↑ ↓) — decorative only */
+.arrow-key-inactive {
+  background: linear-gradient(175deg, #1a2335 0%, #111928 60%, #0e1620 100%);
+  border: 2px solid #222e3e;
+  border-bottom: 5px solid #0a1018;
+  color: #28384a;
+  box-shadow:
+    0 5px 0 rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    inset 0 0 12px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+/* active keys (← →) — clickable */
+.arrow-key-active {
+  background: linear-gradient(175deg, #283248 0%, #1a2438 55%, #131d30 100%);
+  border: 2px solid rgba(232, 112, 48, 0.6);
+  border-bottom: 5px solid rgba(70, 24, 4, 0.95);
+  color: #e87030;
+  cursor: pointer;
+  box-shadow:
+    0 6px 0 rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(208, 88, 24, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* top sheen — concave key-cap illusion */
+.arrow-key-active::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 38%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.07) 0%,
+    transparent 100%
+  );
+  border-radius: 6px 6px 0 0;
+  pointer-events: none;
+}
+
+/* bottom depth shadow */
+.arrow-key-active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 30%;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.25) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+.arrow-key-active:hover {
+  background: linear-gradient(175deg, #3a2010 0%, #281408 55%, #1e1000 100%);
+  border-color: rgba(240, 120, 50, 0.95);
+  border-bottom-color: rgba(100, 36, 4, 0.95);
+  color: #ffb870;
+  box-shadow:
+    0 6px 0 rgba(0, 0, 0, 0.75),
+    0 0 18px rgba(208, 88, 24, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transform: translate(-1px, -1px);
+}
+
+/* Physical key-press state */
+.arrow-key-active:active,
+.arrow-key-active.arrow-key-pressed {
+  transform: translateY(5px) !important;
+  border-bottom-width: 1px !important;
+  border-bottom-color: rgba(90, 36, 4, 0.7) !important;
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.7),
+    inset 0 3px 6px rgba(0, 0, 0, 0.5) !important;
+  background: linear-gradient(175deg, #1a0e04 0%, #100800 100%) !important;
+  color: #ffd090 !important;
+  border-color: rgba(255, 180, 80, 0.75) !important;
+}
+
+.arrow-key-glyph {
+  font-size: 22px;
+  line-height: 1;
+  pointer-events: none;
+  font-weight: 900;
+  position: relative;
+  z-index: 1;
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.6),
+    0 0 8px rgba(232, 112, 48, 0.3);
+}
+
+.arrow-key-label {
+  font-family: "Orbitron", sans-serif;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.5;
+  margin-top: 2px;
+  pointer-events: none;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Wheel button locked/unlocked state ── */
+#addWheelBtn[disabled],
+#addWheelBtn[disabled] * {
+  cursor: not-allowed !important;
+}
+
 @media (min-width: 1600px) {
   :root {
     --panel-w: clamp(260px, 16vw, 320px);
@@ -1649,124 +1699,77 @@ canvas#app {
     grid-template-columns: repeat(2, 1fr);
   }
 }
-/* ═══════════════════════════════════════════════════
-   ARROW KEY CLUSTER — physical keyboard style
-   ═══════════════════════════════════════════════════ */
 
-#viewport-rot-controls {
-  position: fixed;
-  bottom: 54px;
-  right: calc(var(--panel-w) + 16px);
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  z-index: 9001;
-  animation: fadedown 0.2s ease both;
+/* ── UNDO / REDO BUTTONS ── */
+.undo-redo-section {
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
-
-.arrow-key-row {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  justify-content: center;
+.undo-redo-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 8px 10px;
 }
-
-/* shared key-cap base */
-.arrow-key {
-  width: 44px;
-  height: 40px;
+.undo-redo-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
-  position: relative;
-  user-select: none;
-  transition:
-    transform 0.07s ease,
-    box-shadow 0.07s ease,
-    background 0.1s,
-    border-color 0.1s,
-    color 0.1s;
-}
-
-/* inactive keys (↑ ↓) — purely decorative, not clickable */
-.arrow-key-inactive {
-  background: linear-gradient(175deg, #1e2a3a 0%, #141e2e 100%);
+  gap: 5px;
+  padding: 8px 6px;
+  background: #111820;
   border: 1.5px solid #2a3848;
-  border-bottom: 4px solid #111820;
-  color: #2a3848;
-  box-shadow:
-    0 4px 0 rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  pointer-events: none;
-  opacity: 0.45;
-}
-
-/* active keys (← →) — clickable */
-.arrow-key-active {
-  background: linear-gradient(175deg, #2a3650 0%, #1a2438 60%, #141c30 100%);
-  border: 1.5px solid rgba(232, 112, 48, 0.55);
-  border-bottom: 4px solid rgba(90, 32, 8, 0.9);
-  color: #e87030;
+  border-bottom: 3px solid #0e1420;
+  color: #6a8098;
   cursor: pointer;
+  border-radius: 4px;
+  font-family: var(--font-hud);
+  transition:
+    background 0.1s,
+    color 0.1s,
+    border-color 0.1s,
+    transform 0.07s,
+    box-shadow 0.07s;
   box-shadow:
-    0 5px 0 rgba(0, 0, 0, 0.65),
-    inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    inset 0 0 0 1px rgba(208, 88, 24, 0.06);
+    0 3px 0 rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  position: relative;
+  overflow: hidden;
 }
-
-/* top-left sheen on active keys */
-.arrow-key-active::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 40%;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.06) 0%,
-    transparent 100%
-  );
-  border-radius: 4px 4px 0 0;
-  pointer-events: none;
-}
-
-.arrow-key-active:hover {
-  background: linear-gradient(175deg, #3a2818 0%, #281808 60%, #1e1200 100%);
-  border-color: rgba(232, 112, 48, 0.9);
-  border-bottom-color: rgba(232, 112, 48, 0.9);
-  color: #ffb060;
-  box-shadow:
-    0 5px 0 rgba(0, 0, 0, 0.7),
-    0 0 14px rgba(208, 88, 24, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+.undo-redo-btn:hover {
+  background: #1a2838;
+  border-color: rgba(208, 88, 24, 0.6);
+  border-bottom-color: rgba(70, 24, 4, 0.9);
+  color: #e87030;
   transform: translate(-1px, -1px);
-}
-
-/* key-press state — triggered by JS class or :active */
-.arrow-key-active:active,
-.arrow-key-active.arrow-key-pressed {
-  transform: translateY(4px) !important;
-  border-bottom-width: 1px !important;
   box-shadow:
-    0 1px 0 rgba(0, 0, 0, 0.6),
-    inset 0 2px 4px rgba(0, 0, 0, 0.45) !important;
-  background: linear-gradient(175deg, #1e1000 0%, #120c00 100%) !important;
-  color: #ffd090 !important;
-  border-color: rgba(255, 176, 80, 0.8) !important;
+    3px 4px 0 rgba(0, 0, 0, 0.55),
+    0 0 10px rgba(208, 88, 24, 0.15);
 }
-
-.arrow-key-glyph {
-  font-size: 18px;
+.undo-redo-btn:active {
+  transform: translateY(2px);
+  border-bottom-width: 1px;
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.5),
+    inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+.ur-icon {
+  font-size: 14px;
   line-height: 1;
-  pointer-events: none;
-  font-weight: 700;
+  flex-shrink: 0;
 }
-
-/* ── Wheel button locked/unlocked state ── */
-#addWheelBtn[disabled],
-#addWheelBtn[disabled] * {
-  cursor: not-allowed !important;
+.ur-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+.ur-kbd {
+  font-family: var(--font-mono);
+  font-size: 7px;
+  letter-spacing: 0.06em;
+  opacity: 0.45;
+  margin-left: 2px;
+  white-space: nowrap;
 }

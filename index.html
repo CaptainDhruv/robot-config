@@ -141,6 +141,34 @@
             <div class="cam-hint">Alt+0–7 or click to switch</div>
           </div>
         </section>
+
+        <!-- UNDO / REDO -->
+        <section class="panel-section undo-redo-section">
+          <div class="undo-redo-row">
+            <button
+              id="undoBtn"
+              class="undo-redo-btn"
+              disabled
+              style="opacity: 0.35; pointer-events: none"
+              title="Undo (Ctrl+Z)"
+            >
+              <span class="ur-icon">↩</span>
+              <span class="ur-label">UNDO</span>
+              <span class="ur-kbd">Ctrl Z</span>
+            </button>
+            <button
+              id="redoBtn"
+              class="undo-redo-btn"
+              disabled
+              style="opacity: 0.35; pointer-events: none"
+              title="Redo (Ctrl+Y)"
+            >
+              <span class="ur-icon">↪</span>
+              <span class="ur-label">REDO</span>
+              <span class="ur-kbd">Ctrl Y</span>
+            </button>
+          </div>
+        </section>
       </aside>
 
       <!-- ═══════ VIEWPORT ═══════ -->
@@ -150,19 +178,15 @@
         <!-- IDLE ARROWS container -->
         <div id="idle-arrows"></div>
 
-        <!-- ARROW KEY CLUSTER — replaces old rotation buttons -->
+        <!-- ARROW KEY CLUSTER — centered in viewport -->
         <div id="viewport-rot-controls" style="display: none">
-          <!-- top row: up key (inactive/decorative) -->
+          <!-- top row: ↑ key (inactive/decorative) -->
           <div class="arrow-key-row arrow-key-row-top">
-            <div
-              class="arrow-key arrow-key-inactive"
-              id="arrowKeyUp"
-              title="Not used"
-            >
+            <div class="arrow-key arrow-key-inactive" id="arrowKeyUp">
               <span class="arrow-key-glyph">↑</span>
             </div>
           </div>
-          <!-- bottom row: left · down · right -->
+          <!-- bottom row: ← · ↓ · → -->
           <div class="arrow-key-row arrow-key-row-bottom">
             <button
               class="arrow-key arrow-key-active"
@@ -170,12 +194,9 @@
               title="Rotate left (← Arrow)"
             >
               <span class="arrow-key-glyph">←</span>
+              <span class="arrow-key-label">ROT</span>
             </button>
-            <div
-              class="arrow-key arrow-key-inactive"
-              id="arrowKeyDown"
-              title="Not used"
-            >
+            <div class="arrow-key arrow-key-inactive" id="arrowKeyDown">
               <span class="arrow-key-glyph">↓</span>
             </div>
             <button
@@ -184,6 +205,7 @@
               title="Rotate right (→ Arrow)"
             >
               <span class="arrow-key-glyph">→</span>
+              <span class="arrow-key-label">ROT</span>
             </button>
           </div>
         </div>

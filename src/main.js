@@ -72,11 +72,15 @@ let frameHoverType = "frame";
 
 // ── Undo history ─────────────────────────────────────────────────────────────
 const undoStack = [];
+const redoStack = [];
 const MAX_UNDO = 50;
 
 function pushUndo(mount, socketUuids, type) {
   undoStack.push({ mount, socketUuids: [...socketUuids], type });
   if (undoStack.length > MAX_UNDO) undoStack.shift();
+  // Any new action clears the redo history
+  redoStack.length = 0;
+  updateUndoRedoButtons();
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -360,9 +364,9 @@ function captureFromAngle(presetKey) {
   const dataURL = renderer.domElement.toDataURL("image/png");
 
   // ── Restore scene state ───────────────────────────────────────────────────
-  scene.background = savedBg ?? new THREE.Color(0x4a5c78);
+  scene.background = savedBg ?? new THREE.Color(0x8aaec8);
   scene.fog = savedFog;
-  renderer.setClearColor(0x4a5c78, 1);
+  renderer.setClearColor(0x8aaec8, 1);
   if (sceneGridMajor) sceneGridMajor.visible = true;
   if (sceneGridMinor) sceneGridMinor.visible = true;
   if (sceneGround) sceneGround.visible = true;
@@ -929,7 +933,7 @@ async function init() {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.15;
-  renderer.setClearColor(0x4a5c78, 1);
+  renderer.setClearColor(0x8aaec8, 1);
 
   controls = createControls(camera, renderer.domElement);
   controls.minDistance = 1.0;
@@ -992,6 +996,7 @@ async function init() {
   initIdleArrows();
   rebuildSocketMarkers();
   updateWheelButtonState();
+  updateUndoRedoButtons();
   applySocketHighlights();
 
   canvas.addEventListener("mousemove", onMouseMove);
@@ -1064,8 +1069,8 @@ function frameObject(object) {
    ========================================================= */
 
 function setupLights() {
-  scene.background = new THREE.Color(0x4a5c78);
-  scene.fog = new THREE.FogExp2(0x4a5c78, 0.028);
+  scene.background = new THREE.Color(0x8aaec8);
+  scene.fog = new THREE.FogExp2(0x8aaec8, 0.014);
 
   scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.55));
 
@@ -1096,21 +1101,21 @@ function setupGrid() {
 
   const gridY = lowestY;
 
-  sceneGridMajor = new THREE.GridHelper(60, 60, 0x3d4a60, 0x303d52);
+  sceneGridMajor = new THREE.GridHelper(60, 60, 0x6a8aaa, 0x5a7a9a);
   sceneGridMajor.position.y = gridY;
   sceneGridMajor.material.transparent = true;
-  sceneGridMajor.material.opacity = 0.75;
+  sceneGridMajor.material.opacity = 0.55;
   scene.add(sceneGridMajor);
 
-  sceneGridMinor = new THREE.GridHelper(60, 240, 0x283040, 0x283040);
+  sceneGridMinor = new THREE.GridHelper(60, 240, 0x4a6a88, 0x4a6a88);
   sceneGridMinor.position.y = gridY - 0.001;
   sceneGridMinor.material.transparent = true;
-  sceneGridMinor.material.opacity = 0.45;
+  sceneGridMinor.material.opacity = 0.3;
   scene.add(sceneGridMinor);
 
   const groundGeo = new THREE.PlaneGeometry(60, 60);
   const groundMat = new THREE.MeshBasicMaterial({
-    color: 0x1e2535,
+    color: 0x3a5470,
     transparent: true,
     opacity: 0.92,
     depthWrite: false,
@@ -1137,6 +1142,8 @@ function bindUI() {
   bind("editBtn", onEdit);
   bind("proceedPaymentBtn", onProceedToPayment);
   bind("printDesignBtn", printDesign);
+  bind("undoBtn", () => !isFinalized && performUndo());
+  bind("redoBtn", () => !isFinalized && performRedo());
 
   const rotLeftBtn = document.getElementById("rotLeftBtn");
   const rotRightBtn = document.getElementById("rotRightBtn");
@@ -1684,46 +1691,8 @@ function printDesign() {
    KEYBOARD SHORTCUT BAR
    ========================================================= */
 
-const SHORTCUT_DEFS = {
-  idle: [
-    { key: "CLICK", action: "Select part" },
-    { key: "DEL", action: "Delete selected" },
-    { key: "CTRL+Z", action: "Undo" },
-    { key: "ESC", action: "Deselect" },
-    { key: "SCROLL", action: "Zoom" },
-    { key: "RMB drag", action: "Pan" },
-  ],
-  frame: [
-    { key: "CLICK", action: "Place frame" },
-    { key: "← →", action: "Rotate on support" },
-    { key: "ESC", action: "Exit mode" },
-    { key: "CTRL+Z", action: "Undo last" },
-  ],
-  motor: [
-    { key: "HOVER", action: "Auto-orient" },
-    { key: "CLICK", action: "Place motor" },
-    { key: "← →", action: "Add 90° rotation" },
-    { key: "ESC", action: "Exit mode" },
-  ],
-  triangle: [
-    { key: "HOVER", action: "Auto-orient" },
-    { key: "← →", action: "Flip 180°" },
-    { key: "CLICK", action: "Place triangle" },
-    { key: "ESC", action: "Exit mode" },
-  ],
-  support: [
-    { key: "CLICK 1", action: "Pick first socket" },
-    { key: "CLICK 2", action: "Pick second socket" },
-    { key: "← →", action: "Rotate 90°" },
-    { key: "ESC", action: "Cancel / Exit" },
-  ],
-  wheel: [
-    { key: "CLICK", action: "Snap wheel" },
-    { key: "ESC", action: "Exit mode" },
-  ],
-};
-
 let shortcutBarEl = null;
+let shortcutBarVisible = false;
 
 function getPanelWidthPx() {
   const raw = getComputedStyle(document.documentElement)
@@ -1731,8 +1700,6 @@ function getPanelWidthPx() {
     .trim();
   return parseFloat(raw) || 300;
 }
-
-let shortcutBarVisible = false;
 
 function toggleShortcutBar() {
   shortcutBarVisible = !shortcutBarVisible;
@@ -1746,106 +1713,48 @@ function toggleShortcutBar() {
   if (helpBtn) {
     helpBtn.classList.toggle("help-btn-active", shortcutBarVisible);
     helpBtn.title = shortcutBarVisible ? "Hide shortcuts" : "Show shortcuts";
+    helpBtn.style.bottom = shortcutBarVisible ? "40px" : "10px";
   }
 }
 
-function initShortcutBar() {
-  shortcutBarEl = document.createElement("div");
-  shortcutBarEl.id = "shortcut-bar";
-
-  const pw = getPanelWidthPx();
-  Object.assign(shortcutBarEl.style, {
-    position: "fixed",
-    bottom: "0",
-    left: `${pw}px`,
-    right: `${pw}px`,
-    height: "40px",
-    background: "rgba(12,18,28,0.98)",
-    borderTop: "1px solid rgba(208,88,24,0.45)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "0",
-    zIndex: "9000",
-    backdropFilter: "blur(8px)",
-    overflow: "hidden",
-    transform: "translateY(100%)",
-    opacity: "0",
-    transition: "transform 0.25s ease, opacity 0.2s ease",
-    boxShadow: "0 -4px 24px rgba(0,0,0,0.5)",
-  });
-  document.body.appendChild(shortcutBarEl);
-
-  const helpBtn = document.createElement("button");
-  helpBtn.id = "help-toggle-btn";
-  helpBtn.title = "Show shortcuts";
-  helpBtn.innerHTML = "›";
-  Object.assign(helpBtn.style, {
-    position: "fixed",
-    bottom: "10px",
-    left: "50%",
-    transform: "translateX(-50%)",
-    width: "32px",
-    height: "32px",
-    background: "rgba(12,18,28,0.95)",
-    border: "2px solid rgba(208,88,24,0.6)",
-    color: "#d05818",
-    fontFamily: "'Orbitron', sans-serif",
-    fontSize: "20px",
-    fontWeight: "700",
-    cursor: "pointer",
-    zIndex: "9001",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    transition: "all 0.15s ease",
-    backdropFilter: "blur(6px)",
-    lineHeight: "1",
-    clipPath: "polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,0 100%)",
-  });
-  helpBtn.addEventListener("click", toggleShortcutBar);
-  helpBtn.addEventListener("mouseover", () => {
-    if (!shortcutBarVisible) {
-      helpBtn.style.background = "#d05818";
-      helpBtn.style.color = "#0e1018";
-    }
-  });
-  helpBtn.addEventListener("mouseout", () => {
-    if (!shortcutBarVisible) {
-      helpBtn.style.background = "rgba(12,18,28,0.95)";
-      helpBtn.style.color = "#d05818";
-    }
-  });
-  document.body.appendChild(helpBtn);
-
-  window.addEventListener("resize", () => {
-    const newPw = getPanelWidthPx();
-    shortcutBarEl.style.left = `${newPw}px`;
-    shortcutBarEl.style.right = `${newPw}px`;
-  });
-
-  if (!document.getElementById("sb-kf")) {
-    const s = document.createElement("style");
-    s.id = "sb-kf";
-    s.textContent = `
-      @keyframes sbItemIn {
-        from { opacity:0; transform:translateY(4px); }
-        to   { opacity:1; transform:translateY(0); }
-      }
-      .sb-sep { width:1px; height:18px; background:rgba(208,88,24,0.2); flex-shrink:0; margin:0; }
-      .sb-item { display:flex; align-items:center; gap:7px; padding:0 16px; height:100%; animation:sbItemIn 0.18s ease both; cursor:default; flex-shrink:0; transition:background 0.15s; }
-      .sb-item:hover { background:rgba(208,88,24,0.07); }
-      .sb-key { font-family:'Orbitron',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.1em; color:#e87030; background:rgba(208,88,24,0.15); border:1.5px solid rgba(208,88,24,0.5); padding:3px 8px; white-space:nowrap; line-height:1.4; }
-      .sb-action { font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:0.08em; color:#8aacbf; text-transform:uppercase; white-space:nowrap; }
-      .sb-mode-label { font-family:'Orbitron',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.2em; padding:0 18px; text-transform:uppercase; flex-shrink:0; white-space:nowrap; border-right:1px solid rgba(208,88,24,0.25); height:100%; display:flex; align-items:center; }
-      .sb-chain-label { font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:0.1em; color:#e87030; padding:0 14px; flex-shrink:0; white-space:nowrap; display:flex; align-items:center; gap:7px; border-right:1px solid rgba(208,88,24,0.2); }
-      #help-toggle-btn.help-btn-active { background:#d05818 !important; color:#0e1018 !important; border-color:#d05818 !important; bottom:40px !important; }
-    `;
-    document.head.appendChild(s);
-  }
-
-  updateShortcutBar();
-}
+const SHORTCUT_DEFS = {
+  idle: [
+    { key: "CLICK", action: "Select part" },
+    { key: "DEL", action: "Delete selected" },
+    { key: "CTRL+Z", action: "Undo" },
+    { key: "ESC", action: "Deselect" },
+    { key: "SCROLL", action: "Zoom" },
+    { key: "RMB drag", action: "Pan" },
+  ],
+  frame: [
+    { key: "CLICK", action: "Place frame" },
+    { key: "← →", action: "Rotate on support" },
+    { key: "ESC / CLICK", action: "Exit mode" },
+    { key: "CTRL+Z", action: "Undo last" },
+  ],
+  motor: [
+    { key: "HOVER", action: "Auto-orient" },
+    { key: "CLICK", action: "Place motor" },
+    { key: "← →", action: "Add 90° rotation" },
+    { key: "ESC / CLICK", action: "Exit mode" },
+  ],
+  triangle: [
+    { key: "HOVER", action: "Auto-orient" },
+    { key: "← →", action: "Flip 180°" },
+    { key: "CLICK", action: "Place triangle" },
+    { key: "ESC / CLICK", action: "Exit mode" },
+  ],
+  support: [
+    { key: "CLICK 1", action: "Pick first socket" },
+    { key: "CLICK 2", action: "Pick second socket" },
+    { key: "← →", action: "Rotate 90°" },
+    { key: "ESC / CLICK", action: "Cancel / Exit" },
+  ],
+  wheel: [
+    { key: "CLICK", action: "Snap wheel" },
+    { key: "ESC / CLICK", action: "Exit mode" },
+  ],
+};
 
 function updateShortcutBar() {
   if (!shortcutBarEl) return;
@@ -1866,7 +1775,7 @@ function updateShortcutBar() {
   const modeLabel = document.createElement("div");
   modeLabel.className = "sb-mode-label";
   modeLabel.style.color = mc.color;
-  modeLabel.style.borderRight = `1px solid rgba(208,88,24,0.25)`;
+  modeLabel.style.borderRight = "1px solid rgba(208,88,24,0.25)";
   modeLabel.textContent = mc.label;
   shortcutBarEl.appendChild(modeLabel);
 
@@ -1928,6 +1837,111 @@ function updateShortcutBar() {
     item.appendChild(action);
     shortcutBarEl.appendChild(item);
   });
+}
+
+function initShortcutBar() {
+  shortcutBarEl = document.createElement("div");
+  shortcutBarEl.id = "shortcut-bar";
+
+  const pw = getPanelWidthPx();
+  Object.assign(shortcutBarEl.style, {
+    position: "fixed",
+    bottom: "0",
+    left: `${pw}px`,
+    right: `${pw}px`,
+    height: "40px",
+    background: "rgba(12,18,28,0.98)",
+    borderTop: "1px solid rgba(208,88,24,0.45)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "0",
+    zIndex: "9000",
+    backdropFilter: "blur(8px)",
+    overflow: "hidden",
+    transform: "translateY(100%)",
+    opacity: "0",
+    transition: "transform 0.25s ease, opacity 0.2s ease",
+    boxShadow: "0 -4px 24px rgba(0,0,0,0.5)",
+  });
+  document.body.appendChild(shortcutBarEl);
+
+  // ── Help button — double downward chevron, centred in viewport ────────────
+  const helpBtn = document.createElement("button");
+  helpBtn.id = "help-toggle-btn";
+  helpBtn.title = "Show shortcuts";
+  helpBtn.innerHTML = `<span style="display:flex;flex-direction:column;align-items:center;gap:0px;line-height:0.75;pointer-events:none"><span style="transform:rotate(90deg);display:block;font-size:13px;font-weight:900">❯</span><span style="transform:rotate(90deg);display:block;font-size:13px;font-weight:900">❯</span></span>`;
+  Object.assign(helpBtn.style, {
+    position: "fixed",
+    bottom: "10px",
+    left: "auto",
+    right: "auto",
+    transform: "none",
+    width: "38px",
+    height: "34px",
+    background: "rgba(12,18,28,0.95)",
+    border: "2px solid rgba(208,88,24,0.6)",
+    color: "#d05818",
+    cursor: "pointer",
+    zIndex: "9001",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "bottom 0.25s ease, background 0.15s, border-color 0.15s",
+    backdropFilter: "blur(6px)",
+    borderRadius: "4px",
+    boxShadow: "0 3px 0 rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)",
+  });
+
+  function positionHelpBtn() {
+    const vpW = window.innerWidth - getPanelWidthPx() * 2;
+    helpBtn.style.left = `${getPanelWidthPx() + vpW / 2 - 19}px`;
+  }
+  positionHelpBtn();
+
+  helpBtn.addEventListener("click", toggleShortcutBar);
+  helpBtn.addEventListener("mouseover", () => {
+    if (!shortcutBarVisible) {
+      helpBtn.style.background = "rgba(208,88,24,0.2)";
+      helpBtn.style.borderColor = "rgba(208,88,24,0.9)";
+    }
+  });
+  helpBtn.addEventListener("mouseout", () => {
+    if (!shortcutBarVisible) {
+      helpBtn.style.background = "rgba(12,18,28,0.95)";
+      helpBtn.style.borderColor = "rgba(208,88,24,0.6)";
+    }
+  });
+  document.body.appendChild(helpBtn);
+
+  window.addEventListener("resize", () => {
+    const newPw = getPanelWidthPx();
+    shortcutBarEl.style.left = `${newPw}px`;
+    shortcutBarEl.style.right = `${newPw}px`;
+    positionHelpBtn();
+  });
+
+  if (!document.getElementById("sb-kf")) {
+    const s = document.createElement("style");
+    s.id = "sb-kf";
+    s.textContent = `
+      @keyframes sbItemIn {
+        from { opacity:0; transform:translateY(4px); }
+        to   { opacity:1; transform:translateY(0); }
+      }
+      .sb-sep { width:1px; height:18px; background:rgba(208,88,24,0.2); flex-shrink:0; margin:0; }
+      .sb-item { display:flex; align-items:center; gap:7px; padding:0 16px; height:100%; animation:sbItemIn 0.18s ease both; cursor:default; flex-shrink:0; transition:background 0.15s; }
+      .sb-item:hover { background:rgba(208,88,24,0.07); }
+      .sb-key { font-family:'Orbitron',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.1em; color:#e87030; background:rgba(208,88,24,0.15); border:1.5px solid rgba(208,88,24,0.5); padding:3px 8px; white-space:nowrap; line-height:1.4; }
+      .sb-action { font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:0.08em; color:#8aacbf; text-transform:uppercase; white-space:nowrap; }
+      .sb-mode-label { font-family:'Orbitron',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.2em; padding:0 18px; text-transform:uppercase; flex-shrink:0; white-space:nowrap; border-right:1px solid rgba(208,88,24,0.25); height:100%; display:flex; align-items:center; }
+      .sb-chain-label { font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:0.1em; color:#e87030; padding:0 14px; flex-shrink:0; white-space:nowrap; display:flex; align-items:center; gap:7px; border-right:1px solid rgba(208,88,24,0.2); }
+      #help-toggle-btn.help-btn-active { background:rgba(208,88,24,0.25) !important; border-color:#d05818 !important; box-shadow:0 3px 0 rgba(0,0,0,0.6), 0 0 12px rgba(208,88,24,0.3) !important; }
+    `;
+    document.head.appendChild(s);
+  }
+
+  updateShortcutBar();
 }
 
 /* =========================================================
@@ -2227,13 +2241,30 @@ function resolveMeshAndMount(obj) {
 
 function setMeshEmissive(mesh, colorHex) {
   if (!mesh?.material?.emissive) return new THREE.Color(0, 0, 0);
+
+  // If this mesh still uses a shared material (no _origMat stored), clone it
+  // so emissive changes don't bleed onto every other mesh using the same material.
+  if (!mesh._origMat) {
+    mesh._origMat = mesh.material; // remember the shared original
+    mesh.material = mesh.material.clone(); // give this mesh its own copy
+  }
+
   const prev = mesh.material.emissive.clone();
   mesh.material.emissive.set(colorHex);
   return prev;
 }
 
 function restoreMeshEmissive(mesh, savedColor) {
-  if (mesh?.material?.emissive) mesh.material.emissive.copy(savedColor);
+  if (!mesh?.material) return;
+
+  if (mesh._origMat) {
+    // Dispose the cloned material and restore the shared one
+    mesh.material.dispose();
+    mesh.material = mesh._origMat;
+    delete mesh._origMat;
+  } else if (mesh.material.emissive) {
+    mesh.material.emissive.copy(savedColor);
+  }
 }
 
 function getMeshesOfMount() {
@@ -3435,7 +3466,11 @@ function onClick(e) {
     }
 
     const frameHit = raycaster.intersectObjects(frameMarkers)[0];
-    if (!frameHit) return;
+    // Click on empty space → exit placement mode
+    if (!frameHit) {
+      clearGhost();
+      return;
+    }
     const socket = frameHit.object.userData.socket;
     if (usedSockets.has(socket.uuid)) return;
     placeFrame(socket);
@@ -3453,7 +3488,11 @@ function onClick(e) {
     }
 
     const hit = raycaster.intersectObjects(stressConnectorMarkers)[0];
-    if (!hit) return;
+    // Click on empty space → exit placement mode
+    if (!hit) {
+      clearGhost();
+      return;
+    }
 
     const rawSocket = hit.object.userData.socket;
     if (usedSockets.has(rawSocket.uuid)) return;
@@ -3606,7 +3645,10 @@ function onClick(e) {
 
   if (placementMode === "wheel") {
     const hit = raycaster.intersectObjects(wheelMarkers)[0];
-    if (!hit) return;
+    if (!hit) {
+      clearGhost();
+      return;
+    }
     const socket = hit.object.userData.socket;
     if (usedSockets.has(socket.uuid)) return;
     placeWheel(socket);
@@ -3627,7 +3669,10 @@ function onClick(e) {
 
   if (placementMode === "motor") {
     const hit = raycaster.intersectObjects(motorMarkers)[0];
-    if (!hit) return;
+    if (!hit) {
+      clearGhost();
+      return;
+    }
     const socket = hit.object.userData.socket;
     if (usedSockets.has(socket.uuid)) return;
 
@@ -3649,7 +3694,10 @@ function onClick(e) {
 
   if (placementMode === "triangle") {
     const hit = raycaster.intersectObjects(triangleSocketMarkers)[0];
-    if (!hit) return;
+    if (!hit) {
+      clearGhost();
+      return;
+    }
     const socket = hit.object.userData.socket;
     if (usedSockets.has(socket.uuid)) return;
     placeTriangle(socket, triangleAutoBaseYaw, triangleManualRotSteps);
@@ -4153,7 +4201,7 @@ function setHoverMesh(mesh, mount) {
     if (hoveredMesh === selectedMesh) {
       hoveredOrigEm.copy(selectedOrigEm);
     } else {
-      hoveredOrigEm = setMeshEmissive(hoveredMesh, 0x1a1a1a);
+      hoveredOrigEm = setMeshEmissive(hoveredMesh, 0x001a2e);
     }
   }
 }
@@ -4169,7 +4217,7 @@ function selectMesh(mesh, mount) {
   if (selectedMesh) {
     if (selectedMesh === hoveredMesh) {
       restoreMeshEmissive(selectedMesh, selectedOrigEm);
-      setMeshEmissive(selectedMesh, 0x1a1a1a);
+      setMeshEmissive(selectedMesh, 0x001a2e);
     } else {
       restoreMeshEmissive(selectedMesh, selectedOrigEm);
     }
@@ -4183,10 +4231,10 @@ function selectMesh(mesh, mount) {
     if (selectedMesh === hoveredMesh) {
       selectedOrigEm = hoveredOrigEm.clone();
     } else {
-      selectedOrigEm = setMeshEmissive(selectedMesh, 0x2a1a10);
+      selectedOrigEm = setMeshEmissive(selectedMesh, 0x004466);
     }
     if (selectedMesh?.material?.emissive) {
-      selectedMesh.material.emissive.set(0x2a1a10);
+      selectedMesh.material.emissive.set(0x004466);
     }
   }
 }
@@ -4195,13 +4243,31 @@ function selectMesh(mesh, mount) {
    UNDO
    ========================================================= */
 
+function updateUndoRedoButtons() {
+  const undoBtn = document.getElementById("undoBtn");
+  const redoBtn = document.getElementById("redoBtn");
+  if (undoBtn) {
+    const canUndo = undoStack.length > 0 && !isFinalized;
+    undoBtn.disabled = !canUndo;
+    undoBtn.style.opacity = canUndo ? "1" : "0.35";
+    undoBtn.style.pointerEvents = canUndo ? "auto" : "none";
+  }
+  if (redoBtn) {
+    const canRedo = redoStack.length > 0 && !isFinalized;
+    redoBtn.disabled = !canRedo;
+    redoBtn.style.opacity = canRedo ? "1" : "0.35";
+    redoBtn.style.pointerEvents = canRedo ? "auto" : "none";
+  }
+}
+
 function performUndo() {
   if (undoStack.length === 0) {
     showHudMessage("NOTHING TO UNDO");
     return;
   }
 
-  const { mount, socketUuids, type } = undoStack.pop();
+  const entry = undoStack.pop();
+  const { mount, socketUuids, type } = entry;
 
   if (selectedMount === mount) {
     restoreMeshEmissive(selectedMesh, selectedOrigEm);
@@ -4222,11 +4288,38 @@ function performUndo() {
   scene.remove(mount);
   removeFromInventory(type);
 
+  // Save to redo stack so it can be re-applied
+  redoStack.push(entry);
+
   rebuildSocketMarkers();
   updateWheelButtonState();
   applySocketHighlights();
+  updateUndoRedoButtons();
 
   showHudMessage("UNDO ✓");
+}
+
+function performRedo() {
+  if (redoStack.length === 0) {
+    showHudMessage("NOTHING TO REDO");
+    return;
+  }
+
+  const { mount, socketUuids, type } = redoStack.pop();
+
+  // Re-add the mount and re-mark its sockets as used
+  scene.add(mount);
+  socketUuids.forEach((uuid) => usedSockets.add(uuid));
+  addToInventory(type);
+
+  undoStack.push({ mount, socketUuids: [...socketUuids], type });
+
+  rebuildSocketMarkers();
+  updateWheelButtonState();
+  applySocketHighlights();
+  updateUndoRedoButtons();
+
+  showHudMessage("REDO ✓");
 }
 
 /* =========================================================
@@ -4246,6 +4339,12 @@ function onKeyDown(e) {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
     e.preventDefault();
     performUndo();
+    return;
+  }
+
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") {
+    e.preventDefault();
+    performRedo();
     return;
   }
 
