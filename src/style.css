@@ -1649,3 +1649,124 @@ canvas#app {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+/* ═══════════════════════════════════════════════════
+   ARROW KEY CLUSTER — physical keyboard style
+   ═══════════════════════════════════════════════════ */
+
+#viewport-rot-controls {
+  position: fixed;
+  bottom: 54px;
+  right: calc(var(--panel-w) + 16px);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  z-index: 9001;
+  animation: fadedown 0.2s ease both;
+}
+
+.arrow-key-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+}
+
+/* shared key-cap base */
+.arrow-key {
+  width: 44px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  position: relative;
+  user-select: none;
+  transition:
+    transform 0.07s ease,
+    box-shadow 0.07s ease,
+    background 0.1s,
+    border-color 0.1s,
+    color 0.1s;
+}
+
+/* inactive keys (↑ ↓) — purely decorative, not clickable */
+.arrow-key-inactive {
+  background: linear-gradient(175deg, #1e2a3a 0%, #141e2e 100%);
+  border: 1.5px solid #2a3848;
+  border-bottom: 4px solid #111820;
+  color: #2a3848;
+  box-shadow:
+    0 4px 0 rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  pointer-events: none;
+  opacity: 0.45;
+}
+
+/* active keys (← →) — clickable */
+.arrow-key-active {
+  background: linear-gradient(175deg, #2a3650 0%, #1a2438 60%, #141c30 100%);
+  border: 1.5px solid rgba(232, 112, 48, 0.55);
+  border-bottom: 4px solid rgba(90, 32, 8, 0.9);
+  color: #e87030;
+  cursor: pointer;
+  box-shadow:
+    0 5px 0 rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 0 0 1px rgba(208, 88, 24, 0.06);
+}
+
+/* top-left sheen on active keys */
+.arrow-key-active::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    transparent 100%
+  );
+  border-radius: 4px 4px 0 0;
+  pointer-events: none;
+}
+
+.arrow-key-active:hover {
+  background: linear-gradient(175deg, #3a2818 0%, #281808 60%, #1e1200 100%);
+  border-color: rgba(232, 112, 48, 0.9);
+  border-bottom-color: rgba(232, 112, 48, 0.9);
+  color: #ffb060;
+  box-shadow:
+    0 5px 0 rgba(0, 0, 0, 0.7),
+    0 0 14px rgba(208, 88, 24, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transform: translate(-1px, -1px);
+}
+
+/* key-press state — triggered by JS class or :active */
+.arrow-key-active:active,
+.arrow-key-active.arrow-key-pressed {
+  transform: translateY(4px) !important;
+  border-bottom-width: 1px !important;
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.6),
+    inset 0 2px 4px rgba(0, 0, 0, 0.45) !important;
+  background: linear-gradient(175deg, #1e1000 0%, #120c00 100%) !important;
+  color: #ffd090 !important;
+  border-color: rgba(255, 176, 80, 0.8) !important;
+}
+
+.arrow-key-glyph {
+  font-size: 18px;
+  line-height: 1;
+  pointer-events: none;
+  font-weight: 700;
+}
+
+/* ── Wheel button locked/unlocked state ── */
+#addWheelBtn[disabled],
+#addWheelBtn[disabled] * {
+  cursor: not-allowed !important;
+}

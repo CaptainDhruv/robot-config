@@ -48,7 +48,13 @@
               </div>
             </button>
 
-            <button id="addWheelBtn" class="btn btn-wheel">
+            <button
+              id="addWheelBtn"
+              class="btn btn-wheel"
+              disabled
+              style="opacity: 0.35; pointer-events: none"
+              title="Place a Motor first to unlock wheels"
+            >
               <div class="btn-inner">
                 <span class="btn-glyph">◉</span>
                 <span class="btn-body">
@@ -144,16 +150,42 @@
         <!-- IDLE ARROWS container -->
         <div id="idle-arrows"></div>
 
-        <!-- VIEWPORT ROTATION CONTROLS — bottom-right, keyboard key-cap style -->
+        <!-- ARROW KEY CLUSTER — replaces old rotation buttons -->
         <div id="viewport-rot-controls" style="display: none">
-          <button class="vp-rot-btn" id="rotLeftBtn" title="Rotate left (←)">
-            <span class="vp-rot-icon">&#8592;</span>
-            <span class="vp-rot-label">ROT L</span>
-          </button>
-          <button class="vp-rot-btn" id="rotRightBtn" title="Rotate right (→)">
-            <span class="vp-rot-icon">&#8594;</span>
-            <span class="vp-rot-label">ROT R</span>
-          </button>
+          <!-- top row: up key (inactive/decorative) -->
+          <div class="arrow-key-row arrow-key-row-top">
+            <div
+              class="arrow-key arrow-key-inactive"
+              id="arrowKeyUp"
+              title="Not used"
+            >
+              <span class="arrow-key-glyph">↑</span>
+            </div>
+          </div>
+          <!-- bottom row: left · down · right -->
+          <div class="arrow-key-row arrow-key-row-bottom">
+            <button
+              class="arrow-key arrow-key-active"
+              id="arrowKeyLeft"
+              title="Rotate left (← Arrow)"
+            >
+              <span class="arrow-key-glyph">←</span>
+            </button>
+            <div
+              class="arrow-key arrow-key-inactive"
+              id="arrowKeyDown"
+              title="Not used"
+            >
+              <span class="arrow-key-glyph">↓</span>
+            </div>
+            <button
+              class="arrow-key arrow-key-active"
+              id="arrowKeyRight"
+              title="Rotate right (→ Arrow)"
+            >
+              <span class="arrow-key-glyph">→</span>
+            </button>
+          </div>
         </div>
       </main>
 
@@ -182,7 +214,7 @@
           </button>
         </div>
 
-        <!-- FINALIZE (toggles to EDIT DESIGN after clicking) + PRINT -->
+        <!-- FINALIZE + PRINT -->
         <div class="save-print-section">
           <button id="finalizeBtn" class="btn btn-primary btn-finalize-large">
             <div class="btn-inner">

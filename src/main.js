@@ -905,6 +905,7 @@ function performCascadeDelete(targetMount, directDependents) {
   hoveredTriangleMarker = null;
 
   rebuildSocketMarkers();
+  updateWheelButtonState();
   applySocketHighlights();
 
   const count = toDelete.size;
@@ -947,6 +948,21 @@ async function init() {
   frameTemplate = await loadGLB("/assets/models/rectangle_frame.glb");
   motorTemplate = await loadGLB("/assets/models/motor_housing.glb");
   triangleTemplate = await loadGLB("/assets/models/triangle_frame.glb");
+
+  // Boost triangle material — GLB defaults can appear washed-out
+  triangleTemplate.traverse((o) => {
+    if (!o.isMesh) return;
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    mats.forEach((mat) => {
+      if (!mat) return;
+      mat.transparent = false;
+      mat.opacity = 1;
+      mat.depthWrite = true;
+      // Increase perceived darkness/saturation so it reads clearly in the scene
+      if (mat.color) mat.color.multiplyScalar(1.35);
+      mat.needsUpdate = true;
+    });
+  });
   supportTemplate = await loadGLB("/assets/models/support_frame.glb");
   wheelTemplate = await loadGLB("/assets/models/wheel.glb");
 
@@ -975,6 +991,7 @@ async function init() {
   initColorLegend();
   initIdleArrows();
   rebuildSocketMarkers();
+  updateWheelButtonState();
   applySocketHighlights();
 
   canvas.addEventListener("mousemove", onMouseMove);
@@ -1123,6 +1140,75 @@ function bindUI() {
 
   const rotLeftBtn = document.getElementById("rotLeftBtn");
   const rotRightBtn = document.getElementById("rotRightBtn");
+
+  // Also wire the new keyboard-style arrow key buttons
+  const arrowLeft = document.getElementById("arrowKeyLeft");
+  const arrowRight = document.getElementById("arrowKeyRight");
+
+  function fireArrow(dir) {
+    // Simulate the key logic inline so on-screen clicks behave identically
+    if (!placementMode) return;
+    flashArrowKey(dir === 1 ? "right" : "left");
+
+    if (placementMode === "motor") {
+      motorManualRotSteps += dir;
+      const totalDeg = (((motorManualRotSteps % 4) + 4) % 4) * 90;
+      showHudMessage(`Motor manual offset: +${totalDeg}°`);
+      updateShortcutBar();
+      if (ghost) {
+        const finalYaw = motorAutoBaseYaw + motorManualRotSteps * (Math.PI / 2);
+        ghost.rotation.set(0, finalYaw, 0);
+        motorRotationGroup.rotation.set(0, 0, 0);
+      }
+    }
+    if (placementMode === "triangle" && ghost) {
+      triangleManualRotSteps = (triangleManualRotSteps + 1) % 2;
+      const totalDeg = triangleManualRotSteps * 180;
+      showHudMessage(`Triangle manual offset: +${totalDeg}°`);
+      updateShortcutBar();
+      ghost.rotation.set(
+        0,
+        triangleAutoBaseYaw + triangleManualRotSteps * Math.PI,
+        0,
+      );
+    }
+    if (placementMode === "support" && ghost) {
+      supportManualRotSteps += dir;
+      const totalDeg = (((supportManualRotSteps % 4) + 4) % 4) * 90;
+      showHudMessage(`Support manual offset: +${totalDeg}°`);
+      updateShortcutBar();
+      if (hoveredTriangleMarker) {
+        const rawSocket = hoveredTriangleMarker.userData.socket;
+        rawSocket.updateMatrixWorld(true);
+        const pair = resolveBestSupportSocketPair(rawSocket);
+        if (!pair) return;
+        ghost.position.set(0, 0, 0);
+        ghost.rotation.set(0, 0, 0);
+        ghost.scale.set(1, 1, 1);
+        ghost.updateMatrixWorld(true);
+        applyTwoPointSupportSnap(
+          ghost,
+          ghost,
+          pair.posA,
+          pair.posB,
+          supportManualRotSteps,
+          rawSocket,
+        );
+      }
+    }
+    if (placementMode === "frame") {
+      frameOnSupportRotationSteps += dir;
+      const deg = (((frameOnSupportRotationSteps % 4) + 4) % 4) * 90;
+      showHudMessage(`Frame rotation on support: ${deg}°`);
+      updateShortcutBar();
+      if (ghost && frameHoverType === "support") {
+        ghost.rotation.set(0, frameOnSupportRotationSteps * (Math.PI / 2), 0);
+      }
+    }
+  }
+
+  if (arrowLeft) arrowLeft.addEventListener("click", () => fireArrow(-1));
+  if (arrowRight) arrowRight.addEventListener("click", () => fireArrow(1));
 
   if (rotLeftBtn)
     rotLeftBtn.addEventListener("click", () => {
@@ -2441,6 +2527,39 @@ function hideRotationControls() {
 
 function updateRotationDisplay() {}
 
+// ── Arrow key highlight on physical keypress ──────────────────────────────────
+function flashArrowKey(direction) {
+  const id = direction === "left" ? "arrowKeyLeft" : "arrowKeyRight";
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add("arrow-key-pressed");
+  setTimeout(() => el.classList.remove("arrow-key-pressed"), 180);
+}
+
+// ── Wheel button enable/disable state ────────────────────────────────────────
+function updateWheelButtonState() {
+  const btn = document.getElementById("addWheelBtn");
+  if (!btn) return;
+
+  // Count placed motors
+  const motorsPlaced = countPlaced("motor");
+
+  // Wheel button is active only when:
+  // 1. At least one motor has been placed
+  // 2. There are free wheel sockets available
+  const hasFreeSockets = wheelMarkers.length > 0;
+  const shouldEnable = motorsPlaced > 0 && hasFreeSockets;
+
+  btn.disabled = !shouldEnable;
+  btn.style.opacity = shouldEnable ? "1" : "0.35";
+  btn.style.pointerEvents = shouldEnable ? "auto" : "none";
+  btn.title = !motorsPlaced
+    ? "Place a Motor first to unlock wheels"
+    : !hasFreeSockets
+      ? "All wheel sockets are occupied"
+      : "";
+}
+
 function startMotorPlacement() {
   hideIdleArrows();
   clearTimeout(idleTimer);
@@ -2647,6 +2766,7 @@ function restartPlacementMode(mode) {
   }
 
   rebuildSocketMarkers();
+  updateWheelButtonState();
   applySocketHighlights();
   updateShortcutBar();
 }
@@ -3492,6 +3612,7 @@ function onClick(e) {
     placeWheel(socket);
 
     rebuildSocketMarkers();
+    updateWheelButtonState();
     applySocketHighlights();
 
     if (wheelMarkers.length === 0) {
@@ -3513,6 +3634,7 @@ function onClick(e) {
     placeMotor(socket, motorAutoBaseYaw, motorManualRotSteps);
 
     rebuildSocketMarkers();
+    updateWheelButtonState();
     applySocketHighlights();
 
     if (motorMarkers.length === 0) {
@@ -3741,6 +3863,7 @@ function placeWheel(socket) {
   addToInventory("wheel");
   pushUndo(mount, [socket.uuid], "wheel");
   rebuildSocketMarkers();
+  updateWheelButtonState();
   applySocketHighlights();
 }
 
@@ -4100,6 +4223,7 @@ function performUndo() {
   removeFromInventory(type);
 
   rebuildSocketMarkers();
+  updateWheelButtonState();
   applySocketHighlights();
 
   showHudMessage("UNDO ✓");
@@ -4152,6 +4276,7 @@ function onKeyDown(e) {
     e.preventDefault();
 
     const dir = e.key === "ArrowRight" ? 1 : -1;
+    flashArrowKey(e.key === "ArrowRight" ? "right" : "left");
 
     if (placementMode === "motor") {
       motorManualRotSteps += dir;
@@ -4632,6 +4757,7 @@ function executeDelete(mount) {
   scene.remove(mount);
   removeFromInventory(type);
   rebuildSocketMarkers();
+  updateWheelButtonState();
   applySocketHighlights();
   showHudMessage(`DELETED: ${(PART_LABELS[type] ?? type).toUpperCase()}`);
 }
@@ -4655,6 +4781,7 @@ function duplicateFrame(sourceMount) {
   addToInventory("frame");
   pushUndo(mount, [], "frame");
   rebuildSocketMarkers();
+  updateWheelButtonState();
   applySocketHighlights();
   frameObject(mount);
   showHudMessage("FRAME DUPLICATED ✓");
