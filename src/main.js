@@ -1275,6 +1275,17 @@ function bind(id, fn) {
 }
 
 /* =========================================================
+   FRAME-ON-SUPPORT GHOST REFRESH HELPER
+   ─────────────────────────────────────────────────────────
+   Called when frameOnSupportRotationSteps changes while the
+   ghost is already hovering a support socket, so the preview
+   updates immediately without waiting for the next mousemove.
+   ========================================================= */
+
+// Stores the last support socket the ghost snapped to, so we can re-snap
+// when the user changes rotation steps via arrow keys.
+
+/* =========================================================
    FINALIZE / EDIT
    ========================================================= */
 
@@ -1490,7 +1501,28 @@ function onProceedToPayment() {
   const confirmBtn = makeBtn("YES, PROCEED", true);
   confirmBtn.onclick = () => {
     overlay.remove();
-    showHudMessage("REDIRECTING TO PAYMENT...");
+
+    // ── Collect order summary and pass to address.html via localStorage ──
+    const counts = {};
+    scene.traverse((o) => {
+      if (!o.userData?.isMount) return;
+      const t = o.userData.type ?? "unknown";
+      counts[t] = (counts[t] ?? 0) + 1;
+    });
+    const totalCost = document.getElementById("totalPrice")?.textContent ?? "0";
+    const totalParts = Object.values(counts).reduce((a, b) => a + b, 0);
+
+    localStorage.setItem(
+      "mk1_order",
+      JSON.stringify({
+        counts,
+        totalCost,
+        totalParts,
+        ref: "MK1-" + Date.now().toString(36).toUpperCase().slice(-8),
+      }),
+    );
+
+    window.location.href = "/address.html";
   };
 
   btnRow.appendChild(cancelBtn);
@@ -1509,10 +1541,6 @@ function onProceedToPayment() {
 
   document.body.appendChild(overlay);
 }
-
-/* =========================================================
-   PRINT DESIGN — Multi-angle screenshots
-   ========================================================= */
 
 function printDesign() {
   const angleKeys = [
@@ -3193,6 +3221,7 @@ function onMouseMove(e) {
   raycaster.setFromCamera(mouse, camera);
 
   if (placementMode === "frame") {
+    // ── Check for support socket hover first ─────────────────────────────────
     const supportHit = raycaster.intersectObjects(frameOnSupportMarkers)[0];
     if (supportHit) {
       frameHoverType = "support";
@@ -3212,8 +3241,12 @@ function onMouseMove(e) {
       return;
     }
 
-    if (frameMarkers.length === 0) {
+    // ── No support socket hit — clear cached socket ───────────────────────────
+    if (frameHoverType === "support") {
       frameHoverType = "frame";
+    }
+
+    if (frameMarkers.length === 0) {
       const groundPlane = new THREE.Plane(
         new THREE.Vector3(0, 1, 0),
         -baseFrameYLevel,

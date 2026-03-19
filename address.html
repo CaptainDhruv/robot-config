@@ -1,0 +1,863 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Delivery Address — Robot Configurator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #0e1420;
+        --panel: #18202e;
+        --border: #28384a;
+        --amb: #d05818;
+        --amb-bright: #e87030;
+        --text-hi: #d8e8f4;
+        --text-mid: #6a8098;
+        --text-lo: #384858;
+        --steel: #8aacbf;
+      }
+
+      html,
+      body {
+        min-height: 100vh;
+        background: var(--bg);
+        font-family: "Rajdhani", sans-serif;
+        color: var(--text-hi);
+        cursor: default;
+      }
+
+      /* ── scanline overlay ── */
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 2px,
+          rgba(0, 0, 0, 0.05) 2px,
+          rgba(0, 0, 0, 0.05) 4px
+        );
+        pointer-events: none;
+        z-index: 9999;
+      }
+
+      /* ── page layout ── */
+      .page {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+        position: relative;
+      }
+
+      /* ── top bar ── */
+      .topbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 48px;
+        background: #111820;
+        border-bottom: 1px solid rgba(208, 88, 24, 0.25);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 28px;
+        z-index: 100;
+      }
+      .topbar-logo {
+        font-family: "Orbitron", sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        color: var(--text-hi);
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .topbar-logo::before {
+        content: "◈";
+        color: var(--amb);
+        font-size: 14px;
+      }
+      .topbar-step {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 10px;
+        letter-spacing: 0.18em;
+        color: var(--text-lo);
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+      }
+      .step {
+        opacity: 0.35;
+      }
+      .step.active {
+        opacity: 1;
+        color: var(--amb);
+      }
+      .step-sep {
+        opacity: 0.2;
+      }
+      .topbar-back {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        color: var(--text-lo);
+        background: none;
+        border: 1px solid #2a3848;
+        padding: 5px 14px;
+        cursor: pointer;
+        text-transform: uppercase;
+        transition:
+          color 0.1s,
+          border-color 0.1s,
+          background 0.1s;
+      }
+      .topbar-back:hover {
+        color: var(--text-hi);
+        border-color: #6a8098;
+        background: #1e2838;
+      }
+
+      /* ── main card ── */
+      .card {
+        width: min(620px, 100%);
+        background: var(--panel);
+        border: 1.5px solid rgba(208, 88, 24, 0.3);
+        border-left: 3px solid var(--amb);
+        clip-path: polygon(
+          0 0,
+          calc(100% - 20px) 0,
+          100% 20px,
+          100% 100%,
+          0 100%
+        );
+        box-shadow:
+          0 0 60px rgba(0, 0, 0, 0.6),
+          0 0 30px rgba(208, 88, 24, 0.06);
+        position: relative;
+        overflow: hidden;
+        margin-top: 28px;
+        animation: slideUp 0.35s ease both;
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(24px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .card-accent {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          var(--amb),
+          rgba(208, 88, 24, 0.15),
+          transparent
+        );
+      }
+
+      /* ── order summary strip ── */
+      .order-strip {
+        background: rgba(208, 88, 24, 0.06);
+        border-bottom: 1px solid rgba(208, 88, 24, 0.15);
+        padding: 14px 32px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .order-strip-label {
+        font-family: "Orbitron", sans-serif;
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.24em;
+        color: var(--amb);
+        text-transform: uppercase;
+      }
+      .order-strip-items {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+      .order-stat {
+        text-align: center;
+      }
+      .order-stat-val {
+        font-family: "Orbitron", sans-serif;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-hi);
+        letter-spacing: 0.06em;
+        line-height: 1;
+      }
+      .order-stat-lbl {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 8px;
+        letter-spacing: 0.14em;
+        color: var(--text-lo);
+        margin-top: 3px;
+        text-transform: uppercase;
+      }
+
+      /* ── card body ── */
+      .card-body {
+        padding: 28px 32px 32px;
+      }
+
+      /* ── section title ── */
+      .section-title {
+        font-family: "Orbitron", sans-serif;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.24em;
+        color: var(--text-mid);
+        text-transform: uppercase;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .section-title::before {
+        content: "";
+        width: 3px;
+        height: 14px;
+        background: var(--amb);
+        flex-shrink: 0;
+      }
+
+      /* ── form rows ── */
+      .form-row {
+        display: grid;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+      .form-row-2 {
+        grid-template-columns: 1fr 1fr;
+      }
+      .form-row-31 {
+        grid-template-columns: 1fr 1fr 140px;
+      }
+      .form-row-13 {
+        grid-template-columns: 1fr 140px;
+      }
+      .form-row-1 {
+        grid-template-columns: 1fr;
+      }
+
+      /* ── field ── */
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+      .field label {
+        font-family: "Orbitron", sans-serif;
+        font-size: 7.5px;
+        font-weight: 700;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--text-mid);
+      }
+      .field label .req {
+        color: var(--amb);
+        margin-left: 2px;
+      }
+      .field input,
+      .field select {
+        background: #111820;
+        border: 1.5px solid #2a3848;
+        color: var(--text-hi);
+        font-family: "Share Tech Mono", monospace;
+        font-size: 13px;
+        letter-spacing: 0.04em;
+        padding: 10px 14px;
+        width: 100%;
+        border-radius: 0;
+        appearance: none;
+        -webkit-appearance: none;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+      }
+      .field input::placeholder {
+        color: #2a3848;
+      }
+      .field input:focus,
+      .field select:focus {
+        outline: none;
+        border-color: var(--amb);
+        box-shadow:
+          0 0 0 2px rgba(208, 88, 24, 0.18),
+          inset 0 2px 4px rgba(0, 0, 0, 0.3);
+      }
+      .field input.error {
+        border-color: #cc2200;
+        box-shadow:
+          0 0 0 2px rgba(204, 34, 0, 0.18),
+          inset 0 2px 4px rgba(0, 0, 0, 0.3);
+      }
+      .field .err-msg {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 9px;
+        color: #cc4020;
+        letter-spacing: 0.08em;
+        display: none;
+      }
+      .field input.error + .err-msg,
+      .field input.error ~ .err-msg {
+        display: block;
+      }
+
+      /* ── divider ── */
+      .divider {
+        height: 1px;
+        background: rgba(255, 255, 255, 0.05);
+        margin: 24px 0 22px;
+      }
+
+      /* ── button row ── */
+      .btn-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .btn-note {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 9px;
+        color: var(--text-lo);
+        letter-spacing: 0.1em;
+      }
+      .btn-group {
+        display: flex;
+        gap: 10px;
+      }
+
+      .btn {
+        font-family: "Orbitron", sans-serif;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        padding: 12px 26px;
+        border: 1.5px solid;
+        cursor: pointer;
+        transition: all 0.12s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .btn-cancel {
+        background: transparent;
+        border-color: #2a3848;
+        color: var(--text-mid);
+        box-shadow: 3px 3px 0 #0e1420;
+      }
+      .btn-cancel:hover {
+        background: #1e2838;
+        border-color: #6a8098;
+        color: var(--text-hi);
+        box-shadow: 5px 5px 0 #0e1420;
+        transform: translate(-2px, -2px);
+      }
+      .btn-cancel:active {
+        transform: translate(1px, 1px);
+        box-shadow: 1px 1px 0 #0e1420;
+      }
+
+      .btn-submit {
+        background: transparent;
+        border-color: var(--amb);
+        color: var(--amb);
+        box-shadow: 4px 4px 0 #5a2008;
+      }
+      .btn-submit:hover {
+        background: var(--amb);
+        color: #0e1018;
+        box-shadow: 6px 6px 0 #5a2008;
+        transform: translate(-2px, -2px);
+      }
+      .btn-submit:active {
+        transform: translate(2px, 2px);
+        box-shadow: 1px 1px 0 #5a2008;
+      }
+
+      /* ── confirmation screen ── */
+      .confirm-card {
+        width: min(480px, 100%);
+        background: var(--panel);
+        border: 1.5px solid rgba(208, 88, 24, 0.3);
+        border-left: 3px solid var(--amb);
+        clip-path: polygon(
+          0 0,
+          calc(100% - 20px) 0,
+          100% 20px,
+          100% 100%,
+          0 100%
+        );
+        box-shadow:
+          0 0 60px rgba(0, 0, 0, 0.6),
+          0 0 40px rgba(208, 88, 24, 0.08);
+        padding: 44px 48px 40px;
+        text-align: center;
+        position: relative;
+        margin-top: 28px;
+        animation: slideUp 0.35s ease both;
+        display: none;
+      }
+      .confirm-card .card-accent {
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--amb),
+          transparent
+        );
+      }
+      .confirm-icon {
+        font-family: "Orbitron", sans-serif;
+        font-size: 48px;
+        color: var(--amb);
+        line-height: 1;
+        margin-bottom: 16px;
+        text-shadow: 0 0 40px rgba(208, 88, 24, 0.5);
+      }
+      .confirm-title {
+        font-family: "Orbitron", sans-serif;
+        font-size: 18px;
+        font-weight: 900;
+        letter-spacing: 0.2em;
+        color: var(--text-hi);
+        margin-bottom: 8px;
+      }
+      .confirm-sub {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 10px;
+        color: var(--text-lo);
+        letter-spacing: 0.1em;
+        line-height: 1.6;
+        margin-bottom: 28px;
+      }
+      .confirm-addr-box {
+        background: #111820;
+        border: 1px solid #2a3848;
+        border-left: 3px solid rgba(208, 88, 24, 0.4);
+        padding: 16px 20px;
+        text-align: left;
+        margin-bottom: 20px;
+      }
+      .confirm-addr-label {
+        font-family: "Orbitron", sans-serif;
+        font-size: 7px;
+        font-weight: 700;
+        letter-spacing: 0.3em;
+        color: var(--amb);
+        margin-bottom: 10px;
+      }
+      .confirm-addr-line {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 12px;
+        color: var(--steel);
+        letter-spacing: 0.04em;
+        line-height: 1.8;
+      }
+      .confirm-ref {
+        font-family: "Orbitron", sans-serif;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        color: var(--text-lo);
+        margin-bottom: 28px;
+      }
+      .btn-close {
+        background: var(--amb);
+        border: 1.5px solid var(--amb);
+        color: #0e1018;
+        box-shadow: 4px 4px 0 #5a2008;
+      }
+      .btn-close:hover {
+        background: transparent;
+        color: var(--amb);
+        box-shadow: 6px 6px 0 #5a2008;
+        transform: translate(-2px, -2px);
+      }
+      .btn-close:active {
+        transform: translate(2px, 2px);
+        box-shadow: 1px 1px 0 #5a2008;
+      }
+
+      @media (max-width: 600px) {
+        .form-row-2 {
+          grid-template-columns: 1fr;
+        }
+        .form-row-31 {
+          grid-template-columns: 1fr;
+        }
+        .form-row-13 {
+          grid-template-columns: 1fr;
+        }
+        .order-strip {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .btn-row {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .btn-group {
+          flex-direction: column;
+        }
+        .card-body {
+          padding: 22px 20px 24px;
+        }
+        .topbar-step {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ── Top bar ── -->
+    <nav class="topbar">
+      <div class="topbar-logo">Robot Configurator</div>
+      <div class="topbar-step">
+        <span class="step">Configure</span>
+        <span class="step-sep">›</span>
+        <span class="step">Review</span>
+        <span class="step-sep">›</span>
+        <span class="step active">Address</span>
+        <span class="step-sep">›</span>
+        <span class="step">Confirm</span>
+      </div>
+      <button class="topbar-back" onclick="history.back()">← Back</button>
+    </nav>
+
+    <main class="page">
+      <!-- ══════════ ADDRESS FORM ══════════ -->
+      <div class="card" id="addressCard">
+        <div class="card-accent"></div>
+
+        <!-- Order summary strip -->
+        <div class="order-strip" id="orderStrip">
+          <span class="order-strip-label">Your Order</span>
+          <div class="order-strip-items" id="orderStats">
+            <!-- populated by JS -->
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="section-title">Delivery Address</div>
+
+          <form id="addressForm" novalidate>
+            <!-- Row 1: First + Last name -->
+            <div class="form-row form-row-2">
+              <div class="field">
+                <label>First Name <span class="req">*</span></label>
+                <input
+                  type="text"
+                  id="fFirst"
+                  placeholder="e.g. Arjun"
+                  autocomplete="given-name"
+                />
+              </div>
+              <div class="field">
+                <label>Last Name <span class="req">*</span></label>
+                <input
+                  type="text"
+                  id="fLast"
+                  placeholder="e.g. Sharma"
+                  autocomplete="family-name"
+                />
+              </div>
+            </div>
+
+            <!-- Row 2: Street + Apt -->
+            <div class="form-row form-row-13">
+              <div class="field">
+                <label>Street Address <span class="req">*</span></label>
+                <input
+                  type="text"
+                  id="fStreet"
+                  placeholder="e.g. 14 MG Road"
+                  autocomplete="address-line1"
+                />
+              </div>
+              <div class="field">
+                <label>Apt / Unit No.</label>
+                <input
+                  type="text"
+                  id="fApt"
+                  placeholder="e.g. 4B"
+                  autocomplete="address-line2"
+                />
+              </div>
+            </div>
+
+            <!-- Row 3: City + State + PIN -->
+            <div class="form-row form-row-31">
+              <div class="field">
+                <label>City <span class="req">*</span></label>
+                <input
+                  type="text"
+                  id="fCity"
+                  placeholder="e.g. Bengaluru"
+                  autocomplete="address-level2"
+                />
+              </div>
+              <div class="field">
+                <label>State <span class="req">*</span></label>
+                <input
+                  type="text"
+                  id="fState"
+                  placeholder="e.g. Karnataka"
+                  autocomplete="address-level1"
+                />
+              </div>
+              <div class="field">
+                <label>PIN Code <span class="req">*</span></label>
+                <input
+                  type="text"
+                  id="fPin"
+                  placeholder="560001"
+                  maxlength="6"
+                  inputmode="numeric"
+                  autocomplete="postal-code"
+                />
+              </div>
+            </div>
+
+            <!-- Row 4: Phone -->
+            <div class="form-row form-row-1">
+              <div class="field">
+                <label>Phone Number <span class="req">*</span></label>
+                <input
+                  type="tel"
+                  id="fPhone"
+                  placeholder="+91 98765 43210"
+                  autocomplete="tel"
+                />
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="btn-row">
+              <span class="btn-note">* Required fields</span>
+              <div class="btn-group">
+                <button
+                  type="button"
+                  class="btn btn-cancel"
+                  onclick="history.back()"
+                >
+                  Cancel
+                </button>
+                <button type="submit" class="btn btn-submit">
+                  <span>▶</span> Use This Address
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- ══════════ CONFIRMATION ══════════ -->
+      <div class="confirm-card" id="confirmCard">
+        <div class="card-accent"></div>
+        <div class="confirm-icon">✓</div>
+        <div class="confirm-title">Order Placed</div>
+        <div class="confirm-sub" id="confirmSub">
+          Your MK-1 build has been submitted for production.<br />
+          You will receive a confirmation shortly.
+        </div>
+        <div class="confirm-addr-box">
+          <div class="confirm-addr-label">Shipping To</div>
+          <div class="confirm-addr-line" id="confirmAddr"></div>
+        </div>
+        <div class="confirm-ref" id="confirmRef"></div>
+        <button class="btn btn-close" onclick="window.location.href = '/'">
+          Back to Configurator
+        </button>
+      </div>
+    </main>
+
+    <script>
+      // ── Load order data from localStorage ────────────────────────────────────
+      const PART_LABELS = {
+        frame: "Rect. Frame",
+        motor: "Motor",
+        triangle_frame: "Tri. Frame",
+        support_frame: "Support",
+        wheel: "Wheel",
+      };
+      const PART_COSTS = {
+        frame: 1200,
+        motor: 2500,
+        triangle_frame: 650,
+        support_frame: 900,
+        wheel: 1100,
+      };
+
+      let orderData = null;
+      try {
+        const raw = localStorage.getItem("mk1_order");
+        if (raw) orderData = JSON.parse(raw);
+      } catch (e) {
+        /* no order data — that's fine */
+      }
+
+      // ── Populate order summary strip ─────────────────────────────────────────
+      const statsEl = document.getElementById("orderStats");
+      if (orderData) {
+        const { counts, totalCost, totalParts } = orderData;
+
+        // Parts breakdown
+        Object.entries(counts).forEach(([type, qty]) => {
+          const stat = document.createElement("div");
+          stat.className = "order-stat";
+          stat.innerHTML = `
+          <div class="order-stat-val">${qty}</div>
+          <div class="order-stat-lbl">${PART_LABELS[type] ?? type}</div>
+        `;
+          statsEl.appendChild(stat);
+        });
+
+        // Total
+        const sep = document.createElement("div");
+        Object.assign(sep.style, {
+          width: "1px",
+          background: "rgba(208,88,24,0.2)",
+          alignSelf: "stretch",
+          margin: "0 4px",
+        });
+        statsEl.appendChild(sep);
+
+        const total = document.createElement("div");
+        total.className = "order-stat";
+        total.innerHTML = `
+        <div class="order-stat-val" style="color:#d05818">₹${Number(totalCost).toLocaleString("en-IN")}</div>
+        <div class="order-stat-lbl">Total</div>
+      `;
+        statsEl.appendChild(total);
+      } else {
+        statsEl.innerHTML = `<span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#384858;letter-spacing:0.1em">No order data found</span>`;
+      }
+
+      // ── Form validation + submit ──────────────────────────────────────────────
+      const REQUIRED = [
+        "fFirst",
+        "fLast",
+        "fStreet",
+        "fCity",
+        "fState",
+        "fPin",
+        "fPhone",
+      ];
+
+      function validate() {
+        let ok = true;
+        REQUIRED.forEach((id) => {
+          const el = document.getElementById(id);
+          if (!el.value.trim()) {
+            el.classList.add("error");
+            ok = false;
+          }
+        });
+        // PIN: 6 digits
+        const pin = document.getElementById("fPin");
+        if (pin.value.trim() && !/^\d{6}$/.test(pin.value.trim())) {
+          pin.classList.add("error");
+          ok = false;
+        }
+        return ok;
+      }
+
+      // Clear error on input
+      REQUIRED.forEach((id) => {
+        const el = document.getElementById(id);
+        el.addEventListener("input", () => el.classList.remove("error"));
+      });
+
+      document.getElementById("addressForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (!validate()) return;
+
+        const first = document.getElementById("fFirst").value.trim();
+        const last = document.getElementById("fLast").value.trim();
+        const street = document.getElementById("fStreet").value.trim();
+        const apt = document.getElementById("fApt").value.trim();
+        const city = document.getElementById("fCity").value.trim();
+        const state = document.getElementById("fState").value.trim();
+        const pin = document.getElementById("fPin").value.trim();
+        const phone = document.getElementById("fPhone").value.trim();
+
+        const aptStr = apt ? `, ${apt}` : "";
+        const addrLines = [
+          `${first} ${last}`,
+          `${street}${aptStr}`,
+          `${city}, ${state} — ${pin}`,
+          phone,
+        ];
+
+        const ref =
+          orderData?.ref ??
+          "MK1-" + Date.now().toString(36).toUpperCase().slice(-8);
+
+        // Save completed address
+        try {
+          localStorage.setItem(
+            "mk1_address",
+            JSON.stringify({ addrLines, ref }),
+          );
+        } catch (e) {}
+
+        // Show confirmation
+        document.getElementById("addressCard").style.display = "none";
+        const confirmCard = document.getElementById("confirmCard");
+        confirmCard.style.display = "block";
+
+        document.getElementById("confirmAddr").innerHTML = addrLines
+          .map((l) => `<div>${l}</div>`)
+          .join("");
+        document.getElementById("confirmRef").textContent = `Order Ref: ${ref}`;
+
+        // Update step bar
+        document.querySelectorAll(".step").forEach((s, i) => {
+          s.classList.toggle("active", i === 3);
+        });
+
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    </script>
+  </body>
+</html>
