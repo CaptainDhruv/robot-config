@@ -1501,28 +1501,7 @@ function onProceedToPayment() {
   const confirmBtn = makeBtn("YES, PROCEED", true);
   confirmBtn.onclick = () => {
     overlay.remove();
-
-    // ── Collect order summary and pass to address.html via localStorage ──
-    const counts = {};
-    scene.traverse((o) => {
-      if (!o.userData?.isMount) return;
-      const t = o.userData.type ?? "unknown";
-      counts[t] = (counts[t] ?? 0) + 1;
-    });
-    const totalCost = document.getElementById("totalPrice")?.textContent ?? "0";
-    const totalParts = Object.values(counts).reduce((a, b) => a + b, 0);
-
-    localStorage.setItem(
-      "mk1_order",
-      JSON.stringify({
-        counts,
-        totalCost,
-        totalParts,
-        ref: "MK1-" + Date.now().toString(36).toUpperCase().slice(-8),
-      }),
-    );
-
-    window.location.href = "/address.html";
+    showAddressOverlay();
   };
 
   btnRow.appendChild(cancelBtn);
@@ -1541,6 +1520,474 @@ function onProceedToPayment() {
 
   document.body.appendChild(overlay);
 }
+
+/* =========================================================
+   ADDRESS OVERLAY — shown in-page, no navigation
+   ========================================================= */
+
+function showAddressOverlay() {
+  const existing = document.getElementById("addr-overlay");
+  if (existing) existing.remove();
+
+  // ── Collect order data ────────────────────────────────────────────────────
+  const counts = {};
+  scene.traverse((o) => {
+    if (!o.userData?.isMount) return;
+    const t = o.userData.type ?? "unknown";
+    counts[t] = (counts[t] ?? 0) + 1;
+  });
+  const totalCost = document.getElementById("totalPrice")?.textContent ?? "0";
+  const totalParts = Object.values(counts).reduce((a, b) => a + b, 0);
+  const orderRef = "MK1-" + Date.now().toString(36).toUpperCase().slice(-8);
+
+  // ── Inject keyframe once ──────────────────────────────────────────────────
+  if (!document.getElementById("addr-kf")) {
+    const s = document.createElement("style");
+    s.id = "addr-kf";
+    s.textContent = `
+      @keyframes addrFadeIn  { from{opacity:0} to{opacity:1} }
+      @keyframes addrSlideUp { from{opacity:0;transform:translate(-50%,-48%)} to{opacity:1;transform:translate(-50%,-50%)} }
+      .addr-input { background:#111820; border:1.5px solid #2a3848; color:#d8e8f4;
+        font-family:'Share Tech Mono',monospace; font-size:13px; letter-spacing:0.04em;
+        padding:10px 14px; width:100%; border-radius:0;
+        box-shadow:inset 0 2px 4px rgba(0,0,0,0.3); transition:border-color .15s,box-shadow .15s; }
+      .addr-input::placeholder { color:#2a3848; }
+      .addr-input:focus { outline:none; border-color:#d05818;
+        box-shadow:0 0 0 2px rgba(208,88,24,0.18),inset 0 2px 4px rgba(0,0,0,0.3); }
+      .addr-input.addr-err { border-color:#cc2200;
+        box-shadow:0 0 0 2px rgba(204,34,0,0.18),inset 0 2px 4px rgba(0,0,0,0.3); }
+      .addr-label { font-family:'Orbitron',sans-serif; font-size:7.5px; font-weight:700;
+        letter-spacing:0.22em; text-transform:uppercase; color:#6a8098; display:block; margin-bottom:6px; }
+      .addr-field { display:flex; flex-direction:column; }
+      .addr-row { display:grid; gap:14px; margin-bottom:16px; }
+      .addr-row-2 { grid-template-columns:1fr 1fr; }
+      .addr-row-13 { grid-template-columns:1fr 130px; }
+      .addr-row-211 { grid-template-columns:1fr 1fr 120px; }
+      .addr-row-1 { grid-template-columns:1fr; }
+      .addr-btn { font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700;
+        letter-spacing:0.2em; text-transform:uppercase; padding:11px 26px;
+        border:1.5px solid; cursor:pointer; transition:all .12s ease;
+        display:flex; align-items:center; gap:8px; }
+      .addr-btn-cancel { background:transparent; border-color:#2a3848; color:#6a8098;
+        box-shadow:3px 3px 0 #0e1420; }
+      .addr-btn-cancel:hover { background:#1e2838; border-color:#6a8098; color:#d8e8f4;
+        box-shadow:5px 5px 0 #0e1420; transform:translate(-2px,-2px); }
+      .addr-btn-submit { background:transparent; border-color:#d05818; color:#d05818;
+        box-shadow:4px 4px 0 #5a2008; }
+      .addr-btn-submit:hover { background:#d05818; color:#0e1018;
+        box-shadow:6px 6px 0 #5a2008; transform:translate(-2px,-2px); }
+      @media(max-width:560px){
+        .addr-row-2,.addr-row-13,.addr-row-211{grid-template-columns:1fr;}
+      }
+    `;
+    document.head.appendChild(s);
+  }
+
+  // ── Backdrop ──────────────────────────────────────────────────────────────
+  const backdrop = document.createElement("div");
+  backdrop.id = "addr-overlay";
+  Object.assign(backdrop.style, {
+    position: "fixed",
+    inset: "0",
+    background: "rgba(8,12,20,0.92)",
+    zIndex: "10000001",
+    animation: "addrFadeIn 0.2s ease both",
+    backdropFilter: "blur(6px)",
+    overflowY: "auto",
+  });
+
+  // ── Card ─────────────────────────────────────────────────────────────────
+  const card = document.createElement("div");
+  Object.assign(card.style, {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%,-50%)",
+    width: "min(580px, 92vw)",
+    background: "#18202e",
+    border: "1.5px solid rgba(208,88,24,0.3)",
+    borderLeft: "3px solid #d05818",
+    clipPath: "polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%)",
+    boxShadow: "0 0 60px rgba(0,0,0,0.7),0 0 30px rgba(208,88,24,0.07)",
+    animation: "addrSlideUp 0.3s ease both",
+    padding: "0",
+  });
+
+  // accent line
+  const accentLine = document.createElement("div");
+  Object.assign(accentLine.style, {
+    height: "2px",
+    background:
+      "linear-gradient(90deg,#d05818,rgba(208,88,24,0.1),transparent)",
+  });
+  card.appendChild(accentLine);
+
+  // ── Order summary strip ───────────────────────────────────────────────────
+  const strip = document.createElement("div");
+  Object.assign(strip.style, {
+    background: "rgba(208,88,24,0.06)",
+    borderBottom: "1px solid rgba(208,88,24,0.14)",
+    padding: "12px 28px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    flexWrap: "wrap",
+    gap: "10px",
+  });
+
+  const stripLabel = document.createElement("div");
+  Object.assign(stripLabel.style, {
+    fontFamily: "'Orbitron',sans-serif",
+    fontSize: "8px",
+    fontWeight: "700",
+    letterSpacing: "0.24em",
+    color: "#d05818",
+    textTransform: "uppercase",
+  });
+  stripLabel.textContent = "Your Order";
+
+  const stripStats = document.createElement("div");
+  Object.assign(stripStats.style, {
+    display: "flex",
+    gap: "20px",
+    alignItems: "center",
+  });
+
+  const makeStat = (val, lbl, accent) => {
+    const b = document.createElement("div");
+    b.style.textAlign = "center";
+    const v = document.createElement("div");
+    v.textContent = val;
+    Object.assign(v.style, {
+      fontFamily: "'Orbitron',sans-serif",
+      fontSize: "16px",
+      fontWeight: "700",
+      color: accent ? "#d05818" : "#d8e8f4",
+      letterSpacing: "0.06em",
+      lineHeight: "1",
+    });
+    const l = document.createElement("div");
+    l.textContent = lbl;
+    Object.assign(l.style, {
+      fontFamily: "'Share Tech Mono',monospace",
+      fontSize: "8px",
+      letterSpacing: "0.14em",
+      color: "#384858",
+      marginTop: "3px",
+      textTransform: "uppercase",
+    });
+    b.appendChild(v);
+    b.appendChild(l);
+    return b;
+  };
+
+  stripStats.appendChild(makeStat(totalParts, "Parts", false));
+  const sep = document.createElement("div");
+  Object.assign(sep.style, {
+    width: "1px",
+    height: "28px",
+    background: "rgba(208,88,24,0.2)",
+  });
+  stripStats.appendChild(sep);
+  stripStats.appendChild(
+    makeStat(
+      "₹" + Number(totalCost).toLocaleString("en-IN"),
+      "Total Cost",
+      true,
+    ),
+  );
+
+  strip.appendChild(stripLabel);
+  strip.appendChild(stripStats);
+  card.appendChild(strip);
+
+  // ── Form body ─────────────────────────────────────────────────────────────
+  const body = document.createElement("div");
+  body.style.padding = "24px 28px 28px";
+
+  const sectionTitle = document.createElement("div");
+  Object.assign(sectionTitle.style, {
+    fontFamily: "'Orbitron',sans-serif",
+    fontSize: "10px",
+    fontWeight: "700",
+    letterSpacing: "0.22em",
+    color: "#6a8098",
+    textTransform: "uppercase",
+    marginBottom: "20px",
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+  });
+  sectionTitle.innerHTML = `<span style="width:3px;height:14px;background:#d05818;display:inline-block;flex-shrink:0"></span>Delivery Address`;
+  body.appendChild(sectionTitle);
+
+  // helper: make a field
+  const makeField = (labelTxt, placeholder, required = true, type = "text") => {
+    const wrap = document.createElement("div");
+    wrap.className = "addr-field";
+    const lbl = document.createElement("label");
+    lbl.className = "addr-label";
+    lbl.innerHTML =
+      labelTxt + (required ? ' <span style="color:#d05818">*</span>' : "");
+    const inp = document.createElement("input");
+    inp.type = type;
+    inp.placeholder = placeholder;
+    inp.className = "addr-input";
+    inp.autocomplete = "off";
+    inp.addEventListener("input", () => inp.classList.remove("addr-err"));
+    wrap.appendChild(lbl);
+    wrap.appendChild(inp);
+    return { wrap, inp };
+  };
+
+  const fFirst = makeField("First Name", "e.g. Arjun");
+  const fLast = makeField("Last Name", "e.g. Sharma");
+  const fStreet = makeField("Street Address", "e.g. 14 MG Road");
+  const fApt = makeField("Apt / Unit", "e.g. 4B", false);
+  const fCity = makeField("City", "e.g. Bengaluru");
+  const fState = makeField("State", "e.g. Karnataka");
+  const fPin = makeField("PIN Code", "560001");
+  const fPhone = makeField("Phone", "+91 98765 43210", true, "tel");
+
+  const row = (cls, ...fields) => {
+    const r = document.createElement("div");
+    r.className = `addr-row ${cls}`;
+    fields.forEach((f) => r.appendChild(f.wrap));
+    return r;
+  };
+
+  body.appendChild(row("addr-row-2", fFirst, fLast));
+  body.appendChild(row("addr-row-13", fStreet, fApt));
+  body.appendChild(row("addr-row-211", fCity, fState, fPin));
+  body.appendChild(row("addr-row-1", fPhone));
+
+  // divider
+  const divider = document.createElement("div");
+  Object.assign(divider.style, {
+    height: "1px",
+    background: "rgba(255,255,255,0.05)",
+    margin: "20px 0 18px",
+  });
+  body.appendChild(divider);
+
+  // button row
+  const btnRow = document.createElement("div");
+  Object.assign(btnRow.style, {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "10px",
+  });
+
+  const note = document.createElement("span");
+  Object.assign(note.style, {
+    fontFamily: "'Share Tech Mono',monospace",
+    fontSize: "9px",
+    color: "#384858",
+    letterSpacing: "0.1em",
+  });
+  note.textContent = "* Required fields";
+
+  const btnGroup = document.createElement("div");
+  btnGroup.style.display = "flex";
+  btnGroup.style.gap = "10px";
+
+  const cancelBtn2 = document.createElement("button");
+  cancelBtn2.className = "addr-btn addr-btn-cancel";
+  cancelBtn2.textContent = "CANCEL";
+  cancelBtn2.onclick = () => backdrop.remove();
+
+  const submitBtn = document.createElement("button");
+  submitBtn.className = "addr-btn addr-btn-submit";
+  submitBtn.innerHTML = `<span>▶</span> USE THIS ADDRESS`;
+  submitBtn.onclick = () => {
+    const required = [fFirst, fLast, fStreet, fCity, fState, fPin, fPhone];
+    let valid = true;
+    required.forEach((f) => {
+      if (!f.inp.value.trim()) {
+        f.inp.classList.add("addr-err");
+        valid = false;
+      }
+    });
+    if (fPin.inp.value.trim() && !/^\d{6}$/.test(fPin.inp.value.trim())) {
+      fPin.inp.classList.add("addr-err");
+      valid = false;
+    }
+    if (!valid) {
+      showHudMessage("⚠ Please fill in all required fields");
+      return;
+    }
+
+    const apt = fApt.inp.value.trim();
+    const addrLines = [
+      `${fFirst.inp.value.trim()} ${fLast.inp.value.trim()}`,
+      `${fStreet.inp.value.trim()}${apt ? ", " + apt : ""}`,
+      `${fCity.inp.value.trim()}, ${fState.inp.value.trim()} — ${fPin.inp.value.trim()}`,
+      fPhone.inp.value.trim(),
+    ];
+    backdrop.remove();
+    showOrderConfirmOverlay(addrLines, orderRef, totalCost, totalParts);
+  };
+
+  btnGroup.appendChild(cancelBtn2);
+  btnGroup.appendChild(submitBtn);
+  btnRow.appendChild(note);
+  btnRow.appendChild(btnGroup);
+  body.appendChild(btnRow);
+
+  card.appendChild(body);
+  backdrop.appendChild(card);
+  document.body.appendChild(backdrop);
+
+  // focus first field
+  setTimeout(() => fFirst.inp.focus(), 120);
+}
+
+/* =========================================================
+   ORDER CONFIRMATION OVERLAY
+   ========================================================= */
+
+function showOrderConfirmOverlay(addrLines, orderRef, totalCost, totalParts) {
+  const existing = document.getElementById("order-confirm-overlay");
+  if (existing) existing.remove();
+
+  const backdrop = document.createElement("div");
+  backdrop.id = "order-confirm-overlay";
+  Object.assign(backdrop.style, {
+    position: "fixed",
+    inset: "0",
+    background: "rgba(8,12,20,0.94)",
+    zIndex: "10000002",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    backdropFilter: "blur(8px)",
+    animation: "addrFadeIn 0.2s ease both",
+  });
+
+  const card = document.createElement("div");
+  Object.assign(card.style, {
+    width: "min(460px, 90vw)",
+    background: "#18202e",
+    border: "1.5px solid rgba(208,88,24,0.3)",
+    borderLeft: "3px solid #d05818",
+    clipPath: "polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%)",
+    boxShadow: "0 0 60px rgba(0,0,0,0.7),0 0 40px rgba(208,88,24,0.08)",
+    padding: "40px 44px 36px",
+    textAlign: "center",
+    position: "relative",
+    animation: "addrSlideUp 0.3s ease both",
+  });
+
+  const al = document.createElement("div");
+  Object.assign(al.style, {
+    position: "absolute",
+    top: "0",
+    left: "0",
+    right: "0",
+    height: "2px",
+    background: "linear-gradient(90deg,transparent,#d05818,transparent)",
+  });
+  card.appendChild(al);
+
+  const icon = document.createElement("div");
+  icon.textContent = "✓";
+  Object.assign(icon.style, {
+    fontFamily: "'Orbitron',sans-serif",
+    fontSize: "44px",
+    color: "#d05818",
+    lineHeight: "1",
+    marginBottom: "14px",
+    textShadow: "0 0 40px rgba(208,88,24,0.5)",
+  });
+
+  const title = document.createElement("div");
+  title.textContent = "ORDER PLACED";
+  Object.assign(title.style, {
+    fontFamily: "'Orbitron',sans-serif",
+    fontSize: "17px",
+    fontWeight: "900",
+    letterSpacing: "0.2em",
+    color: "#d8e8f4",
+    marginBottom: "8px",
+  });
+
+  const sub = document.createElement("div");
+  sub.textContent = "Your MK-1 build has been submitted for production.";
+  Object.assign(sub.style, {
+    fontFamily: "'Share Tech Mono',monospace",
+    fontSize: "10px",
+    color: "#384858",
+    letterSpacing: "0.1em",
+    lineHeight: "1.6",
+    marginBottom: "24px",
+  });
+
+  const addrBox = document.createElement("div");
+  Object.assign(addrBox.style, {
+    background: "#111820",
+    border: "1px solid #2a3848",
+    borderLeft: "3px solid rgba(208,88,24,0.4)",
+    padding: "14px 18px",
+    textAlign: "left",
+    marginBottom: "18px",
+  });
+  const addrLbl = document.createElement("div");
+  addrLbl.textContent = "SHIPPING TO";
+  Object.assign(addrLbl.style, {
+    fontFamily: "'Orbitron',sans-serif",
+    fontSize: "7px",
+    fontWeight: "700",
+    letterSpacing: "0.3em",
+    color: "#d05818",
+    marginBottom: "10px",
+  });
+  addrBox.appendChild(addrLbl);
+  addrLines.forEach((line) => {
+    const p = document.createElement("div");
+    p.textContent = line;
+    Object.assign(p.style, {
+      fontFamily: "'Share Tech Mono',monospace",
+      fontSize: "12px",
+      color: "#8aacbf",
+      letterSpacing: "0.04em",
+      lineHeight: "1.8",
+    });
+    addrBox.appendChild(p);
+  });
+
+  const refEl = document.createElement("div");
+  refEl.textContent = `ORDER REF: ${orderRef}`;
+  Object.assign(refEl.style, {
+    fontFamily: "'Orbitron',sans-serif",
+    fontSize: "9px",
+    fontWeight: "700",
+    letterSpacing: "0.2em",
+    color: "#384858",
+    marginBottom: "24px",
+  });
+
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "addr-btn addr-btn-submit";
+  closeBtn.style.margin = "0 auto";
+  closeBtn.style.justifyContent = "center";
+  closeBtn.textContent = "CLOSE";
+  closeBtn.onclick = () => backdrop.remove();
+
+  card.appendChild(icon);
+  card.appendChild(title);
+  card.appendChild(sub);
+  card.appendChild(addrBox);
+  card.appendChild(refEl);
+  card.appendChild(closeBtn);
+
+  backdrop.appendChild(card);
+  document.body.appendChild(backdrop);
+}
+
+/* =========================================================
+   PRINT DESIGN — Multi-angle screenshots
+   ========================================================= */
 
 function printDesign() {
   const angleKeys = [
