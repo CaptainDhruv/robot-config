@@ -1540,44 +1540,97 @@ function showAddressOverlay() {
   const totalParts = Object.values(counts).reduce((a, b) => a + b, 0);
   const orderRef = "MK1-" + Date.now().toString(36).toUpperCase().slice(-8);
 
-  // ── Inject keyframe once ──────────────────────────────────────────────────
+  // ── All Indian states ─────────────────────────────────────────────────────
+  const INDIAN_STATES = [
+    "Andaman and Nicobar Islands",
+    "Andhra Pradesh",
+    "Arunachal Pradesh",
+    "Assam",
+    "Bihar",
+    "Chandigarh",
+    "Chhattisgarh",
+    "Dadra and Nagar Haveli and Daman and Diu",
+    "Delhi",
+    "Goa",
+    "Gujarat",
+    "Haryana",
+    "Himachal Pradesh",
+    "Jammu and Kashmir",
+    "Jharkhand",
+    "Karnataka",
+    "Kerala",
+    "Ladakh",
+    "Lakshadweep",
+    "Madhya Pradesh",
+    "Maharashtra",
+    "Manipur",
+    "Meghalaya",
+    "Mizoram",
+    "Nagaland",
+    "Odisha",
+    "Puducherry",
+    "Punjab",
+    "Rajasthan",
+    "Sikkim",
+    "Tamil Nadu",
+    "Telangana",
+    "Tripura",
+    "Uttar Pradesh",
+    "Uttarakhand",
+    "West Bengal",
+  ];
+
+  // ── Inject styles once ────────────────────────────────────────────────────
   if (!document.getElementById("addr-kf")) {
     const s = document.createElement("style");
     s.id = "addr-kf";
     s.textContent = `
       @keyframes addrFadeIn  { from{opacity:0} to{opacity:1} }
-      @keyframes addrSlideUp { from{opacity:0;transform:translate(-50%,-48%)} to{opacity:1;transform:translate(-50%,-50%)} }
-      .addr-input { background:#111820; border:1.5px solid #2a3848; color:#d8e8f4;
+      @keyframes addrCardIn  { from{opacity:0;transform:translate(-50%,-47%)} to{opacity:1;transform:translate(-50%,-50%)} }
+      .addr-input, .addr-select {
+        background:#111820; border:1.5px solid #2a3848; color:#d8e8f4;
         font-family:'Share Tech Mono',monospace; font-size:13px; letter-spacing:0.04em;
         padding:10px 14px; width:100%; border-radius:0;
-        box-shadow:inset 0 2px 4px rgba(0,0,0,0.3); transition:border-color .15s,box-shadow .15s; }
+        box-shadow:inset 0 2px 4px rgba(0,0,0,0.3);
+        transition:border-color .15s,box-shadow .15s; appearance:none; -webkit-appearance:none;
+      }
       .addr-input::placeholder { color:#2a3848; }
-      .addr-input:focus { outline:none; border-color:#d05818;
-        box-shadow:0 0 0 2px rgba(208,88,24,0.18),inset 0 2px 4px rgba(0,0,0,0.3); }
-      .addr-input.addr-err { border-color:#cc2200;
-        box-shadow:0 0 0 2px rgba(204,34,0,0.18),inset 0 2px 4px rgba(0,0,0,0.3); }
-      .addr-label { font-family:'Orbitron',sans-serif; font-size:7.5px; font-weight:700;
-        letter-spacing:0.22em; text-transform:uppercase; color:#6a8098; display:block; margin-bottom:6px; }
+      .addr-input:focus, .addr-select:focus {
+        outline:none; border-color:#d05818;
+        box-shadow:0 0 0 2px rgba(208,88,24,0.18),inset 0 2px 4px rgba(0,0,0,0.3);
+      }
+      .addr-input.addr-err, .addr-select.addr-err {
+        border-color:#cc2200;
+        box-shadow:0 0 0 2px rgba(204,34,0,0.18),inset 0 2px 4px rgba(0,0,0,0.3);
+      }
+      .addr-select-wrap { position:relative; }
+      .addr-select-wrap::after {
+        content:"▾"; position:absolute; right:12px; top:50%; transform:translateY(-50%);
+        color:#6a8098; font-size:14px; pointer-events:none;
+      }
+      .addr-select option { background:#18202e; color:#d8e8f4; }
+      .addr-label {
+        font-family:'Orbitron',sans-serif; font-size:7.5px; font-weight:700;
+        letter-spacing:0.22em; text-transform:uppercase; color:#6a8098;
+        display:block; margin-bottom:6px;
+      }
       .addr-field { display:flex; flex-direction:column; }
-      .addr-row { display:grid; gap:14px; margin-bottom:16px; }
-      .addr-row-2 { grid-template-columns:1fr 1fr; }
-      .addr-row-13 { grid-template-columns:1fr 130px; }
-      .addr-row-211 { grid-template-columns:1fr 1fr 120px; }
-      .addr-row-1 { grid-template-columns:1fr; }
-      .addr-btn { font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700;
+      .addr-row { display:grid; gap:14px; margin-bottom:14px; }
+      .addr-row-1   { grid-template-columns:1fr; }
+      .addr-row-2   { grid-template-columns:1fr 1fr; }
+      .addr-row-211 { grid-template-columns:1fr 1fr 110px; }
+      .addr-btn {
+        font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700;
         letter-spacing:0.2em; text-transform:uppercase; padding:11px 26px;
         border:1.5px solid; cursor:pointer; transition:all .12s ease;
-        display:flex; align-items:center; gap:8px; }
-      .addr-btn-cancel { background:transparent; border-color:#2a3848; color:#6a8098;
-        box-shadow:3px 3px 0 #0e1420; }
-      .addr-btn-cancel:hover { background:#1e2838; border-color:#6a8098; color:#d8e8f4;
-        box-shadow:5px 5px 0 #0e1420; transform:translate(-2px,-2px); }
-      .addr-btn-submit { background:transparent; border-color:#d05818; color:#d05818;
-        box-shadow:4px 4px 0 #5a2008; }
-      .addr-btn-submit:hover { background:#d05818; color:#0e1018;
-        box-shadow:6px 6px 0 #5a2008; transform:translate(-2px,-2px); }
-      @media(max-width:560px){
-        .addr-row-2,.addr-row-13,.addr-row-211{grid-template-columns:1fr;}
+        display:flex; align-items:center; gap:8px;
+      }
+      .addr-btn-cancel { background:transparent; border-color:#2a3848; color:#6a8098; box-shadow:3px 3px 0 #0e1420; }
+      .addr-btn-cancel:hover { background:#1e2838; border-color:#6a8098; color:#d8e8f4; box-shadow:5px 5px 0 #0e1420; transform:translate(-2px,-2px); }
+      .addr-btn-submit { background:transparent; border-color:#d05818; color:#d05818; box-shadow:4px 4px 0 #5a2008; }
+      .addr-btn-submit:hover { background:#d05818; color:#0e1018; box-shadow:6px 6px 0 #5a2008; transform:translate(-2px,-2px); }
+      @media(max-width:540px){
+        .addr-row-2,.addr-row-211{ grid-template-columns:1fr; }
       }
     `;
     document.head.appendChild(s);
@@ -1603,40 +1656,38 @@ function showAddressOverlay() {
     top: "50%",
     left: "50%",
     transform: "translate(-50%,-50%)",
-    width: "min(580px, 92vw)",
+    width: "min(560px, 92vw)",
     background: "#18202e",
     border: "1.5px solid rgba(208,88,24,0.3)",
     borderLeft: "3px solid #d05818",
     clipPath: "polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%)",
     boxShadow: "0 0 60px rgba(0,0,0,0.7),0 0 30px rgba(208,88,24,0.07)",
-    animation: "addrSlideUp 0.3s ease both",
-    padding: "0",
+    animation: "addrCardIn 0.3s ease both",
   });
 
   // accent line
-  const accentLine = document.createElement("div");
-  Object.assign(accentLine.style, {
+  const al = document.createElement("div");
+  Object.assign(al.style, {
     height: "2px",
     background:
       "linear-gradient(90deg,#d05818,rgba(208,88,24,0.1),transparent)",
   });
-  card.appendChild(accentLine);
+  card.appendChild(al);
 
   // ── Order summary strip ───────────────────────────────────────────────────
   const strip = document.createElement("div");
   Object.assign(strip.style, {
     background: "rgba(208,88,24,0.06)",
     borderBottom: "1px solid rgba(208,88,24,0.14)",
-    padding: "12px 28px",
+    padding: "11px 26px",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
     flexWrap: "wrap",
     gap: "10px",
   });
-
-  const stripLabel = document.createElement("div");
-  Object.assign(stripLabel.style, {
+  const stripLbl = document.createElement("div");
+  Object.assign(stripLbl.style, {
     fontFamily: "'Orbitron',sans-serif",
     fontSize: "8px",
     fontWeight: "700",
@@ -1644,23 +1695,22 @@ function showAddressOverlay() {
     color: "#d05818",
     textTransform: "uppercase",
   });
-  stripLabel.textContent = "Your Order";
+  stripLbl.textContent = "Your Order";
 
   const stripStats = document.createElement("div");
   Object.assign(stripStats.style, {
     display: "flex",
-    gap: "20px",
+    gap: "18px",
     alignItems: "center",
   });
-
-  const makeStat = (val, lbl, accent) => {
+  const mkStat = (val, lbl, accent) => {
     const b = document.createElement("div");
     b.style.textAlign = "center";
     const v = document.createElement("div");
     v.textContent = val;
     Object.assign(v.style, {
       fontFamily: "'Orbitron',sans-serif",
-      fontSize: "16px",
+      fontSize: "15px",
       fontWeight: "700",
       color: accent ? "#d05818" : "#d8e8f4",
       letterSpacing: "0.06em",
@@ -1671,7 +1721,7 @@ function showAddressOverlay() {
     Object.assign(l.style, {
       fontFamily: "'Share Tech Mono',monospace",
       fontSize: "8px",
-      letterSpacing: "0.14em",
+      letterSpacing: "0.12em",
       color: "#384858",
       marginTop: "3px",
       textTransform: "uppercase",
@@ -1680,49 +1730,47 @@ function showAddressOverlay() {
     b.appendChild(l);
     return b;
   };
-
-  stripStats.appendChild(makeStat(totalParts, "Parts", false));
-  const sep = document.createElement("div");
-  Object.assign(sep.style, {
+  stripStats.appendChild(mkStat(totalParts, "Parts", false));
+  const stripSep = document.createElement("div");
+  Object.assign(stripSep.style, {
     width: "1px",
-    height: "28px",
+    height: "26px",
     background: "rgba(208,88,24,0.2)",
   });
-  stripStats.appendChild(sep);
+  stripStats.appendChild(stripSep);
   stripStats.appendChild(
-    makeStat(
-      "₹" + Number(totalCost).toLocaleString("en-IN"),
-      "Total Cost",
+    mkStat(
+      "₹" + Number(totalCost.replace(/[^0-9.]/g, "")).toLocaleString("en-IN"),
+      "Total",
       true,
     ),
   );
-
-  strip.appendChild(stripLabel);
+  strip.appendChild(stripLbl);
   strip.appendChild(stripStats);
   card.appendChild(strip);
 
-  // ── Form body ─────────────────────────────────────────────────────────────
+  // ── Form ─────────────────────────────────────────────────────────────────
   const body = document.createElement("div");
-  body.style.padding = "24px 28px 28px";
+  body.style.padding = "22px 26px 26px";
 
-  const sectionTitle = document.createElement("div");
-  Object.assign(sectionTitle.style, {
+  const secTitle = document.createElement("div");
+  Object.assign(secTitle.style, {
     fontFamily: "'Orbitron',sans-serif",
     fontSize: "10px",
     fontWeight: "700",
     letterSpacing: "0.22em",
     color: "#6a8098",
     textTransform: "uppercase",
-    marginBottom: "20px",
+    marginBottom: "18px",
     display: "flex",
     alignItems: "center",
     gap: "10px",
   });
-  sectionTitle.innerHTML = `<span style="width:3px;height:14px;background:#d05818;display:inline-block;flex-shrink:0"></span>Delivery Address`;
-  body.appendChild(sectionTitle);
+  secTitle.innerHTML = `<span style="width:3px;height:13px;background:#d05818;display:inline-block;flex-shrink:0"></span>Delivery Address`;
+  body.appendChild(secTitle);
 
-  // helper: make a field
-  const makeField = (labelTxt, placeholder, required = true, type = "text") => {
+  // ── Field helpers ─────────────────────────────────────────────────────────
+  const mkField = (labelTxt, placeholder, required = true, type = "text") => {
     const wrap = document.createElement("div");
     wrap.className = "addr-field";
     const lbl = document.createElement("label");
@@ -1740,33 +1788,64 @@ function showAddressOverlay() {
     return { wrap, inp };
   };
 
-  const fFirst = makeField("First Name", "e.g. Arjun");
-  const fLast = makeField("Last Name", "e.g. Sharma");
-  const fStreet = makeField("Street Address", "e.g. 14 MG Road");
-  const fApt = makeField("Apt / Unit", "e.g. 4B", false);
-  const fCity = makeField("City", "e.g. Bengaluru");
-  const fState = makeField("State", "e.g. Karnataka");
-  const fPin = makeField("PIN Code", "560001");
-  const fPhone = makeField("Phone", "+91 98765 43210", true, "tel");
+  const mkSelect = (labelTxt, options, required = true) => {
+    const wrap = document.createElement("div");
+    wrap.className = "addr-field";
+    const lbl = document.createElement("label");
+    lbl.className = "addr-label";
+    lbl.innerHTML =
+      labelTxt + (required ? ' <span style="color:#d05818">*</span>' : "");
+    const selWrap = document.createElement("div");
+    selWrap.className = "addr-select-wrap";
+    const sel = document.createElement("select");
+    sel.className = "addr-select";
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Select state…";
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    sel.appendChild(placeholder);
+    options.forEach((opt) => {
+      const o = document.createElement("option");
+      o.value = opt;
+      o.textContent = opt;
+      sel.appendChild(o);
+    });
+    sel.addEventListener("change", () => sel.classList.remove("addr-err"));
+    selWrap.appendChild(sel);
+    wrap.appendChild(lbl);
+    wrap.appendChild(selWrap);
+    return { wrap, inp: sel };
+  };
 
-  const row = (cls, ...fields) => {
+  const mkRow = (cls, ...fields) => {
     const r = document.createElement("div");
     r.className = `addr-row ${cls}`;
     fields.forEach((f) => r.appendChild(f.wrap));
     return r;
   };
 
-  body.appendChild(row("addr-row-2", fFirst, fLast));
-  body.appendChild(row("addr-row-13", fStreet, fApt));
-  body.appendChild(row("addr-row-211", fCity, fState, fPin));
-  body.appendChild(row("addr-row-1", fPhone));
+  // ── Fields ────────────────────────────────────────────────────────────────
+  const fLine1 = mkField("Address Line 1", "House / Flat No., Building Name");
+  const fLine2 = mkField("Address Line 2", "Street, Area, Landmark", false);
+  const fLine3 = mkField("Address Line 3", "Locality / Neighbourhood", false);
+  const fCity = mkField("City", "e.g. Bengaluru");
+  const fState = mkSelect("State", INDIAN_STATES);
+  const fPin = mkField("PIN Code", "560001");
+  const fPhone = mkField("Phone Number", "+91 98765 43210", true, "tel");
+
+  body.appendChild(mkRow("addr-row-1", fLine1));
+  body.appendChild(mkRow("addr-row-1", fLine2));
+  body.appendChild(mkRow("addr-row-1", fLine3));
+  body.appendChild(mkRow("addr-row-211", fCity, fState, fPin));
+  body.appendChild(mkRow("addr-row-1", fPhone));
 
   // divider
   const divider = document.createElement("div");
   Object.assign(divider.style, {
     height: "1px",
     background: "rgba(255,255,255,0.05)",
-    margin: "20px 0 18px",
+    margin: "18px 0 16px",
   });
   body.appendChild(divider);
 
@@ -1778,7 +1857,6 @@ function showAddressOverlay() {
     alignItems: "center",
     gap: "10px",
   });
-
   const note = document.createElement("span");
   Object.assign(note.style, {
     fontFamily: "'Share Tech Mono',monospace",
@@ -1789,8 +1867,7 @@ function showAddressOverlay() {
   note.textContent = "* Required fields";
 
   const btnGroup = document.createElement("div");
-  btnGroup.style.display = "flex";
-  btnGroup.style.gap = "10px";
+  btnGroup.style.cssText = "display:flex;gap:10px;";
 
   const cancelBtn2 = document.createElement("button");
   cancelBtn2.className = "addr-btn addr-btn-cancel";
@@ -1799,32 +1876,43 @@ function showAddressOverlay() {
 
   const submitBtn = document.createElement("button");
   submitBtn.className = "addr-btn addr-btn-submit";
-  submitBtn.innerHTML = `<span>▶</span> USE THIS ADDRESS`;
+  submitBtn.innerHTML = `<span>▶</span> PROCEED TO PAYMENT`;
   submitBtn.onclick = () => {
-    const required = [fFirst, fLast, fStreet, fCity, fState, fPin, fPhone];
+    // Validate required fields
+    const requiredFields = [fLine1, fCity, fState, fPin, fPhone];
     let valid = true;
-    required.forEach((f) => {
+    requiredFields.forEach((f) => {
       if (!f.inp.value.trim()) {
         f.inp.classList.add("addr-err");
         valid = false;
       }
     });
+    // PIN: 6 digits
     if (fPin.inp.value.trim() && !/^\d{6}$/.test(fPin.inp.value.trim())) {
       fPin.inp.classList.add("addr-err");
       valid = false;
     }
+    // Phone: at least 10 digits
+    if (
+      fPhone.inp.value.trim() &&
+      fPhone.inp.value.replace(/\D/g, "").length < 10
+    ) {
+      fPhone.inp.classList.add("addr-err");
+      valid = false;
+    }
     if (!valid) {
-      showHudMessage("⚠ Please fill in all required fields");
+      showHudMessage("⚠ Please fill in all required fields correctly");
       return;
     }
 
-    const apt = fApt.inp.value.trim();
     const addrLines = [
-      `${fFirst.inp.value.trim()} ${fLast.inp.value.trim()}`,
-      `${fStreet.inp.value.trim()}${apt ? ", " + apt : ""}`,
+      fLine1.inp.value.trim(),
+      fLine2.inp.value.trim(),
+      fLine3.inp.value.trim(),
       `${fCity.inp.value.trim()}, ${fState.inp.value.trim()} — ${fPin.inp.value.trim()}`,
       fPhone.inp.value.trim(),
-    ];
+    ].filter(Boolean);
+
     backdrop.remove();
     showOrderConfirmOverlay(addrLines, orderRef, totalCost, totalParts);
   };
@@ -1839,8 +1927,7 @@ function showAddressOverlay() {
   backdrop.appendChild(card);
   document.body.appendChild(backdrop);
 
-  // focus first field
-  setTimeout(() => fFirst.inp.focus(), 120);
+  setTimeout(() => fLine1.inp.focus(), 120);
 }
 
 /* =========================================================
@@ -1876,7 +1963,6 @@ function showOrderConfirmOverlay(addrLines, orderRef, totalCost, totalParts) {
     padding: "40px 44px 36px",
     textAlign: "center",
     position: "relative",
-    animation: "addrSlideUp 0.3s ease both",
   });
 
   const al = document.createElement("div");
@@ -2854,6 +2940,17 @@ function rebuildSocketMarkers() {
     if (suppressedSockets.has(o.uuid)) return;
 
     if (ghost && isDescendantOf(o, ghost)) return;
+
+    // ── DISABLED: SOCKET_FRAME_SUPPORT_B on support_frame mounts ─────────────
+    // The B-side connector on the stress bridge is intentionally suppressed
+    // so it does not appear as an available placement socket in the viewport.
+    if (o.name.toUpperCase() === "SOCKET_FRAME_SUPPORT_B") {
+      let parentMount = o.parent;
+      while (parentMount && !parentMount.userData?.isMount)
+        parentMount = parentMount.parent;
+      if (parentMount && parentMount.userData.type === "support_frame") return;
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     if (o.name.startsWith("SOCKET_FRAME_SUPPORT")) {
       addMarker(o, frameOnSupportMarkers, supportFrameSocketMat);
