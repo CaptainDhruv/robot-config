@@ -1154,20 +1154,10 @@ function bindUI() {
 
   function fireArrow(dir) {
     // Simulate the key logic inline so on-screen clicks behave identically
+    // NOTE: motor rotation intentionally excluded — motor uses auto-orient only
     if (!placementMode) return;
     flashArrowKey(dir === 1 ? "right" : "left");
 
-    if (placementMode === "motor") {
-      motorManualRotSteps += dir;
-      const totalDeg = (((motorManualRotSteps % 4) + 4) % 4) * 90;
-      showHudMessage(`Motor manual offset: +${totalDeg}°`);
-      updateShortcutBar();
-      if (ghost) {
-        const finalYaw = motorAutoBaseYaw + motorManualRotSteps * (Math.PI / 2);
-        ghost.rotation.set(0, finalYaw, 0);
-        motorRotationGroup.rotation.set(0, 0, 0);
-      }
-    }
     if (placementMode === "triangle" && ghost) {
       triangleManualRotSteps = (triangleManualRotSteps + 1) % 2;
       const totalDeg = triangleManualRotSteps * 180;
@@ -2278,6 +2268,7 @@ function toggleShortcutBar() {
   }
 }
 
+// ── CHANGE: removed "← →" entry from motor shortcuts (motor is auto-orient only)
 const SHORTCUT_DEFS = {
   idle: [
     { key: "CLICK", action: "Select part" },
@@ -2296,7 +2287,6 @@ const SHORTCUT_DEFS = {
   motor: [
     { key: "HOVER", action: "Auto-orient" },
     { key: "CLICK", action: "Place motor" },
-    { key: "← →", action: "Add 90° rotation" },
     { key: "ESC / CLICK", action: "Exit mode" },
   ],
   triangle: [
@@ -2354,14 +2344,11 @@ function updateShortcutBar() {
 
   const defs = SHORTCUT_DEFS[mode] || SHORTCUT_DEFS.idle;
 
+  // ── CHANGE: motor arrow patching removed since motor has no arrow shortcut
   const patchedDefs = defs.map((d) => {
     if (mode === "frame" && d.key === "← →") {
       const deg = (((frameOnSupportRotationSteps % 4) + 4) % 4) * 90;
       return { key: "← →", action: `Rotate on support (${deg}°)` };
-    }
-    if (mode === "motor" && d.key === "← →") {
-      const deg = (((motorManualRotSteps % 4) + 4) % 4) * 90;
-      return { key: "← →", action: `+${deg}° manual` };
     }
     if (mode === "triangle" && d.key === "← →") {
       return {
@@ -2782,6 +2769,42 @@ function findMount(obj) {
 }
 
 /* =========================================================
+   SCREEN-SPACE PROXIMITY SNAP
+   ─────────────────────────────────────────────────────────
+   When a click misses a socket marker by raycasting, this
+   helper finds the nearest visible marker within thresholdPx
+   screen pixels and returns it, so near-misses still place
+   a part instead of exiting placement mode.
+   ========================================================= */
+
+function findNearestMarkerOnScreen(markers, thresholdPx) {
+  thresholdPx = thresholdPx !== undefined ? thresholdPx : 40;
+  const canvas = renderer.domElement;
+  const rect = canvas.getBoundingClientRect();
+  // Convert NDC mouse coords back to canvas pixels
+  const mouseScreenX = ((mouse.x + 1) / 2) * rect.width;
+  const mouseScreenY = ((1 - mouse.y) / 2) * rect.height;
+
+  let best = null;
+  let bestDist = thresholdPx;
+
+  for (const m of markers) {
+    if (!m.visible) continue;
+    const projected = m.position.clone().project(camera);
+    // projected.z > 1 means behind the camera
+    if (projected.z > 1) continue;
+    const sx = ((projected.x + 1) / 2) * rect.width;
+    const sy = ((1 - projected.y) / 2) * rect.height;
+    const d = Math.hypot(sx - mouseScreenX, sy - mouseScreenY);
+    if (d < bestDist) {
+      bestDist = d;
+      best = m;
+    }
+  }
+  return best;
+}
+
+/* =========================================================
    MESH-LEVEL EMISSIVE HELPERS
    ========================================================= */
 
@@ -2942,8 +2965,6 @@ function rebuildSocketMarkers() {
     if (ghost && isDescendantOf(o, ghost)) return;
 
     // ── DISABLED: SOCKET_FRAME_SUPPORT_B on support_frame mounts ─────────────
-    // The B-side connector on the stress bridge is intentionally suppressed
-    // so it does not appear as an available placement socket in the viewport.
     if (o.name.toUpperCase() === "SOCKET_FRAME_SUPPORT_B") {
       let parentMount = o.parent;
       while (parentMount && !parentMount.userData?.isMount)
@@ -3144,12 +3165,7 @@ function updateWheelButtonState() {
   const btn = document.getElementById("addWheelBtn");
   if (!btn) return;
 
-  // Count placed motors
   const motorsPlaced = countPlaced("motor");
-
-  // Wheel button is active only when:
-  // 1. At least one motor has been placed
-  // 2. There are free wheel sockets available
   const hasFreeSockets = wheelMarkers.length > 0;
   const shouldEnable = motorsPlaced > 0 && hasFreeSockets;
 
@@ -3407,23 +3423,6 @@ function canPlaceSupportBridge() {
 
 /* =========================================================
    RESOLVE BEST SUPPORT SOCKET PAIR
-   ─────────────────────────────────────────────────────────
-   The support bridge must connect two SOCKET_STRESS_CONNECTOR
-   points on TWO DIFFERENT triangle mounts that are:
-     1. On the same horizontal plane (Y difference < MAX_Y_DIFF).
-     2. Colinear along either the X or Z world axis
-        (small perpendicular offset on the non-spanning axis).
-     3. The horizontal XZ distance must be larger than the Y
-        difference to ensure no near-vertical bridges form.
-
-   Vertical-axis connections are explicitly rejected.
-   ========================================================= */
-
-/* =========================================================
-   TRIANGLE OUTWARD NORMAL HELPER
-   ─────────────────────────────────────────────────────────
-   Returns the XZ-plane unit vector from the triangle mount's
-   bounding-box centre toward the given socket.
    ========================================================= */
 
 function computeTriangleOutwardNormal(socket) {
@@ -3450,16 +3449,6 @@ function computeTriangleOutwardNormal(socket) {
   return outward;
 }
 
-/* =========================================================
-   RESOLVE BEST SUPPORT SOCKET PAIR — MUTUAL FACING
-   ─────────────────────────────────────────────────────────
-   For a valid bridge both sockets must face each other:
-     • A's outward normal must point roughly toward B
-     • B's outward normal must point roughly toward A
-   This eliminates cross-row and wrong-side matches
-   regardless of build orientation or triangle tilt.
-   ========================================================= */
-
 function resolveBestSupportSocketPair(clickedSocket) {
   scene.updateMatrixWorld(true);
   clickedSocket.updateMatrixWorld(true);
@@ -3479,8 +3468,6 @@ function resolveBestSupportSocketPair(clickedSocket) {
   const normalA = computeTriangleOutwardNormal(clickedSocket);
   if (!normalA) return null;
 
-  // Minimum dot product for "facing" — cos(55°) ≈ 0.57
-  // Both sockets must clear this threshold toward each other.
   const MIN_DOT = 0.45;
   const MIN_SPAN = 0.2;
 
@@ -3502,18 +3489,13 @@ function resolveBestSupportSocketPair(clickedSocket) {
       const dirAtoB = toB.clone().normalize();
       const dirBtoA = dirAtoB.clone().negate();
 
-      // A's normal must point toward B
       const dotA = normalA.dot(dirAtoB);
 
-      // B's normal must point toward A
       const normalB = computeTriangleOutwardNormal(socketB);
-      const dotB = normalB ? normalB.dot(dirBtoA) : dotA; // if no normalB, rely on dotA
+      const dotB = normalB ? normalB.dot(dirBtoA) : dotA;
 
-      // Both must be facing each other
       if (dotA < MIN_DOT || dotB < MIN_DOT) continue;
 
-      // Score: sum of both dot products (higher = more directly facing)
-      // Prefer pairs that are most mutually aligned
       const score = dotA + dotB;
       if (score > bestScore) {
         bestScore = score;
@@ -3535,7 +3517,6 @@ function resolveBestSupportSocketPair(clickedSocket) {
 function checkSupportBridgeAlignment(pair) {
   const { posA, posB } = pair;
 
-  // Sanity: the two sockets must have a meaningful horizontal span
   const horizDist = Math.hypot(posB.x - posA.x, posB.z - posA.z);
   if (horizDist < 0.2) {
     return {
@@ -3785,7 +3766,6 @@ function onMouseMove(e) {
       return;
     }
 
-    // ── No support socket hit — clear cached socket ───────────────────────────
     if (frameHoverType === "support") {
       frameHoverType = "frame";
     }
@@ -3851,7 +3831,8 @@ function onMouseMove(e) {
     const autoYaw = computeMotorAutoYaw(socket);
     motorAutoBaseYaw = autoYaw;
 
-    const finalYaw = motorAutoBaseYaw + motorManualRotSteps * (Math.PI / 2);
+    // Motor is auto-orient only — no manual rotation steps applied
+    const finalYaw = motorAutoBaseYaw;
 
     ghost.position.copy(socketWorldPos);
     ghost.rotation.set(0, finalYaw, 0);
@@ -3876,7 +3857,6 @@ function onMouseMove(e) {
 
     const hit = raycaster.intersectObjects(targets)[0];
 
-    // Un-hover the previously hovered marker (unless it's locked as first socket)
     if (
       hoveredTriangleMarker &&
       hoveredTriangleMarker !== hit?.object &&
@@ -3895,7 +3875,6 @@ function onMouseMove(e) {
     const rawSocket = hit.object.userData.socket;
     rawSocket.updateMatrixWorld(true);
 
-    // Highlight hovered marker (unless it's the locked first socket)
     if (
       hit.object !== hoveredTriangleMarker &&
       hit.object !== supportFirstMarker
@@ -3905,9 +3884,7 @@ function onMouseMove(e) {
       hoveredTriangleMarker.scale.setScalar(2.0);
     }
 
-    // If first socket is already chosen, preview the bridge to the hovered socket
     if (supportFirstSocket) {
-      // Make sure the hovered socket is on a different mount
       let hoveredMount = rawSocket.parent;
       while (hoveredMount && !hoveredMount.userData?.isMount)
         hoveredMount = hoveredMount.parent;
@@ -3938,7 +3915,6 @@ function onMouseMove(e) {
       }
     }
 
-    // No first socket yet — just float the ghost at the hovered socket position
     const pos = new THREE.Vector3();
     rawSocket.getWorldPosition(pos);
     ghost.position.copy(pos);
@@ -3990,6 +3966,11 @@ function onMouseMove(e) {
 
 /* =========================================================
    CLICK HANDLER
+   =========================================================
+   CHANGE: Each placement branch now falls back to
+   findNearestMarkerOnScreen() before exiting placement mode,
+   so clicking slightly outside a socket marker still places
+   the part rather than exiting the mode.
    ========================================================= */
 
 function onClick(e) {
@@ -4035,6 +4016,20 @@ function onClick(e) {
       return;
     }
 
+    // ── proximity fallback for support markers ────────────────────────────────
+    const nearestSupport = findNearestMarkerOnScreen(frameOnSupportMarkers);
+    if (nearestSupport) {
+      const socket = nearestSupport.userData.socket;
+      if (!usedSockets.has(socket.uuid)) {
+        placeFrameOnSupport(socket, frameOnSupportRotationSteps);
+        frameOnSupportRotationSteps = 0;
+        frameHoverType = "frame";
+        restartPlacementMode("frame");
+        checkQueuedIntent();
+      }
+      return;
+    }
+
     if (frameMarkers.length === 0) {
       placeFrameAtPosition(ghost.position.x, ghost.position.z);
       restartPlacementMode("frame");
@@ -4042,13 +4037,20 @@ function onClick(e) {
       return;
     }
 
-    const frameHit = raycaster.intersectObjects(frameMarkers)[0];
-    // Click on empty space → exit placement mode
-    if (!frameHit) {
+    // ── Try direct raycast hit, then proximity fallback ───────────────────────
+    let frameHitObj = raycaster.intersectObjects(frameMarkers)[0];
+    if (!frameHitObj) {
+      const nearest = findNearestMarkerOnScreen(frameMarkers);
+      if (nearest) frameHitObj = { object: nearest };
+    }
+
+    // No marker anywhere near click — exit placement mode
+    if (!frameHitObj) {
       clearGhost();
       return;
     }
-    const socket = frameHit.object.userData.socket;
+
+    const socket = frameHitObj.object.userData.socket;
     if (usedSockets.has(socket.uuid)) return;
     placeFrame(socket);
     restartPlacementMode("frame");
@@ -4064,7 +4066,13 @@ function onClick(e) {
       return;
     }
 
-    const hit = raycaster.intersectObjects(stressConnectorMarkers)[0];
+    // ── Try direct raycast, then proximity fallback ───────────────────────────
+    let hit = raycaster.intersectObjects(stressConnectorMarkers)[0];
+    if (!hit) {
+      const nearest = findNearestMarkerOnScreen(stressConnectorMarkers);
+      if (nearest) hit = { object: nearest };
+    }
+
     // Click on empty space → exit placement mode
     if (!hit) {
       clearGhost();
@@ -4091,7 +4099,6 @@ function onClick(e) {
     const socketA = supportFirstSocket;
     const socketB = rawSocket;
 
-    // Helper to reset first-socket selection state
     function resetFirstSocket() {
       supportFirstSocket = null;
       if (supportFirstMarker) {
@@ -4101,7 +4108,6 @@ function onClick(e) {
       }
     }
 
-    // Rule: must be on different mounts
     let mountA = socketA.parent;
     while (mountA && !mountA.userData?.isMount) mountA = mountA.parent;
     let mountB = socketB.parent;
@@ -4114,11 +4120,7 @@ function onClick(e) {
       return;
     }
 
-    // Rule: the two triangles must be attached to DIFFERENT rectangular frames.
-    // A bridge connecting two triangles on the same frame bridges nothing — it
-    // just runs along the side of the build.
     function getParentRectFrame(triMount) {
-      // triMount.userData.socket is the SOCKET_TRIANGLE on the rect frame
       const attachSocket = triMount.userData?.socket;
       if (!attachSocket) return null;
       let p = attachSocket.parent;
@@ -4139,14 +4141,12 @@ function onClick(e) {
       return;
     }
 
-    // Rule: neither socket already used
     if (usedSockets.has(socketA.uuid) || usedSockets.has(socketB.uuid)) {
       showHudMessage("⚠ One of those sockets is already used");
       resetFirstSocket();
       return;
     }
 
-    // Rule: axis alignment — bridge must run along X or Z, not diagonally
     const posA = new THREE.Vector3();
     const posB = new THREE.Vector3();
     socketA.getWorldPosition(posA);
@@ -4155,10 +4155,6 @@ function onClick(e) {
     const dx = Math.abs(posB.x - posA.x);
     const dz = Math.abs(posB.z - posA.z);
 
-    // The spanning axis must clearly dominate. We use an absolute threshold
-    // on the minor axis (off-axis drift) rather than a ratio, so short
-    // bridges with natural socket offsets aren't incorrectly rejected.
-    // minor axis must be < 0.30 world units AND less than 30% of the major.
     const major = Math.max(dx, dz);
     const minor = Math.min(dx, dz);
     const isAxisAligned = major > 0.1 && minor < 0.3 && minor / major < 0.3;
@@ -4173,7 +4169,6 @@ function onClick(e) {
       return;
     }
 
-    // Rule: only one bridge per triangle-mount pair
     const existingBridgeBetween = getAllMounts().some((m) => {
       if (m.userData.type !== "support_frame") return false;
       const sA = m.userData.socket;
@@ -4199,7 +4194,6 @@ function onClick(e) {
       return;
     }
 
-    // All checks passed — place the bridge
     resetFirstSocket();
     if (hoveredTriangleMarker) {
       hoveredTriangleMarker.material = MAT_TRI_ACTIVE;
@@ -4221,7 +4215,12 @@ function onClick(e) {
   }
 
   if (placementMode === "wheel") {
-    const hit = raycaster.intersectObjects(wheelMarkers)[0];
+    // ── Try direct raycast, then proximity fallback ───────────────────────────
+    let hit = raycaster.intersectObjects(wheelMarkers)[0];
+    if (!hit) {
+      const nearest = findNearestMarkerOnScreen(wheelMarkers);
+      if (nearest) hit = { object: nearest };
+    }
     if (!hit) {
       clearGhost();
       return;
@@ -4245,7 +4244,12 @@ function onClick(e) {
   }
 
   if (placementMode === "motor") {
-    const hit = raycaster.intersectObjects(motorMarkers)[0];
+    // ── Try direct raycast, then proximity fallback ───────────────────────────
+    let hit = raycaster.intersectObjects(motorMarkers)[0];
+    if (!hit) {
+      const nearest = findNearestMarkerOnScreen(motorMarkers);
+      if (nearest) hit = { object: nearest };
+    }
     if (!hit) {
       clearGhost();
       return;
@@ -4253,7 +4257,8 @@ function onClick(e) {
     const socket = hit.object.userData.socket;
     if (usedSockets.has(socket.uuid)) return;
 
-    placeMotor(socket, motorAutoBaseYaw, motorManualRotSteps);
+    // Motor is auto-orient only — place using autoBaseYaw, no manual steps
+    placeMotor(socket, motorAutoBaseYaw, 0);
 
     rebuildSocketMarkers();
     updateWheelButtonState();
@@ -4270,7 +4275,12 @@ function onClick(e) {
   }
 
   if (placementMode === "triangle") {
-    const hit = raycaster.intersectObjects(triangleSocketMarkers)[0];
+    // ── Try direct raycast, then proximity fallback ───────────────────────────
+    let hit = raycaster.intersectObjects(triangleSocketMarkers)[0];
+    if (!hit) {
+      const nearest = findNearestMarkerOnScreen(triangleSocketMarkers);
+      if (nearest) hit = { object: nearest };
+    }
     if (!hit) {
       clearGhost();
       return;
@@ -4379,6 +4389,7 @@ function placeMotor(socket, autoBaseYaw = 0, manualSteps = 0) {
   const socketPos = new THREE.Vector3();
   socket.getWorldPosition(socketPos);
 
+  // Motor is auto-orient only — manualSteps is always 0 at call site
   const finalYaw = autoBaseYaw + manualSteps * (Math.PI / 2);
 
   mount.position.copy(socketPos);
@@ -4808,10 +4819,10 @@ function selectMesh(mesh, mount) {
     if (selectedMesh === hoveredMesh) {
       selectedOrigEm = hoveredOrigEm.clone();
     } else {
-      selectedOrigEm = setMeshEmissive(selectedMesh, 0x004466);
+      selectedOrigEm = setMeshEmissive(selectedMesh, 0x3d0020);
     }
     if (selectedMesh?.material?.emissive) {
-      selectedMesh.material.emissive.set(0x004466);
+      selectedMesh.material.emissive.set(0x3d0020);
     }
   }
 }
@@ -4865,7 +4876,6 @@ function performUndo() {
   scene.remove(mount);
   removeFromInventory(type);
 
-  // Save to redo stack so it can be re-applied
   redoStack.push(entry);
 
   rebuildSocketMarkers();
@@ -4884,7 +4894,6 @@ function performRedo() {
 
   const { mount, socketUuids, type } = redoStack.pop();
 
-  // Re-add the mount and re-mark its sockets as used
   scene.add(mount);
   socketUuids.forEach((uuid) => usedSockets.add(uuid));
   addToInventory(type);
@@ -4901,6 +4910,10 @@ function performRedo() {
 
 /* =========================================================
    KEYBOARD HANDLER
+   =========================================================
+   CHANGE: ArrowLeft/Right no longer affect motor rotation.
+   Motor is auto-orient only. Keys still work for frame,
+   triangle, and support placement modes.
    ========================================================= */
 
 function onKeyDown(e) {
@@ -4927,7 +4940,6 @@ function onKeyDown(e) {
 
   if (e.key === "Escape") {
     if (placementMode === "support" && supportFirstSocket) {
-      // ESC during support mode cancels the first socket selection only
       supportFirstSocket = null;
       if (supportFirstMarker) {
         supportFirstMarker.material = MAT_TRI_ACTIVE;
@@ -4948,24 +4960,12 @@ function onKeyDown(e) {
   }
 
   if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-    if (!placementMode) return;
+    // ── CHANGE: motor mode intentionally excluded — motor auto-orients only ──
+    if (!placementMode || placementMode === "motor") return;
     e.preventDefault();
 
     const dir = e.key === "ArrowRight" ? 1 : -1;
     flashArrowKey(e.key === "ArrowRight" ? "right" : "left");
-
-    if (placementMode === "motor") {
-      motorManualRotSteps += dir;
-      const totalDeg = (((motorManualRotSteps % 4) + 4) % 4) * 90;
-      showHudMessage(`Motor manual offset: +${totalDeg}°`);
-      updateShortcutBar();
-      updateRotationDisplay();
-      if (ghost) {
-        const finalYaw = motorAutoBaseYaw + motorManualRotSteps * (Math.PI / 2);
-        ghost.rotation.set(0, finalYaw, 0);
-        motorRotationGroup.rotation.set(0, 0, 0);
-      }
-    }
 
     if (placementMode === "triangle" && ghost) {
       triangleManualRotSteps = (triangleManualRotSteps + 1) % 2;
