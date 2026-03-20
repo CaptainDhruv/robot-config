@@ -1169,30 +1169,7 @@ function bindUI() {
         0,
       );
     }
-    if (placementMode === "support" && ghost) {
-      supportManualRotSteps += dir;
-      const totalDeg = (((supportManualRotSteps % 4) + 4) % 4) * 90;
-      showHudMessage(`Support manual offset: +${totalDeg}°`);
-      updateShortcutBar();
-      if (hoveredTriangleMarker) {
-        const rawSocket = hoveredTriangleMarker.userData.socket;
-        rawSocket.updateMatrixWorld(true);
-        const pair = resolveBestSupportSocketPair(rawSocket);
-        if (!pair) return;
-        ghost.position.set(0, 0, 0);
-        ghost.rotation.set(0, 0, 0);
-        ghost.scale.set(1, 1, 1);
-        ghost.updateMatrixWorld(true);
-        applyTwoPointSupportSnap(
-          ghost,
-          ghost,
-          pair.posA,
-          pair.posB,
-          supportManualRotSteps,
-          rawSocket,
-        );
-      }
-    }
+    // Support bridge rotation is disabled — orientation is auto-determined.
     if (placementMode === "frame") {
       frameOnSupportRotationSteps += dir;
       const deg = (((frameOnSupportRotationSteps % 4) + 4) % 4) * 90;
@@ -2356,10 +2333,7 @@ function updateShortcutBar() {
         action: `flip ${triangleManualRotSteps === 0 ? "0°→180°" : "180°→0°"}`,
       };
     }
-    if (mode === "support" && d.key === "← →") {
-      const deg = (((supportManualRotSteps % 4) + 4) % 4) * 90;
-      return { key: "← →", action: `+${deg}° manual` };
-    }
+    // Support bridge has no manual rotation — shortcut bar unchanged.
     return d;
   });
 
@@ -2685,7 +2659,7 @@ function makeGhost(obj) {
     if (o.isMesh) {
       o.material = o.material.clone();
       o.material.transparent = true;
-      o.material.opacity = 0.18;
+      o.material.opacity = 0.45;
     }
   });
 }
@@ -3894,7 +3868,7 @@ function onMouseMove(e) {
           ghost,
           posA,
           posB,
-          supportManualRotSteps,
+          0, // rotation disabled for support bridge
           supportFirstSocket,
         );
         return;
@@ -4083,6 +4057,22 @@ function onClick(e) {
 
     const { socketA, posA, socketB, posB } = pair;
 
+    // Diagonal guard — resolved pair must run along X or Z axis, not diagonally
+    {
+      const dx = Math.abs(posB.x - posA.x);
+      const dz = Math.abs(posB.z - posA.z);
+      const major = Math.max(dx, dz);
+      const minor = Math.min(dx, dz);
+      if (major > 0.1 && minor > 0.3 && minor / major > 0.3) {
+        showPopup(
+          "Support Bridges must run along a straight axis (X or Z).\n\n" +
+            "The two Triangle Frame connectors are diagonal to each other. " +
+            "Only triangle frames facing each other directly can be bridged.",
+        );
+        return;
+      }
+    }
+
     if (usedSockets.has(socketA.uuid) || usedSockets.has(socketB.uuid)) {
       showHudMessage("⚠ One of those sockets is already used");
       return;
@@ -4127,7 +4117,7 @@ function onClick(e) {
       posA,
       socketB,
       posB,
-      supportManualRotSteps,
+      0, // rotation disabled for support bridge
       socketA,
     );
     restartPlacementMode("support");
@@ -4178,8 +4168,10 @@ function onClick(e) {
     const socket = hit.object.userData.socket;
     if (usedSockets.has(socket.uuid)) return;
 
-    // Motor is auto-orient only — place using autoBaseYaw, no manual steps
-    placeMotor(socket, motorAutoBaseYaw, 0);
+    // Always recompute autoYaw from the actual socket being placed onto,
+    // in case the click used the proximity fallback (not the hovered socket).
+    const finalMotorYaw = computeMotorAutoYaw(socket);
+    placeMotor(socket, finalMotorYaw, 0);
 
     rebuildSocketMarkers();
     updateWheelButtonState();
@@ -4901,35 +4893,7 @@ function onKeyDown(e) {
       );
     }
 
-    if (placementMode === "support" && ghost) {
-      supportManualRotSteps += dir;
-      const totalDeg = (((supportManualRotSteps % 4) + 4) % 4) * 90;
-      showHudMessage(`Support manual offset: +${totalDeg}°`);
-      updateShortcutBar();
-
-      if (hoveredTriangleMarker) {
-        const rawSocket = hoveredTriangleMarker.userData.socket;
-        rawSocket.updateMatrixWorld(true);
-
-        const pair = resolveBestSupportSocketPair(rawSocket);
-        if (!pair) return;
-        const { posA, posB } = pair;
-
-        ghost.position.set(0, 0, 0);
-        ghost.rotation.set(0, 0, 0);
-        ghost.scale.set(1, 1, 1);
-        ghost.updateMatrixWorld(true);
-
-        applyTwoPointSupportSnap(
-          ghost,
-          ghost,
-          posA,
-          posB,
-          supportManualRotSteps,
-          rawSocket,
-        );
-      }
-    }
+    // Support bridge rotation disabled — no handler needed.
 
     if (placementMode === "frame") {
       frameOnSupportRotationSteps += dir;
