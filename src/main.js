@@ -10,6 +10,7 @@ import {
   removeFromInventory,
   initInventory,
 } from "./ui/inventory.js";
+import { supabase } from "./supabaseClient.js";
 /* =========================================================
    GLOBAL STATE
    ========================================================= */
@@ -994,6 +995,7 @@ async function init() {
   initShortcutBar();
   initColorLegend();
   initIdleArrows();
+  initMinimap();
   rebuildSocketMarkers();
   updateWheelButtonState();
   updateUndoRedoButtons();
@@ -1817,8 +1819,8 @@ function showAddressOverlay() {
 
   const submitBtn = document.createElement("button");
   submitBtn.className = "addr-btn addr-btn-submit";
-  submitBtn.innerHTML = `<span>▶</span> PROCEED TO PAYMENT`;
-  submitBtn.onclick = () => {
+  submitBtn.innerHTML = `<span>▶</span> CONFIRM ORDER`;
+  submitBtn.onclick = async () => {
     const requiredFields = [fLine1, fCity, fState, fPin, fPhone];
     let valid = true;
     requiredFields.forEach((f) => {
@@ -1843,6 +1845,10 @@ function showAddressOverlay() {
       return;
     }
 
+    // Disable button to prevent double submit
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<span>⟳</span> SAVING ORDER...`;
+
     const addrLines = [
       fLine1.inp.value.trim(),
       fLine2.inp.value.trim(),
@@ -1851,8 +1857,42 @@ function showAddressOverlay() {
       fPhone.inp.value.trim(),
     ].filter(Boolean);
 
-    backdrop.remove();
-    showOrderConfirmOverlay(addrLines, orderRef, totalCost, totalParts);
+    const customerName = fLine1.inp.value.trim() || "Customer";
+    const customerPhone = fPhone.inp.value.replace(/\D/g, "").slice(-10);
+
+    try {
+      const savedOrder = await saveOrderToSupabase({
+        orderRef,
+        totalCost,
+        totalParts,
+        customerName,
+        customerPhone,
+        fLine1,
+        fLine2,
+        fLine3,
+        fCity,
+        fState,
+        fPin,
+      });
+
+      backdrop.remove();
+      showOrderConfirmOverlay(
+        addrLines,
+        orderRef,
+        totalCost,
+        totalParts,
+        null,
+        savedOrder,
+      );
+
+      // Generate and upload print report in background
+      uploadPrintReport(savedOrder.id, orderRef);
+    } catch (err) {
+      console.error("[ORDER SAVE ERROR]", err);
+      showHudMessage("⚠ Could not save order. Please try again.");
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<span>▶</span> CONFIRM ORDER`;
+    }
   };
 
   btnGroup.appendChild(cancelBtn2);
@@ -1872,7 +1912,14 @@ function showAddressOverlay() {
    ORDER CONFIRMATION OVERLAY
    ========================================================= */
 
-function showOrderConfirmOverlay(addrLines, orderRef, totalCost, totalParts) {
+function showOrderConfirmOverlay(
+  addrLines,
+  orderRef,
+  totalCost,
+  totalParts,
+  paymentResult,
+  savedOrder,
+) {
   const existing = document.getElementById("order-confirm-overlay");
   if (existing) existing.remove();
 
@@ -1981,15 +2028,46 @@ function showOrderConfirmOverlay(addrLines, orderRef, totalCost, totalParts) {
   });
 
   const refEl = document.createElement("div");
-  refEl.textContent = `ORDER REF: ${orderRef}`;
+  refEl.innerHTML = `ORDER REF: ${orderRef}${savedOrder ? `<br><span style="font-size:8px;color:#2a3848;letter-spacing:0.12em">DB ID: ${savedOrder.id}</span>` : ""}`;
   Object.assign(refEl.style, {
     fontFamily: "'Orbitron',sans-serif",
     fontSize: "9px",
     fontWeight: "700",
     letterSpacing: "0.2em",
     color: "#384858",
-    marginBottom: "24px",
+    marginBottom: paymentResult ? "12px" : "24px",
+    lineHeight: "1.8",
   });
+
+  // ── Payment confirmation details (shown when paid via Razorpay) ───────
+  if (paymentResult) {
+    const payBox = document.createElement("div");
+    Object.assign(payBox.style, {
+      background: "rgba(16,48,16,0.3)",
+      border: "1px solid rgba(50,160,50,0.3)",
+      borderLeft: "3px solid #22aa44",
+      padding: "10px 16px",
+      marginBottom: "24px",
+      textAlign: "left",
+    });
+    const METHOD_LABELS = {
+      card: "💳 Card",
+      upi: "⚡ UPI",
+      netbanking: "🏦 Net Banking",
+      wallet: "👛 Wallet",
+      emi: "📅 EMI",
+    };
+    const methodLabel =
+      METHOD_LABELS[paymentResult.method] || paymentResult.method || "Online";
+    payBox.innerHTML = `
+      <div style="font-family:'Orbitron',sans-serif;font-size:7px;font-weight:700;letter-spacing:0.25em;color:#22aa44;margin-bottom:8px">✓ PAYMENT CONFIRMED</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:#8aacbf;line-height:1.8;letter-spacing:0.04em">
+        <span style="color:#384858">Payment ID: </span>${paymentResult.payment_id}<br>
+        <span style="color:#384858">Method: </span>${methodLabel}<br>
+        <span style="color:#384858">Amount: </span>₹${(paymentResult.amount / 100).toLocaleString("en-IN")}
+      </div>`;
+    card.appendChild(payBox);
+  }
 
   const closeBtn = document.createElement("button");
   closeBtn.className = "addr-btn addr-btn-submit";
@@ -2006,6 +2084,413 @@ function showOrderConfirmOverlay(addrLines, orderRef, totalCost, totalParts) {
   card.appendChild(closeBtn);
   backdrop.appendChild(card);
   document.body.appendChild(backdrop);
+}
+
+/* =========================================================
+   RAZORPAY — Frontend checkout integration
+   =========================================================
+   Flow:
+   1. openRazorpayCheckout() → calls backend POST /api/create-order
+   2. Backend returns a Razorpay order_id
+   3. Razorpay checkout popup opens (loaded from Razorpay CDN)
+   4. User pays → Razorpay calls handler.success with payment IDs
+   5. We call backend POST /api/verify-payment to verify signature
+   6. On verified → show order confirmation overlay
+   ========================================================= */
+
+// ── CONFIG — update these for your environment ────────────────────────────
+const RAZORPAY_KEY_ID = "rzp_test_XXXXXXXXXXXXXXXX"; // ← paste your test key
+const BACKEND_URL = "http://localhost:4000"; // ← your backend URL
+
+// ── Load Razorpay checkout script once ───────────────────────────────────
+function loadRazorpayScript() {
+  return new Promise((resolve, reject) => {
+    if (window.Razorpay) {
+      resolve();
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Failed to load Razorpay script"));
+    document.head.appendChild(script);
+  });
+}
+
+// ── Main entry point called after address form submits ────────────────────
+async function openRazorpayCheckout({
+  addrLines,
+  orderRef,
+  totalCost,
+  totalParts,
+  customerName,
+  customerPhone,
+}) {
+  // Show loading state
+  showHudMessage("PREPARING CHECKOUT...");
+
+  try {
+    // 1. Load Razorpay SDK
+    await loadRazorpayScript();
+
+    // 2. Parse amount — totalCost is a string like "14,550" or "14550"
+    const amountRupees =
+      parseFloat(String(totalCost).replace(/[^0-9.]/g, "")) || 0;
+    if (amountRupees < 1) {
+      showHudMessage("⚠ Invalid order amount");
+      return;
+    }
+    const amountPaise = Math.round(amountRupees * 100);
+
+    // 3. Collect build state for order notes
+    const buildCounts = {};
+    scene.traverse((o) => {
+      if (!o.userData?.isMount) return;
+      const t = o.userData.type ?? "unknown";
+      buildCounts[t] = (buildCounts[t] ?? 0) + 1;
+    });
+    const buildSummary = Object.entries(buildCounts)
+      .map(([t, n]) => `${n}x ${t.replace(/_/g, " ")}`)
+      .join(", ");
+
+    // 4. Create order on backend
+    const orderRes = await fetch(`${BACKEND_URL}/api/create-order`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        amount_paise: amountPaise,
+        currency: "INR",
+        receipt: orderRef,
+        notes: {
+          order_ref: orderRef,
+          parts_count: totalParts,
+          build_summary: buildSummary,
+          address: addrLines.join(" | "),
+        },
+      }),
+    });
+
+    if (!orderRes.ok) {
+      const err = await orderRes.json().catch(() => ({}));
+      throw new Error(err.error || `Server error ${orderRes.status}`);
+    }
+
+    const { order_id } = await orderRes.json();
+
+    // 5. Open Razorpay checkout popup
+    const rzpOptions = {
+      key: RAZORPAY_KEY_ID,
+      amount: amountPaise,
+      currency: "INR",
+      name: "Robot Configurator",
+      description: `MK-1 Build — ${totalParts} parts  ·  ${orderRef}`,
+      order_id,
+
+      // Pre-fill customer details from address form
+      prefill: {
+        name: customerName,
+        contact: customerPhone,
+      },
+
+      // Branding
+      theme: { color: "#d05818" },
+
+      // Modal settings
+      modal: {
+        ondismiss: () => {
+          showHudMessage("PAYMENT CANCELLED");
+          // Re-show address overlay so user can try again
+          showAddressOverlay();
+        },
+        confirm_close: true,
+        escape: false,
+        animation: true,
+        backdropclose: false,
+      },
+
+      // ── Success handler ───────────────────────────────────────────────
+      handler: async (response) => {
+        showHudMessage("VERIFYING PAYMENT...");
+        try {
+          await verifyPayment(response, {
+            addrLines,
+            orderRef,
+            totalCost,
+            totalParts,
+          });
+        } catch (err) {
+          showPaymentErrorOverlay(
+            err.message || "Verification failed. Contact support.",
+          );
+        }
+      },
+    };
+
+    const rzp = new window.Razorpay(rzpOptions);
+
+    // Handle payment failure inside the popup
+    rzp.on("payment.failed", (response) => {
+      console.error("[RAZORPAY] Payment failed:", response.error);
+      showPaymentErrorOverlay(
+        response.error.description || "Payment failed. Please try again.",
+        response.error.code,
+      );
+    });
+
+    rzp.open();
+  } catch (err) {
+    console.error("[CHECKOUT ERROR]", err);
+    showPaymentErrorOverlay(
+      err.message || "Could not start checkout. Is the backend running?",
+    );
+  }
+}
+
+// ── Verify payment with backend after Razorpay success ───────────────────
+async function verifyPayment(
+  razorpayResponse,
+  { addrLines, orderRef, totalCost, totalParts },
+) {
+  const verifyRes = await fetch(`${BACKEND_URL}/api/verify-payment`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      razorpay_order_id: razorpayResponse.razorpay_order_id,
+      razorpay_payment_id: razorpayResponse.razorpay_payment_id,
+      razorpay_signature: razorpayResponse.razorpay_signature,
+    }),
+  });
+
+  const result = await verifyRes.json();
+
+  if (!verifyRes.ok || !result.verified) {
+    throw new Error(result.error || "Payment could not be verified");
+  }
+
+  console.log("[PAYMENT VERIFIED]", result);
+  showHudMessage("PAYMENT SUCCESSFUL ✓");
+
+  // Show the existing order confirmation overlay with payment details
+  showOrderConfirmOverlay(addrLines, orderRef, totalCost, totalParts, result);
+}
+
+// ── Payment error overlay ─────────────────────────────────────────────────
+function showPaymentErrorOverlay(message, code) {
+  const existing = document.getElementById("pay-error-overlay");
+  if (existing) existing.remove();
+
+  const backdrop = document.createElement("div");
+  backdrop.id = "pay-error-overlay";
+  Object.assign(backdrop.style, {
+    position: "fixed",
+    inset: "0",
+    background: "rgba(8,12,20,0.92)",
+    zIndex: "10000003",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    backdropFilter: "blur(8px)",
+  });
+
+  const card = document.createElement("div");
+  Object.assign(card.style, {
+    width: "min(440px,90vw)",
+    background: "#18202e",
+    border: "2px solid #cc2200",
+    borderLeft: "4px solid #cc2200",
+    clipPath: "polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%)",
+    padding: "36px 40px",
+    textAlign: "center",
+    boxShadow: "0 0 60px rgba(204,34,0,0.3)",
+  });
+
+  card.innerHTML = `
+    <div style="font-family:'Orbitron',sans-serif;font-size:32px;color:#cc2200;margin-bottom:12px">✕</div>
+    <div style="font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.18em;color:#d8e8f4;margin-bottom:10px">PAYMENT FAILED</div>
+    ${code ? `<div style="font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:0.15em;color:#cc2200;margin-bottom:10px">${code}</div>` : ""}
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:#6a8098;line-height:1.7;margin-bottom:28px;letter-spacing:0.04em">${message}</div>
+    <div style="display:flex;gap:12px;justify-content:center">
+      <button id="pay-err-retry" style="font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.18em;padding:10px 24px;background:#cc2200;border:none;color:#111;cursor:pointer;text-transform:uppercase">TRY AGAIN</button>
+      <button id="pay-err-close" style="font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.18em;padding:10px 24px;background:transparent;border:1.5px solid #384858;color:#6a8098;cursor:pointer;text-transform:uppercase">CANCEL</button>
+    </div>`;
+
+  backdrop.appendChild(card);
+  document.body.appendChild(backdrop);
+
+  document.getElementById("pay-err-retry").onclick = () => {
+    backdrop.remove();
+    showAddressOverlay(); // restart from address
+  };
+  document.getElementById("pay-err-close").onclick = () => backdrop.remove();
+}
+
+/* =========================================================
+   SUPABASE — Order saving + print report upload
+   ========================================================= */
+
+const PART_COSTS_DB = {
+  frame: 1200,
+  motor: 2500,
+  triangle_frame: 650,
+  support_frame: 900,
+  wheel: 1100,
+};
+const PART_LABELS_DB = {
+  frame: "Rectangular Frame",
+  motor: "Motor Housing",
+  triangle_frame: "Triangular Frame",
+  support_frame: "Support Frame",
+  wheel: "Wheel",
+};
+
+async function saveOrderToSupabase({
+  orderRef,
+  totalCost,
+  totalParts,
+  customerName,
+  customerPhone,
+  fLine1,
+  fLine2,
+  fLine3,
+  fCity,
+  fState,
+  fPin,
+}) {
+  const amountNum = parseFloat(String(totalCost).replace(/[^0-9.]/g, "")) || 0;
+
+  // 1. Insert order row
+  const { data: order, error: orderErr } = await supabase
+    .from("orders")
+    .insert({
+      order_ref: orderRef,
+      customer_name: customerName,
+      customer_phone: customerPhone,
+      address_line1: fLine1.inp.value.trim(),
+      address_line2: fLine2.inp.value.trim() || null,
+      address_line3: fLine3.inp.value.trim() || null,
+      city: fCity.inp.value.trim(),
+      state: fState.inp.value.trim(),
+      pin: fPin.inp.value.trim(),
+      total_amount: amountNum,
+      parts_count: totalParts,
+      status: "confirmed",
+    })
+    .select()
+    .single();
+
+  if (orderErr) throw new Error(`Order insert failed: ${orderErr.message}`);
+
+  // 2. Build parts rows from current scene
+  const partRows = [];
+  const countsByType = {};
+  scene.traverse((o) => {
+    if (!o.userData?.isMount) return;
+    const t = o.userData.type ?? "unknown";
+    countsByType[t] = (countsByType[t] ?? 0) + 1;
+  });
+
+  for (const [type, qty] of Object.entries(countsByType)) {
+    const unitCost = PART_COSTS_DB[type] ?? 0;
+    const partLabel = PART_LABELS_DB[type] ?? type.replace(/_/g, " ");
+    partRows.push({
+      order_id: order.id,
+      part_type: type,
+      part_label: partLabel,
+      quantity: qty,
+      unit_cost: unitCost,
+      total_cost: unitCost * qty,
+    });
+  }
+
+  if (partRows.length > 0) {
+    const { error: partsErr } = await supabase
+      .from("order_parts")
+      .insert(partRows);
+    if (partsErr)
+      console.error("[SUPABASE] Parts insert error:", partsErr.message);
+  }
+
+  console.log(`[SUPABASE] Order saved: ${order.id} (${orderRef})`);
+  return order;
+}
+
+async function uploadPrintReport(orderId, orderRef) {
+  try {
+    showHudMessage("GENERATING REPORT...");
+
+    // Capture ISO screenshot with technical overlay
+    const rawShot = captureFromAngle("iso");
+    const overlaid = await addTechnicalOverlay(rawShot, "ISOMETRIC");
+
+    // Build report HTML and convert to Blob
+    const reportHTML = buildReportHTMLBlob(overlaid, orderRef);
+    const blob = new Blob([reportHTML], { type: "text/html" });
+    const filePath = `orders/${orderId}/${orderRef}_report.html`;
+
+    const { error: uploadErr } = await supabase.storage
+      .from("reports")
+      .upload(filePath, blob, { contentType: "text/html", upsert: true });
+
+    if (uploadErr) {
+      console.error("[SUPABASE] Report upload error:", uploadErr.message);
+      return;
+    }
+
+    // Create a signed URL valid for 1 year
+    const { data: urlData } = await supabase.storage
+      .from("reports")
+      .createSignedUrl(filePath, 60 * 60 * 24 * 365);
+
+    const publicUrl = urlData?.signedUrl ?? null;
+
+    // Save record in print_reports table
+    await supabase.from("print_reports").insert({
+      order_id: orderId,
+      storage_path: filePath,
+      public_url: publicUrl,
+    });
+
+    console.log(`[SUPABASE] Report uploaded: ${filePath}`);
+    showHudMessage("REPORT SAVED ✓");
+  } catch (err) {
+    console.error("[REPORT UPLOAD ERROR]", err);
+  }
+}
+
+function buildReportHTMLBlob(isoImageDataURL, orderRef) {
+  const counts = {};
+  scene.traverse((o) => {
+    if (!o.userData?.isMount) return;
+    const t = o.userData.type ?? "unknown";
+    counts[t] = (counts[t] ?? 0) + 1;
+  });
+  const total = document.getElementById("totalPrice")?.textContent ?? "0";
+  const now = new Date().toLocaleString();
+  const parts = Object.entries(counts)
+    .map(([t, n]) => {
+      const cost = (PART_COSTS_DB[t] ?? 0) * n;
+      return `<tr><td>${(PART_LABELS_DB[t] ?? t).toUpperCase()}</td><td>${n}</td><td>₹${cost.toLocaleString("en-IN")}</td></tr>`;
+    })
+    .join("");
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Report ${orderRef}</title>
+<style>
+  body{font-family:monospace;padding:24px;background:#fff;color:#111}
+  h1{font-size:18px;letter-spacing:0.1em;border-bottom:3px solid #111;padding-bottom:8px}
+  .meta{font-size:11px;color:#555;margin-bottom:20px}
+  img{max-width:100%;border:2px solid #222;margin-bottom:20px;display:block}
+  table{border-collapse:collapse;width:400px;font-size:12px}
+  td,th{padding:6px 12px;border:1px solid #ddd}
+  th{background:#111;color:#fff}
+  .total{font-size:16px;font-weight:700;margin-top:16px}
+</style></head><body>
+<h1>ROBOT CONFIGURATOR — ${orderRef}</h1>
+<div class="meta">Generated: ${now} &nbsp;·&nbsp; ${isFinalized ? "✓ Finalized" : "Draft"}</div>
+<img src="${isoImageDataURL}" alt="ISO View"/>
+<table><tr><th>Part</th><th>Qty</th><th>Cost</th></tr>${parts}</table>
+<div class="total">TOTAL: ₹${total}</div>
+</body></html>`;
 }
 
 /* =========================================================
@@ -5336,6 +5821,7 @@ function animate() {
   }
 
   renderer.render(scene, camera);
+  renderMinimap();
 }
 
 /* =========================================================
@@ -5346,4 +5832,506 @@ function showTooltip(_m, _x, _y) {}
 
 function hideTooltip() {
   if (tooltipEl) tooltipEl.style.display = "none";
+}
+
+/* =========================================================
+   MINIMAP — Bird's-eye overview panel (lives in left sidebar)
+   =========================================================
+   - Injected below the undo/redo buttons in the left panel
+   - 220×220px orthographic top-down render
+   - Live camera frustum footprint overlay
+   - Selected part red highlight ring
+   - Compass arrow (camera direction)
+   - Click anywhere → smooth camera teleport to that XZ position
+   - Collapse/expand toggle
+   ========================================================= */
+
+let minimapEl = null;
+let minimapCanvas = null;
+let minimapCtx = null;
+const MINIMAP_SIZE = 220;
+
+let minimapOrthoCamera = null;
+let minimapRenderer = null;
+let minimapCollapsed = false;
+
+const PART_COLORS_MAP = {
+  frame: "#8aacbf",
+  motor: "#cc4400",
+  triangle_frame: "#607080",
+  support_frame: "#506070",
+  wheel: "#e87030",
+};
+
+function initMinimap() {
+  // ── Styles ───────────────────────────────────────────────────────────────
+  if (!document.getElementById("minimap-styles")) {
+    const s = document.createElement("style");
+    s.id = "minimap-styles";
+    s.textContent = `
+      #minimap-section {
+        margin: 0;
+        border-top: 1px solid rgba(208,88,24,0.18);
+        background: transparent;
+        flex-shrink: 0;
+      }
+      #minimap-section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 14px 7px;
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.12s;
+      }
+      #minimap-section-header:hover { background: rgba(208,88,24,0.06); }
+      #minimap-section-title {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: #d05818;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      #minimap-section-title span { color: #384858; font-size: 11px; }
+      #minimap-chevron {
+        font-size: 9px;
+        color: #384858;
+        transition: transform 0.2s ease, color 0.12s;
+        font-family: 'Share Tech Mono', monospace;
+      }
+      #minimap-section-header:hover #minimap-chevron { color: #d05818; }
+      #minimap-body {
+        overflow: hidden;
+        transition: max-height 0.25s ease, opacity 0.2s ease;
+        max-height: 260px;
+        opacity: 1;
+      }
+      #minimap-body.collapsed {
+        max-height: 0;
+        opacity: 0;
+      }
+      #minimap-canvas-wrap {
+        position: relative;
+        width: ${MINIMAP_SIZE}px;
+        height: ${MINIMAP_SIZE}px;
+        margin: 0 auto 10px;
+        cursor: crosshair;
+        border: 1px solid rgba(208,88,24,0.3);
+        overflow: hidden;
+        background: #070d14;
+        display: block;
+      }
+      #minimap-canvas-wrap canvas { display: block; position: absolute; top:0; left:0; }
+      #minimap-hint {
+        text-align: center;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 8px;
+        letter-spacing: 0.12em;
+        color: #2a3848;
+        padding: 0 14px 10px;
+        text-transform: uppercase;
+      }
+      @keyframes minimapIn {
+        from { opacity:0; transform:translateY(6px); }
+        to   { opacity:1; transform:translateY(0); }
+      }
+      #minimap-section { animation: minimapIn 0.35s ease 0.5s both; }
+    `;
+    document.head.appendChild(s);
+  }
+
+  // ── Three.js ortho camera ─────────────────────────────────────────────────
+  minimapOrthoCamera = new THREE.OrthographicCamera(-5, 5, 5, -5, 0.1, 100);
+  minimapOrthoCamera.position.set(0, 30, 0);
+  minimapOrthoCamera.lookAt(0, 0, 0);
+  minimapOrthoCamera.up.set(0, 0, -1);
+
+  // ── Offscreen renderer ────────────────────────────────────────────────────
+  minimapRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  minimapRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  minimapRenderer.setSize(MINIMAP_SIZE, MINIMAP_SIZE);
+  minimapRenderer.setClearColor(0x070d14, 1);
+
+  // ── Find insertion point: below undo/redo row in the left panel ───────────
+  // Look for the undo/redo buttons container or the left panel itself
+  const undoBtn = document.getElementById("undoBtn");
+  let insertAfter = null;
+  if (undoBtn) {
+    // Walk up to find the row/group containing undo
+    let el = undoBtn.parentElement;
+    while (
+      el &&
+      el.parentElement &&
+      !el.parentElement.classList.contains("panel") &&
+      !el.parentElement.id?.includes("left") &&
+      !el.parentElement.id?.includes("sidebar") &&
+      el.parentElement.tagName !== "ASIDE" &&
+      el !== document.body
+    ) {
+      el = el.parentElement;
+    }
+    insertAfter = el;
+  }
+
+  // ── Build the minimap section DOM ─────────────────────────────────────────
+  const section = document.createElement("div");
+  section.id = "minimap-section";
+
+  // Header / toggle
+  const sectionHeader = document.createElement("div");
+  sectionHeader.id = "minimap-section-header";
+  sectionHeader.innerHTML = `
+    <div id="minimap-section-title">
+      <span>◈</span> OVERVIEW
+    </div>
+    <div id="minimap-chevron">▾</div>`;
+  sectionHeader.addEventListener("click", toggleMinimap);
+  section.appendChild(sectionHeader);
+
+  // Collapsible body
+  const body = document.createElement("div");
+  body.id = "minimap-body";
+
+  // Canvas wrap (THREE render target + 2D overlay)
+  const canvasWrap = document.createElement("div");
+  canvasWrap.id = "minimap-canvas-wrap";
+
+  minimapRenderer.domElement.style.width = MINIMAP_SIZE + "px";
+  minimapRenderer.domElement.style.height = MINIMAP_SIZE + "px";
+  canvasWrap.appendChild(minimapRenderer.domElement);
+
+  minimapCanvas = document.createElement("canvas");
+  minimapCanvas.width = MINIMAP_SIZE;
+  minimapCanvas.height = MINIMAP_SIZE;
+  minimapCanvas.style.pointerEvents = "none";
+  minimapCtx = minimapCanvas.getContext("2d");
+  canvasWrap.appendChild(minimapCanvas);
+
+  canvasWrap.addEventListener("click", onMinimapClick);
+  body.appendChild(canvasWrap);
+
+  const hint = document.createElement("div");
+  hint.id = "minimap-hint";
+  hint.textContent = "Click to snap camera";
+  body.appendChild(hint);
+
+  section.appendChild(body);
+
+  // Insert after undo/redo row, or append to left panel
+  if (insertAfter && insertAfter.parentElement) {
+    insertAfter.parentElement.insertBefore(section, insertAfter.nextSibling);
+  } else {
+    // Fallback: try common left panel selectors
+    const leftPanel =
+      document.querySelector(".left-panel") ||
+      document.querySelector(".sidebar-left") ||
+      document.querySelector("aside") ||
+      document.querySelector(".panel");
+    if (leftPanel) leftPanel.appendChild(section);
+    else document.body.appendChild(section);
+  }
+
+  minimapEl = section;
+}
+
+function toggleMinimap() {
+  minimapCollapsed = !minimapCollapsed;
+  const body = document.getElementById("minimap-body");
+  const chevron = document.getElementById("minimap-chevron");
+  if (body) body.classList.toggle("collapsed", minimapCollapsed);
+  if (chevron) {
+    chevron.style.transform = minimapCollapsed
+      ? "rotate(-90deg)"
+      : "rotate(0deg)";
+    chevron.style.color = minimapCollapsed ? "#d05818" : "#384858";
+  }
+}
+
+// positionMinimap is a no-op now (panel layout handles position)
+function positionMinimap() {}
+
+function onMinimapClick(e) {
+  if (!minimapRenderer || !minimapOrthoCamera) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const nx = (e.clientX - rect.left) / MINIMAP_SIZE; // 0..1
+  const ny = (e.clientY - rect.top) / MINIMAP_SIZE; // 0..1
+
+  // Map from minimap UV to world XZ using the ortho camera frustum
+  const left = minimapOrthoCamera.left;
+  const right = minimapOrthoCamera.right;
+  const top = minimapOrthoCamera.top;
+  const bot = minimapOrthoCamera.bottom;
+
+  const worldX = left + nx * (right - left);
+  const worldZ = top + ny * (bot - top);
+
+  // Snap main camera to this XZ position, keep current height & orbit radius
+  const camToTarget = new THREE.Vector3().subVectors(
+    camera.position,
+    controls.target,
+  );
+  const newTarget = new THREE.Vector3(worldX, controls.target.y, worldZ);
+  const newPos = new THREE.Vector3().addVectors(newTarget, camToTarget);
+
+  const startPos = camera.position.clone();
+  const startTarget = controls.target.clone();
+  const duration = 450;
+  const startTime = performance.now();
+
+  function anim(now) {
+    const t = Math.min((now - startTime) / duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    camera.position.lerpVectors(startPos, newPos, ease);
+    controls.target.lerpVectors(startTarget, newTarget, ease);
+    controls.update();
+    if (t < 1) requestAnimationFrame(anim);
+  }
+  requestAnimationFrame(anim);
+}
+
+function updateMinimapCamera() {
+  // Gather all mount bounding boxes to auto-fit ortho frustum
+  const box = new THREE.Box3();
+  scene.traverse((o) => {
+    if (o.userData?.isMount) {
+      box.union(new THREE.Box3().setFromObject(o));
+    }
+  });
+
+  let cx = 0,
+    cz = 0,
+    halfW = 4,
+    halfH = 4;
+  if (!box.isEmpty()) {
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    cx = center.x;
+    cz = center.z;
+    const padding = 1.5;
+    halfW = Math.max(size.x / 2 + padding, 3);
+    halfH = Math.max(size.z / 2 + padding, 3);
+    const half = Math.max(halfW, halfH);
+    halfW = halfH = half;
+  }
+
+  minimapOrthoCamera.left = cx - halfW;
+  minimapOrthoCamera.right = cx + halfW;
+  minimapOrthoCamera.top = cz - halfH;
+  minimapOrthoCamera.bottom = cz + halfH;
+  minimapOrthoCamera.position.set(cx, 30, cz);
+  minimapOrthoCamera.lookAt(cx, 0, cz);
+  minimapOrthoCamera.updateProjectionMatrix();
+}
+
+function drawMinimapOverlay() {
+  if (!minimapCtx) return;
+  const ctx = minimapCtx;
+  const SIZE = MINIMAP_SIZE;
+  ctx.clearRect(0, 0, SIZE, SIZE);
+
+  // Helper: world XZ → minimap pixel
+  const cam = minimapOrthoCamera;
+  const toUV = (wx, wz) => {
+    const u = (wx - cam.left) / (cam.right - cam.left);
+    const v = (wz - cam.top) / (cam.bottom - cam.top);
+    return [u * SIZE, v * SIZE];
+  };
+
+  // ── Grid overlay ─────────────────────────────────────────────────────────
+  ctx.save();
+  ctx.strokeStyle = "rgba(100,140,180,0.12)";
+  ctx.lineWidth = 0.5;
+  const step = (cam.right - cam.left) / 8;
+  for (let wx = cam.left; wx <= cam.right; wx += step) {
+    const [sx] = toUV(wx, cam.top);
+    ctx.beginPath();
+    ctx.moveTo(sx, 0);
+    ctx.lineTo(sx, SIZE);
+    ctx.stroke();
+  }
+  for (let wz = cam.top; wz <= cam.bottom; wz += step) {
+    const [, sy] = toUV(cam.left, wz);
+    ctx.beginPath();
+    ctx.moveTo(0, sy);
+    ctx.lineTo(SIZE, sy);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // ── Part dot highlights (selected = bright red ring) ─────────────────────
+  scene.traverse((mount) => {
+    if (!mount.userData?.isMount) return;
+    const type = mount.userData.type ?? "frame";
+    const isSelected = mount === selectedMount;
+    const [px, py] = toUV(mount.position.x, mount.position.z);
+    const dotR = type === "wheel" ? 4 : type === "motor" ? 5 : 6;
+
+    if (isSelected) {
+      // Outer pulse ring
+      ctx.save();
+      ctx.strokeStyle = "rgba(220,50,0,0.85)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(px, py, dotR + 5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+  });
+
+  // ── Camera frustum footprint ──────────────────────────────────────────────
+  // Project the 4 corners of the main camera's view frustum onto the floor (y=0)
+  const frustumCorners = getFrustumFootprint();
+  if (frustumCorners.length === 4) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,200,80,0.7)";
+    ctx.fillStyle = "rgba(255,200,80,0.06)";
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    frustumCorners.forEach(([wx, wz], i) => {
+      const [px, py] = toUV(wx, wz);
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    });
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  // ── Compass rose (camera look direction) ─────────────────────────────────
+  drawCompass(ctx, SIZE);
+}
+
+function getFrustumFootprint() {
+  // Cast rays from the 4 screen corners through the main camera onto y=0
+  const corners2D = [
+    [-1, -1],
+    [1, -1],
+    [1, 1],
+    [-1, 1],
+  ];
+  const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  const result = [];
+  const ray = new THREE.Ray();
+
+  for (const [nx, ny] of corners2D) {
+    const ndc = new THREE.Vector3(nx, ny, 0.5);
+    ndc.unproject(camera);
+    ray.origin.copy(camera.position);
+    ray.direction.subVectors(ndc, camera.position).normalize();
+    const hit = new THREE.Vector3();
+    if (ray.intersectPlane(groundPlane, hit)) {
+      result.push([hit.x, hit.z]);
+    }
+  }
+  return result.length === 4 ? result : [];
+}
+
+function drawCompass(ctx, SIZE) {
+  // Camera look direction projected onto XZ
+  const dir = new THREE.Vector3();
+  camera.getWorldDirection(dir);
+  dir.y = 0;
+  if (dir.lengthSq() < 0.001) return;
+  dir.normalize();
+
+  const cx = SIZE - 22,
+    cy = 22,
+    r = 14;
+
+  // Background circle
+  ctx.save();
+  ctx.fillStyle = "rgba(10,16,26,0.75)";
+  ctx.strokeStyle = "rgba(208,88,24,0.5)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // N label
+  ctx.fillStyle = "rgba(140,170,200,0.6)";
+  ctx.font = "bold 7px 'Orbitron', sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("N", cx, cy - r + 5);
+
+  // Arrow pointing in camera look direction
+  // dir.x = world X → minimap right, dir.z = world Z → minimap down
+  const angle = Math.atan2(dir.x, dir.z); // angle from north (Z-)
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(angle);
+  ctx.fillStyle = "#e87030";
+  ctx.beginPath();
+  ctx.moveTo(0, -(r - 3));
+  ctx.lineTo(3.5, 3);
+  ctx.lineTo(0, 1);
+  ctx.lineTo(-3.5, 3);
+  ctx.closePath();
+  ctx.fill();
+  // Tail
+  ctx.fillStyle = "rgba(140,170,200,0.45)";
+  ctx.beginPath();
+  ctx.moveTo(0, r - 3);
+  ctx.lineTo(2.5, -2);
+  ctx.lineTo(0, 0);
+  ctx.lineTo(-2.5, -2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+  ctx.restore();
+}
+
+// Frame counter to throttle minimap updates (every 2nd frame)
+let _minimapFrameSkip = 0;
+
+function renderMinimap() {
+  if (!minimapRenderer || !minimapOrthoCamera || minimapCollapsed) return;
+  _minimapFrameSkip++;
+  if (_minimapFrameSkip % 2 !== 0) return; // render every other frame
+
+  // Hide ghost, socket markers and grid for clean top-down render
+  const hiddenObjects = [];
+  scene.traverse((o) => {
+    if (!o.visible) return;
+    const isMarker =
+      frameMarkers.includes(o) ||
+      motorMarkers.includes(o) ||
+      triangleMarkers.includes(o) ||
+      frameOnSupportMarkers.includes(o) ||
+      wheelMarkers.includes(o);
+    if (
+      isMarker ||
+      (ghost && isDescendantOf(o, ghost)) ||
+      o === sceneGridMajor ||
+      o === sceneGridMinor ||
+      o === sceneGround
+    ) {
+      o.visible = false;
+      hiddenObjects.push(o);
+    }
+  });
+
+  updateMinimapCamera();
+
+  const savedBg = scene.background ? scene.background.clone() : null;
+  const savedFog = scene.fog;
+  scene.background = new THREE.Color(0x070d14);
+  scene.fog = null;
+
+  minimapRenderer.render(scene, minimapOrthoCamera);
+
+  scene.background = savedBg ?? new THREE.Color(0x8aaec8);
+  scene.fog = savedFog;
+  hiddenObjects.forEach((o) => {
+    o.visible = true;
+  });
+
+  drawMinimapOverlay();
 }
