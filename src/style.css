@@ -932,17 +932,19 @@ canvas#app {
 .basket-items {
   display: flex;
   flex-direction: column;
-  gap: clamp(3px, 0.4vh, 5px);
+  gap: clamp(2px, 0.3vh, 4px);
 }
+
+/* ── BASKET ITEM ROWS — thinner, subtler amber stripe ── */
 .basket-items > * {
   font-family: var(--font-display);
-  font-size: clamp(11px, 1vw, 14px);
+  font-size: clamp(10px, 0.88vw, 12px);
   font-weight: 600;
   color: #d8eaf8;
-  padding: clamp(6px, 0.8vh, 10px) clamp(8px, 0.9vw, 12px);
+  padding: clamp(4px, 0.45vh, 6px) clamp(8px, 0.9vw, 12px);
   background: #1e2c3e;
   border: 1px solid #2e4058;
-  border-left: 3px solid var(--amb);
+  border-left: 2px solid rgba(208, 88, 24, 0.65);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -956,6 +958,8 @@ canvas#app {
   background: #243448;
   border-color: #3a5068;
 }
+
+/* ── BASKET DIVIDER + SUMMARY ROW — readable ── */
 .basket-divider {
   height: 1px;
   background: var(--border-amb);
@@ -973,6 +977,22 @@ canvas#app {
   letter-spacing: 0.15em;
   background: var(--bg-panel-r);
   padding: 0 4px;
+}
+
+/* Summary / totals row rendered by inventory.js */
+.basket-summary-row,
+.basket-items .basket-summary {
+  font-family: var(--font-mono) !important;
+  font-size: clamp(9px, 0.8vw, 11px) !important;
+  font-weight: 400 !important;
+  color: #8aacbf !important;
+  background: #111c2a !important;
+  border: 1px solid #1e3048 !important;
+  border-left: 2px solid rgba(208, 88, 24, 0.3) !important;
+  padding: clamp(3px, 0.38vh, 5px) clamp(8px, 0.9vw, 12px) !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  justify-content: space-between !important;
 }
 
 .basket-footer {
@@ -1607,7 +1627,7 @@ canvas#app {
   flex-shrink: 0;
 }
 
-/* ── Label text beside arrow glyph — hidden by default, shown on .arrow-key-labeled ── */
+/* ── Label text beside arrow glyph ── */
 .arrow-key-label {
   display: none;
 }

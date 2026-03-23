@@ -1153,8 +1153,6 @@ function bindUI() {
   const arrowRight = document.getElementById("arrowKeyRight");
 
   function fireArrow(dir) {
-    // Simulate the key logic inline so on-screen clicks behave identically
-    // NOTE: motor rotation intentionally excluded — motor uses auto-orient only
     if (!placementMode) return;
     flashArrowKey(dir === 1 ? "right" : "left");
 
@@ -1169,7 +1167,6 @@ function bindUI() {
         0,
       );
     }
-    // Support bridge rotation is disabled — orientation is auto-determined.
     if (placementMode === "frame") {
       frameOnSupportRotationSteps += dir;
       const deg = (((frameOnSupportRotationSteps % 4) + 4) % 4) * 90;
@@ -1240,17 +1237,6 @@ function bind(id, fn) {
   const el = document.getElementById(id);
   if (el) el.addEventListener("click", fn);
 }
-
-/* =========================================================
-   FRAME-ON-SUPPORT GHOST REFRESH HELPER
-   ─────────────────────────────────────────────────────────
-   Called when frameOnSupportRotationSteps changes while the
-   ghost is already hovering a support socket, so the preview
-   updates immediately without waiting for the next mousemove.
-   ========================================================= */
-
-// Stores the last support socket the ghost snapped to, so we can re-snap
-// when the user changes rotation steps via arrow keys.
 
 /* =========================================================
    FINALIZE / EDIT
@@ -1496,7 +1482,6 @@ function showAddressOverlay() {
   const existing = document.getElementById("addr-overlay");
   if (existing) existing.remove();
 
-  // ── Collect order data ────────────────────────────────────────────────────
   const counts = {};
   scene.traverse((o) => {
     if (!o.userData?.isMount) return;
@@ -1507,7 +1492,6 @@ function showAddressOverlay() {
   const totalParts = Object.values(counts).reduce((a, b) => a + b, 0);
   const orderRef = "MK1-" + Date.now().toString(36).toUpperCase().slice(-8);
 
-  // ── All Indian states ─────────────────────────────────────────────────────
   const INDIAN_STATES = [
     "Andaman and Nicobar Islands",
     "Andhra Pradesh",
@@ -1547,7 +1531,6 @@ function showAddressOverlay() {
     "West Bengal",
   ];
 
-  // ── Inject styles once ────────────────────────────────────────────────────
   if (!document.getElementById("addr-kf")) {
     const s = document.createElement("style");
     s.id = "addr-kf";
@@ -1603,7 +1586,6 @@ function showAddressOverlay() {
     document.head.appendChild(s);
   }
 
-  // ── Backdrop ──────────────────────────────────────────────────────────────
   const backdrop = document.createElement("div");
   backdrop.id = "addr-overlay";
   Object.assign(backdrop.style, {
@@ -1616,7 +1598,6 @@ function showAddressOverlay() {
     overflowY: "auto",
   });
 
-  // ── Card ─────────────────────────────────────────────────────────────────
   const card = document.createElement("div");
   Object.assign(card.style, {
     position: "absolute",
@@ -1632,7 +1613,6 @@ function showAddressOverlay() {
     animation: "addrCardIn 0.3s ease both",
   });
 
-  // accent line
   const al = document.createElement("div");
   Object.assign(al.style, {
     height: "2px",
@@ -1641,7 +1621,6 @@ function showAddressOverlay() {
   });
   card.appendChild(al);
 
-  // ── Order summary strip ───────────────────────────────────────────────────
   const strip = document.createElement("div");
   Object.assign(strip.style, {
     background: "rgba(208,88,24,0.06)",
@@ -1716,7 +1695,6 @@ function showAddressOverlay() {
   strip.appendChild(stripStats);
   card.appendChild(strip);
 
-  // ── Form ─────────────────────────────────────────────────────────────────
   const body = document.createElement("div");
   body.style.padding = "22px 26px 26px";
 
@@ -1736,7 +1714,6 @@ function showAddressOverlay() {
   secTitle.innerHTML = `<span style="width:3px;height:13px;background:#d05818;display:inline-block;flex-shrink:0"></span>Delivery Address`;
   body.appendChild(secTitle);
 
-  // ── Field helpers ─────────────────────────────────────────────────────────
   const mkField = (labelTxt, placeholder, required = true, type = "text") => {
     const wrap = document.createElement("div");
     wrap.className = "addr-field";
@@ -1792,7 +1769,6 @@ function showAddressOverlay() {
     return r;
   };
 
-  // ── Fields ────────────────────────────────────────────────────────────────
   const fLine1 = mkField("Address Line 1", "House / Flat No., Building Name");
   const fLine2 = mkField("Address Line 2", "Street, Area, Landmark", false);
   const fLine3 = mkField("Address Line 3", "Locality / Neighbourhood", false);
@@ -1807,7 +1783,6 @@ function showAddressOverlay() {
   body.appendChild(mkRow("addr-row-211", fCity, fState, fPin));
   body.appendChild(mkRow("addr-row-1", fPhone));
 
-  // divider
   const divider = document.createElement("div");
   Object.assign(divider.style, {
     height: "1px",
@@ -1816,7 +1791,6 @@ function showAddressOverlay() {
   });
   body.appendChild(divider);
 
-  // button row
   const btnRow = document.createElement("div");
   Object.assign(btnRow.style, {
     display: "flex",
@@ -1845,7 +1819,6 @@ function showAddressOverlay() {
   submitBtn.className = "addr-btn addr-btn-submit";
   submitBtn.innerHTML = `<span>▶</span> PROCEED TO PAYMENT`;
   submitBtn.onclick = () => {
-    // Validate required fields
     const requiredFields = [fLine1, fCity, fState, fPin, fPhone];
     let valid = true;
     requiredFields.forEach((f) => {
@@ -1854,12 +1827,10 @@ function showAddressOverlay() {
         valid = false;
       }
     });
-    // PIN: 6 digits
     if (fPin.inp.value.trim() && !/^\d{6}$/.test(fPin.inp.value.trim())) {
       fPin.inp.classList.add("addr-err");
       valid = false;
     }
-    // Phone: at least 10 digits
     if (
       fPhone.inp.value.trim() &&
       fPhone.inp.value.replace(/\D/g, "").length < 10
@@ -2033,16 +2004,217 @@ function showOrderConfirmOverlay(addrLines, orderRef, totalCost, totalParts) {
   card.appendChild(addrBox);
   card.appendChild(refEl);
   card.appendChild(closeBtn);
-
   backdrop.appendChild(card);
   document.body.appendChild(backdrop);
+}
+
+/* =========================================================
+   TECHNICAL OVERLAY — draws grid + dimension annotations
+   onto a screenshot dataURL using an offscreen Canvas.
+   ========================================================= */
+
+function addTechnicalOverlay(dataURL, viewLabel) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const W = img.naturalWidth || 1200;
+      const H = img.naturalHeight || 600;
+
+      const canvas = document.createElement("canvas");
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext("2d");
+
+      // 1. Draw the original screenshot
+      ctx.drawImage(img, 0, 0, W, H);
+
+      // 2. FIRST scan bounding box BEFORE drawing the grid
+      //    (grid lines would pollute the pixel scan otherwise)
+      const imageData = ctx.getImageData(0, 0, W, H);
+      const data = imageData.data;
+      // Background is pure white (255,255,255) — anything clearly darker is the model
+      // Use a tight threshold so faint shadows/AA edges don't balloon the box
+      const BG_THRESH = 200;
+
+      let minX = W,
+        maxX = 0,
+        minY = H,
+        maxY = 0;
+      for (let py = 0; py < H; py++) {
+        for (let px = 0; px < W; px++) {
+          const i = (py * W + px) * 4;
+          const r = data[i],
+            g = data[i + 1],
+            b = data[i + 2],
+            a = data[i + 3];
+          // Only count pixels that are clearly non-white and opaque
+          if (a > 128 && (r < BG_THRESH || g < BG_THRESH || b < BG_THRESH)) {
+            if (px < minX) minX = px;
+            if (px > maxX) maxX = px;
+            if (py < minY) minY = py;
+            if (py > maxY) maxY = py;
+          }
+        }
+      }
+
+      // Fallback if detection finds nothing or a degenerate box
+      if (maxX <= minX + 40 || maxY <= minY + 40) {
+        minX = Math.round(W * 0.25);
+        maxX = Math.round(W * 0.75);
+        minY = Math.round(H * 0.2);
+        maxY = Math.round(H * 0.8);
+      }
+
+      // 3. Now draw grid AFTER scan so it doesn't affect bbox
+      const GRID = Math.round(W / 30); // ~30 cells wide regardless of resolution
+      ctx.save();
+      ctx.strokeStyle = "rgba(100,120,140,0.15)";
+      ctx.lineWidth = Math.max(0.5, W / 2400);
+      for (let x = 0; x <= W; x += GRID) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, H);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= H; y += GRID) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y);
+        ctx.stroke();
+      }
+      // Major grid every 5 cells
+      ctx.strokeStyle = "rgba(80,110,140,0.25)";
+      ctx.lineWidth = Math.max(0.75, W / 1600);
+      for (let x = 0; x <= W; x += GRID * 5) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, H);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= H; y += GRID * 5) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // 4. Dimension arrows — scale everything to canvas size
+      const PAD = Math.round(W * 0.018); // ~18px at 1000px wide
+      const LW = Math.max(1.5, W / 600); // line width
+      const AH = Math.max(8, W / 100); // arrowhead size
+      const TICK = Math.max(6, W / 150); // tick length
+      const FONT_SZ = Math.max(14, W / 80); // label font size
+      const LABEL_H = FONT_SZ + 6;
+      const LABEL_P = Math.round(FONT_SZ * 0.35);
+
+      function dimArrow(x1, y1, x2, y2, label) {
+        ctx.save();
+        ctx.strokeStyle = "rgba(200,50,0,0.92)";
+        ctx.fillStyle = "rgba(200,50,0,0.92)";
+        ctx.lineWidth = LW;
+        ctx.font = `bold ${FONT_SZ}px 'Courier New', monospace`;
+        ctx.textBaseline = "middle";
+
+        const horizontal = Math.abs(x2 - x1) >= Math.abs(y2 - y1);
+
+        // Main line
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+
+        // Arrowheads
+        function arrowhead(ax, ay, dir) {
+          ctx.beginPath();
+          if (horizontal) {
+            ctx.moveTo(ax, ay);
+            ctx.lineTo(ax - dir * AH, ay - AH * 0.45);
+            ctx.lineTo(ax - dir * AH, ay + AH * 0.45);
+          } else {
+            ctx.moveTo(ax, ay);
+            ctx.lineTo(ax - AH * 0.45, ay - dir * AH);
+            ctx.lineTo(ax + AH * 0.45, ay - dir * AH);
+          }
+          ctx.closePath();
+          ctx.fill();
+        }
+        arrowhead(x1, y1, horizontal ? -1 : -1);
+        arrowhead(x2, y2, horizontal ? 1 : 1);
+
+        // End ticks
+        function tick(ax, ay) {
+          ctx.beginPath();
+          if (horizontal) {
+            ctx.moveTo(ax, ay - TICK);
+            ctx.lineTo(ax, ay + TICK);
+          } else {
+            ctx.moveTo(ax - TICK, ay);
+            ctx.lineTo(ax + TICK, ay);
+          }
+          ctx.stroke();
+        }
+        tick(x1, y1);
+        tick(x2, y2);
+
+        // Label in white pill at midpoint
+        const mx = (x1 + x2) / 2;
+        const my = (y1 + y2) / 2;
+        const tw = ctx.measureText(label).width;
+        ctx.fillStyle = "rgba(255,255,255,0.92)";
+        ctx.fillRect(
+          mx - tw / 2 - LABEL_P,
+          my - LABEL_H / 2,
+          tw + LABEL_P * 2,
+          LABEL_H,
+        );
+        // Red border around label
+        ctx.strokeStyle = "rgba(200,50,0,0.6)";
+        ctx.lineWidth = Math.max(1, LW * 0.6);
+        ctx.strokeRect(
+          mx - tw / 2 - LABEL_P,
+          my - LABEL_H / 2,
+          tw + LABEL_P * 2,
+          LABEL_H,
+        );
+        ctx.fillStyle = "rgba(200,50,0,0.98)";
+        ctx.textAlign = "center";
+        ctx.fillText(label, mx, my + 1);
+        ctx.restore();
+      }
+
+      // Width arrow — sits just below the model
+      const widthY = Math.min(maxY + PAD * 2, H - LABEL_H - 4);
+      dimArrow(minX, widthY, maxX, widthY, "WIDTH");
+
+      // Height arrow — sits just to the right of the model
+      const heightX = Math.min(maxX + PAD * 2, W - LABEL_H - 4);
+      dimArrow(heightX, minY, heightX, maxY, "HEIGHT");
+
+      // Depth arrow — diagonal top-left, iso/perspective only
+      if (viewLabel === "ISOMETRIC" || viewLabel === "PERSPECTIVE") {
+        const objW = maxX - minX;
+        const objH = maxY - minY;
+        const dLen = Math.min(objW, objH) * 0.32;
+        const dx1 = Math.max(PAD * 2, minX - PAD);
+        const dy1 = minY + Math.round(objH * 0.15);
+        const dx2 = Math.max(PAD, dx1 - dLen * 0.7);
+        const dy2 = dy1 + dLen * 0.45;
+        dimArrow(dx1, dy1, dx2, dy2, "DEPTH");
+      }
+
+      resolve(canvas.toDataURL("image/png"));
+    };
+    img.onerror = () => resolve(dataURL);
+    img.src = dataURL;
+  });
 }
 
 /* =========================================================
    PRINT DESIGN — Multi-angle screenshots
    ========================================================= */
 
-function printDesign() {
+async function printDesign() {
   const angleKeys = [
     "perspective",
     "front",
@@ -2063,21 +2235,43 @@ function printDesign() {
     right: "Right",
     iso: "Isometric",
   };
+  const overlayLabels = {
+    perspective: "PERSPECTIVE",
+    front: "FRONT",
+    back: "BACK",
+    top: "TOP",
+    bottom: "BOTTOM",
+    left: "LEFT",
+    right: "RIGHT",
+    iso: "ISOMETRIC",
+  };
 
   showHudMessage("CAPTURING VIEWS...");
 
-  setTimeout(() => {
-    const screenshots = {};
+  setTimeout(async () => {
+    // Capture raw screenshots
+    const rawScreenshots = {};
     for (const key of angleKeys) {
-      screenshots[key] = captureFromAngle(key);
+      rawScreenshots[key] = captureFromAngle(key);
     }
 
+    // Add technical overlay (grid + dimensions) to each screenshot
+    const screenshots = {};
+    for (const key of angleKeys) {
+      screenshots[key] = await addTechnicalOverlay(
+        rawScreenshots[key],
+        overlayLabels[key],
+      );
+    }
+
+    // Collect basket rows (for reference, kept for compatibility)
     const basketRows = [];
     document.querySelectorAll("#basketItems > *").forEach((row) => {
       basketRows.push(row.textContent.trim().replace(/\s+/g, " "));
     });
     const total = document.getElementById("totalPrice")?.textContent ?? "0";
 
+    // Count placed parts
     const counts = {};
     scene.traverse((obj) => {
       if (!obj.userData?.isMount) return;
@@ -2085,15 +2279,78 @@ function printDesign() {
       counts[t] = (counts[t] ?? 0) + 1;
     });
 
-    const statsRows = Object.entries(counts)
-      .map(
-        ([t, n]) =>
-          `<tr><td>${t.replace(/_/g, " ").toUpperCase()}</td><td>${n}</td></tr>`,
-      )
+    // Compute per-type subtotals for manifest
+    const partCostMap = {
+      frame: 1200,
+      motor: 2500,
+      triangle_frame: 650,
+      support_frame: 900,
+      wheel: 1100,
+    };
+    const partLabelMap = {
+      frame: "Rectangular Frame",
+      motor: "Motor Housing",
+      triangle_frame: "Triangular Frame",
+      support_frame: "Support Frame",
+      wheel: "Wheel",
+    };
+
+    let computedTotal = 0;
+    const manifestRows = Object.entries(counts)
+      .map(([t, n]) => {
+        const cost = (partCostMap[t] ?? 0) * n;
+        computedTotal += cost;
+        return `<tr>
+        <td>${(partLabelMap[t] ?? t.replace(/_/g, " ")).toUpperCase()}</td>
+        <td style="text-align:center">${n}</td>
+        <td style="text-align:right;font-family:'Courier New',monospace;color:#cc2200">₹${cost.toLocaleString("en-IN")}</td>
+      </tr>`;
+      })
       .join("");
 
-    const basketRowsHTML = basketRows
-      .map((r) => `<tr><td colspan="2">${r}</td></tr>`)
+    const totalParts = Object.values(counts).reduce((a, b) => a + b, 0);
+
+    // Build cost breakdown rows with bracket separators
+    const costGroupRows = Object.entries(counts)
+      .map(([t, n]) => {
+        const unitCost = partCostMap[t] ?? 0;
+        const groupCost = unitCost * n;
+        const label = partLabelMap[t] ?? t.replace(/_/g, " ");
+        return `
+        <tr>
+          <td colspan="2" style="
+            font-family:'Courier New',monospace;
+            font-size:8px;
+            letter-spacing:0.18em;
+            color:#999;
+            padding:5px 12px 2px;
+            border-top:1px solid #ddd;
+            border-left:3px solid #cc2200;
+            background:#fafafa;
+          ">[ ${label.toUpperCase()} ]</td>
+        </tr>
+        <tr>
+          <td style="padding-left:18px;border-left:3px solid rgba(204,34,0,0.18)">${n}× ${label}</td>
+          <td style="text-align:right;font-family:'Courier New',monospace;font-weight:700">₹${groupCost.toLocaleString("en-IN")}</td>
+        </tr>
+        <tr>
+          <td style="padding-left:18px;font-size:10px;color:#888;font-family:'Courier New',monospace;border-left:3px solid rgba(204,34,0,0.18)">
+            @ ₹${unitCost.toLocaleString("en-IN")} each
+          </td>
+          <td></td>
+        </tr>
+        <tr>
+          <td colspan="2" style="
+            padding:1px 12px 4px;
+            border-left:3px solid #cc2200;
+            border-bottom:1px solid #e0e0e0;
+            font-family:'Courier New',monospace;
+            font-size:7px;
+            color:#ccc;
+            letter-spacing:0.1em;
+          "> </td>
+        </tr>`;
+      })
       .join("");
 
     const now = new Date().toLocaleString();
@@ -2113,7 +2370,6 @@ function printDesign() {
       .map(
         (k) => `
         <div class="angle-card">
-          <div class="angle-label">${angleLabels[k].toUpperCase()}</div>
           <img src="${screenshots[k]}" alt="${angleLabels[k]} view" />
         </div>
       `,
@@ -2129,6 +2385,7 @@ function printDesign() {
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@400;600;700&display=swap');
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #fff; color: #111; font-family: 'Rajdhani', sans-serif; padding: 22px 28px; }
+
     .print-header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 14px; border-bottom: 3px solid #1a1a1a; margin-bottom: 18px; }
     .print-title { font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 900; letter-spacing: 0.12em; color: #111; line-height: 1; }
     .print-subtitle { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #666; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 5px; }
@@ -2136,25 +2393,70 @@ function printDesign() {
     .status-badge { display: inline-block; padding: 2px 10px; font-size: 9px; font-family: 'Orbitron', sans-serif; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; border: 1.5px solid; margin-top: 4px; }
     .status-final  { color: #166534; border-color: #166534; background: #f0fdf4; }
     .status-draft  { color: #7f1d1d; border-color: #cc2200; background: #fff5f5; }
-    .main-view-wrap { width: 100%; border: 2px solid #222; margin-bottom: 14px; background: #f0f0f0; overflow: hidden; position: relative; }
-    .main-view-wrap img { width: 100%; display: block; max-height: 320px; object-fit: contain; }
-    .main-view-label { position: absolute; top: 8px; left: 12px; font-family: 'Orbitron', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.2em; color: #cc2200; background: rgba(255,255,255,0.82); padding: 3px 8px; }
+
+    /* Main isometric view — LARGER */
+    .main-view-wrap {
+      width: 100%;
+      border: 2px solid #222;
+      margin-bottom: 14px;
+      background: #f0f0f0;
+      overflow: hidden;
+      position: relative;
+    }
+    .main-view-wrap img {
+      width: 100%;
+      display: block;
+      max-height: 440px;
+      object-fit: contain;
+    }
+
     .section-title { font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.2em; color: #111; text-transform: uppercase; border-left: 4px solid #cc2200; padding-left: 10px; margin-bottom: 10px; }
+
+    /* Multi-angle grid — LARGER cards */
     .angles-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 18px; }
-    .angle-card { border: 1.5px solid #222; background: #f0f0f0; overflow: hidden; position: relative; }
-    .angle-label { font-family: 'Orbitron', sans-serif; font-size: 7px; font-weight: 700; letter-spacing: 0.18em; color: #cc2200; background: rgba(255,255,255,0.82); padding: 3px 6px; position: absolute; top: 0; left: 0; z-index: 1; }
-    .angle-card img { width: 100%; display: block; max-height: 130px; object-fit: contain; }
+    .angle-card { border: 1.5px solid #222; background: #f0f0f0; overflow: hidden; }
+    .angle-card img {
+      width: 100%;
+      display: block;
+      max-height: 180px;
+      object-fit: contain;
+    }
+
     .tables-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
     .table-card { border: 1.5px solid #222; }
     .table-card-header { background: #1a1a1a; color: #cc2200; font-family: 'Orbitron', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.18em; padding: 6px 12px; text-transform: uppercase; }
+
     table { width: 100%; border-collapse: collapse; font-size: 12px; }
     td { padding: 6px 12px; border-bottom: 1px solid #e5e5e5; font-family: 'Rajdhani', sans-serif; letter-spacing: 0.03em; }
-    td:last-child { text-align: right; font-family: 'Share Tech Mono', monospace; font-weight: 700; }
     tr:last-child td { border-bottom: none; }
     tr:nth-child(even) td { background: #fafafa; }
+
+    /* Subtotal row in manifest */
+    .manifest-subtotal td {
+      font-family: 'Share Tech Mono', monospace !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      color: #cc2200 !important;
+      background: #fff5f5 !important;
+      border-top: 2px solid #cc2200 !important;
+      border-bottom: none !important;
+    }
+    .manifest-total-parts td {
+      font-family: 'Share Tech Mono', monospace !important;
+      font-size: 10px !important;
+      color: #555 !important;
+      background: #f8f8f8 !important;
+      border-bottom: none !important;
+    }
+
+    /* Cost breakdown — no alternating bg on bracket rows */
+    .cost-table td { padding: 4px 12px; font-size: 12px; border-bottom: none; }
+    .cost-table tr:nth-child(even) td { background: transparent; }
+
     .total-bar { display: flex; justify-content: space-between; align-items: center; border: 2px solid #1a1a1a; padding: 10px 20px; margin-bottom: 16px; background: #f8f8f8; }
     .total-label { font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.1em; color: #111; }
     .total-value { font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 900; color: #cc2200; letter-spacing: 0.06em; }
+
     .print-footer { border-top: 1px solid #ccc; padding-top: 10px; display: flex; justify-content: space-between; font-family: 'Share Tech Mono', monospace; font-size: 9px; color: #888; letter-spacing: 0.08em; }
     @media print { body { padding: 12px 16px; } }
   </style>
@@ -2167,47 +2469,66 @@ function printDesign() {
     </div>
     <div class="print-meta">
       Generated: ${now}<br>
-      Parts: ${Object.values(counts).reduce((a, b) => a + b, 0)}<br>
+      Parts: ${totalParts}<br>
       <span class="status-badge ${isFinalized ? "status-final" : "status-draft"}">
         ${isFinalized ? "✓ Finalized" : "⚠ Draft"}
       </span>
     </div>
   </div>
+
   <div class="main-view-wrap">
-    <div class="main-view-label">◈ ISOMETRIC VIEW</div>
     <img src="${mainShot}" alt="Isometric View"/>
   </div>
+
   <div class="section-title">◼ MULTI-ANGLE VIEWS</div>
   <div class="angles-grid">${otherAnglesHTML}</div>
+
   <div class="tables-row">
+    <!-- Component Manifest with Subtotal -->
     <div class="table-card">
       <div class="table-card-header">Component Manifest</div>
       <table>
-        <tr><td><strong>Type</strong></td><td><strong>Qty</strong></td></tr>
-        ${statsRows || "<tr><td colspan='2'>No parts placed</td></tr>"}
+        <tr>
+          <td><strong>Type</strong></td>
+          <td style="text-align:center"><strong>Qty</strong></td>
+          <td style="text-align:right"><strong>Cost</strong></td>
+        </tr>
+        ${manifestRows || "<tr><td colspan='3'>No parts placed</td></tr>"}
+        <tr class="manifest-subtotal">
+          <td colspan="2">SUBTOTAL</td>
+          <td style="text-align:right">₹${computedTotal.toLocaleString("en-IN")}</td>
+        </tr>
+        <tr class="manifest-total-parts">
+          <td colspan="3">${totalParts} PARTS &nbsp;·&nbsp; ${Object.keys(counts).length} TYPES</td>
+        </tr>
       </table>
     </div>
+
+    <!-- Cost Breakdown with bracket separators -->
     <div class="table-card">
       <div class="table-card-header">Cost Breakdown</div>
-      <table>
-        ${basketRowsHTML || "<tr><td colspan='2'>Empty</td></tr>"}
+      <table class="cost-table">
+        ${costGroupRows || "<tr><td colspan='2'>Empty</td></tr>"}
       </table>
     </div>
   </div>
+
   <div class="total-bar">
     <span class="total-label">TOTAL REQUISITION COST</span>
     <span class="total-value">₹${total}</span>
   </div>
+
   <div class="print-footer">
     <span>ROBOT CONFIGURATOR v1.0 — UNIT MK-1</span>
     <span>CONFIDENTIAL — INTERNAL USE ONLY</span>
     <span>${now}</span>
   </div>
+
   <script>window.onload = () => { window.print(); };<\/script>
 </body>
 </html>`;
 
-    const win = window.open("", "_blank", "width=1000,height=800");
+    const win = window.open("", "_blank", "width=1100,height=900");
     win.document.write(printHTML);
     win.document.close();
 
@@ -2245,7 +2566,6 @@ function toggleShortcutBar() {
   }
 }
 
-// ── CHANGE: removed "← →" entry from motor shortcuts (motor is auto-orient only)
 const SHORTCUT_DEFS = {
   idle: [
     { key: "CLICK", action: "Select part" },
@@ -2321,7 +2641,6 @@ function updateShortcutBar() {
 
   const defs = SHORTCUT_DEFS[mode] || SHORTCUT_DEFS.idle;
 
-  // ── CHANGE: motor arrow patching removed since motor has no arrow shortcut
   const patchedDefs = defs.map((d) => {
     if (mode === "frame" && d.key === "← →") {
       const deg = (((frameOnSupportRotationSteps % 4) + 4) % 4) * 90;
@@ -2333,7 +2652,6 @@ function updateShortcutBar() {
         action: `flip ${triangleManualRotSteps === 0 ? "0°→180°" : "180°→0°"}`,
       };
     }
-    // Support bridge has no manual rotation — shortcut bar unchanged.
     return d;
   });
 
@@ -2388,7 +2706,6 @@ function initShortcutBar() {
   });
   document.body.appendChild(shortcutBarEl);
 
-  // ── Help button — double downward chevron, centred in viewport ────────────
   const helpBtn = document.createElement("button");
   helpBtn.id = "help-toggle-btn";
   helpBtn.title = "Show shortcuts";
@@ -2682,7 +2999,6 @@ function clearGhost() {
   ghost = null;
   motorRotationGroup = null;
   placementMode = null;
-  // ── CURSOR: remove placement-mode class when exiting any placement mode ──
   document.body.classList.remove("placement-mode");
   applySocketHighlights();
   frameOnSupportRotationSteps = 0;
@@ -2724,8 +3040,6 @@ function clearGhost() {
   updateShortcutBar();
   updateLegendHighlight();
   clearTimeout(idleTimer);
-
-  // ── Hide the support axis guide line when leaving support mode ────────────
 }
 
 function applySocketDepth(target, socket, depth) {
@@ -2746,18 +3060,12 @@ function findMount(obj) {
 
 /* =========================================================
    SCREEN-SPACE PROXIMITY SNAP
-   ─────────────────────────────────────────────────────────
-   When a click misses a socket marker by raycasting, this
-   helper finds the nearest visible marker within thresholdPx
-   screen pixels and returns it, so near-misses still place
-   a part instead of exiting placement mode.
    ========================================================= */
 
 function findNearestMarkerOnScreen(markers, thresholdPx) {
   thresholdPx = thresholdPx !== undefined ? thresholdPx : 40;
   const canvas = renderer.domElement;
   const rect = canvas.getBoundingClientRect();
-  // Convert NDC mouse coords back to canvas pixels
   const mouseScreenX = ((mouse.x + 1) / 2) * rect.width;
   const mouseScreenY = ((1 - mouse.y) / 2) * rect.height;
 
@@ -2767,7 +3075,6 @@ function findNearestMarkerOnScreen(markers, thresholdPx) {
   for (const m of markers) {
     if (!m.visible) continue;
     const projected = m.position.clone().project(camera);
-    // projected.z > 1 means behind the camera
     if (projected.z > 1) continue;
     const sx = ((projected.x + 1) / 2) * rect.width;
     const sy = ((1 - projected.y) / 2) * rect.height;
@@ -2801,14 +3108,10 @@ function resolveMeshAndMount(obj) {
 
 function setMeshEmissive(mesh, colorHex) {
   if (!mesh?.material?.emissive) return new THREE.Color(0, 0, 0);
-
-  // If this mesh still uses a shared material (no _origMat stored), clone it
-  // so emissive changes don't bleed onto every other mesh using the same material.
   if (!mesh._origMat) {
-    mesh._origMat = mesh.material; // remember the shared original
-    mesh.material = mesh.material.clone(); // give this mesh its own copy
+    mesh._origMat = mesh.material;
+    mesh.material = mesh.material.clone();
   }
-
   const prev = mesh.material.emissive.clone();
   mesh.material.emissive.set(colorHex);
   return prev;
@@ -2816,9 +3119,7 @@ function setMeshEmissive(mesh, colorHex) {
 
 function restoreMeshEmissive(mesh, savedColor) {
   if (!mesh?.material) return;
-
   if (mesh._origMat) {
-    // Dispose the cloned material and restore the shared one
     mesh.material.dispose();
     mesh.material = mesh._origMat;
     delete mesh._origMat;
@@ -2840,15 +3141,12 @@ let selectedMeshes = [];
 
 function onWindowResize() {
   if (!renderer) return;
-
   const canvas = renderer.domElement;
   const container = canvas.parentElement || canvas;
   const width = container.clientWidth || window.innerWidth;
   const height = container.clientHeight || window.innerHeight;
-
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
-
   renderer.setSize(width, height, false);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 }
@@ -2937,17 +3235,14 @@ function rebuildSocketMarkers() {
   scene.traverse((o) => {
     if (!o.name || usedSockets.has(o.uuid)) return;
     if (suppressedSockets.has(o.uuid)) return;
-
     if (ghost && isDescendantOf(o, ghost)) return;
 
-    // ── DISABLED: SOCKET_FRAME_SUPPORT_B on support_frame mounts ─────────────
     if (o.name.toUpperCase() === "SOCKET_FRAME_SUPPORT_B") {
       let parentMount = o.parent;
       while (parentMount && !parentMount.userData?.isMount)
         parentMount = parentMount.parent;
       if (parentMount && parentMount.userData.type === "support_frame") return;
     }
-    // ─────────────────────────────────────────────────────────────────────────
 
     if (o.name.startsWith("SOCKET_FRAME_SUPPORT")) {
       addMarker(o, frameOnSupportMarkers, supportFrameSocketMat);
@@ -2958,7 +3253,6 @@ function rebuildSocketMarkers() {
     if (o.name.startsWith("SOCKET_MOTOR")) addMarker(o, motorMarkers, motorMat);
     if (o.name.startsWith("WHEEL_SOCKET"))
       addMarker(o, wheelMarkers, wheelSocketMat);
-
     if (o.name.startsWith("SOCKET_TRIANGLE"))
       addMarker(o, triangleSocketMarkers, frameMat);
     if (o.name.startsWith("SOCKET_STRESS_CONNECTOR"))
@@ -2966,9 +3260,6 @@ function rebuildSocketMarkers() {
   });
 
   triangleMarkers = [...triangleSocketMarkers, ...stressConnectorMarkers];
-
-  // ── Refresh axis line position whenever markers are rebuilt ───────────────
-  // (covers the case where a bridge is placed and sockets are consumed)
 }
 
 function isSocketNode(name) {
@@ -3034,9 +3325,7 @@ function getValidStressConnectorSockets() {
   const valid = [];
   for (const marker of stressConnectorMarkers) {
     const socketA = marker.userData.socket;
-    if (socketA && !usedSockets.has(socketA.uuid)) {
-      valid.push(marker);
-    }
+    if (socketA && !usedSockets.has(socketA.uuid)) valid.push(marker);
   }
   return valid;
 }
@@ -3075,7 +3364,6 @@ function applySocketHighlights() {
       m.scale.setScalar(1.5);
     });
   }
-
   if (mode === "motor") {
     motorMarkers.forEach((m) => {
       m.visible = true;
@@ -3083,7 +3371,6 @@ function applySocketHighlights() {
       m.scale.setScalar(1.5);
     });
   }
-
   if (mode === "triangle") {
     triangleSocketMarkers.forEach((m) => {
       m.visible = true;
@@ -3091,7 +3378,6 @@ function applySocketHighlights() {
       m.scale.setScalar(1.5);
     });
   }
-
   if (mode === "support") {
     const validSet = new Set(getValidStressConnectorSockets());
     stressConnectorMarkers.forEach((m) => {
@@ -3101,9 +3387,7 @@ function applySocketHighlights() {
         m.scale.setScalar(1.5);
       }
     });
-    // Refresh axis line position after visibility changes
   }
-
   if (mode === "wheel") {
     wheelMarkers.forEach((m) => {
       m.visible = true;
@@ -3131,7 +3415,6 @@ function hideRotationControls() {
 
 function updateRotationDisplay() {}
 
-// ── Arrow key highlight on physical keypress ──────────────────────────────────
 function flashArrowKey(direction) {
   const id = direction === "left" ? "arrowKeyLeft" : "arrowKeyRight";
   const el = document.getElementById(id);
@@ -3140,15 +3423,12 @@ function flashArrowKey(direction) {
   setTimeout(() => el.classList.remove("arrow-key-pressed"), 180);
 }
 
-// ── Wheel button enable/disable state ────────────────────────────────────────
 function updateWheelButtonState() {
   const btn = document.getElementById("addWheelBtn");
   if (!btn) return;
-
   const motorsPlaced = countPlaced("motor");
   const hasFreeSockets = wheelMarkers.length > 0;
   const shouldEnable = motorsPlaced > 0 && hasFreeSockets;
-
   btn.disabled = !shouldEnable;
   btn.style.opacity = shouldEnable ? "1" : "0.35";
   btn.style.pointerEvents = shouldEnable ? "auto" : "none";
@@ -3181,7 +3461,6 @@ function startMotorPlacement() {
   if (_ab) _ab.classList.add("active-mode");
   clearGhost();
   placementMode = "motor";
-  // ── CURSOR: entering placement mode ──
   document.body.classList.add("placement-mode");
   motorAutoBaseYaw = 0;
   motorManualRotSteps = 0;
@@ -3192,10 +3471,8 @@ function startMotorPlacement() {
 
   ghost = new THREE.Group();
   motorRotationGroup = new THREE.Group();
-
   const m = motorTemplate.clone(true);
   makeGhost(m);
-
   motorRotationGroup.add(m);
   ghost.add(motorRotationGroup);
   scene.add(ghost);
@@ -3207,17 +3484,14 @@ function startFramePlacement() {
   document
     .querySelectorAll(".btn.active-mode")
     .forEach((b) => b.classList.remove("active-mode"));
-
   const addFrameBtn = document.getElementById("addFrame");
   if (addFrameBtn) addFrameBtn.classList.add("active-mode");
   const addFrameToSupportBtn = document.getElementById("addFrameToSupport");
   if (addFrameToSupportBtn) addFrameToSupportBtn.classList.add("active-mode");
-
   clearGhost();
   frameOnSupportRotationSteps = 0;
   frameHoverType = "frame";
   placementMode = "frame";
-  // ── CURSOR: entering placement mode ──
   document.body.classList.add("placement-mode");
   applySocketHighlights();
   updateShortcutBar();
@@ -3238,7 +3512,6 @@ function startTrianglePlacement() {
   if (_ab) _ab.classList.add("active-mode");
   clearGhost();
   placementMode = "triangle";
-  // ── CURSOR: entering placement mode ──
   document.body.classList.add("placement-mode");
   applySocketHighlights();
   updateShortcutBar();
@@ -3276,7 +3549,6 @@ function startSupportPlacement() {
   if (_ab) _ab.classList.add("active-mode");
   clearGhost();
   placementMode = "support";
-  // ── CURSOR: entering placement mode ──
   document.body.classList.add("placement-mode");
   applySocketHighlights();
   updateShortcutBar();
@@ -3285,9 +3557,6 @@ function startSupportPlacement() {
   ghost = supportTemplate.clone(true);
   makeGhost(ghost);
   scene.add(ghost);
-
-  // ── Create and position the green axis guide line ─────────────────────────
-  // ─────────────────────────────────────────────────────────────────────────
 }
 
 /* =========================================================
@@ -3304,7 +3573,6 @@ function restartPlacementMode(mode) {
     motorManualRotSteps = 0;
     hoveredMotorMarker = null;
   }
-
   if (mode === "triangle") {
     triangleAutoBaseYaw = 0;
     triangleManualRotSteps = 0;
@@ -3315,7 +3583,6 @@ function restartPlacementMode(mode) {
       hoveredTriangleMarker = null;
     }
   }
-
   if (mode === "support") {
     supportManualRotSteps = 0;
     if (hoveredTriangleMarker) {
@@ -3323,9 +3590,7 @@ function restartPlacementMode(mode) {
       hoveredTriangleMarker.scale.setScalar(1.5);
       hoveredTriangleMarker = null;
     }
-    // Refresh axis line after a bridge is placed (sockets consumed, new centroid)
   }
-
   if (mode === "frame") {
     frameHoverType = "frame";
   }
@@ -3336,7 +3601,6 @@ function restartPlacementMode(mode) {
       makeGhost(ghost);
       scene.add(ghost);
       break;
-
     case "motor":
       ghost = new THREE.Group();
       motorRotationGroup = new THREE.Group();
@@ -3346,19 +3610,16 @@ function restartPlacementMode(mode) {
       ghost.add(motorRotationGroup);
       scene.add(ghost);
       break;
-
     case "triangle":
       ghost = triangleTemplate.clone(true);
       makeGhost(ghost);
       scene.add(ghost);
       break;
-
     case "support":
       ghost = supportTemplate.clone(true);
       makeGhost(ghost);
       scene.add(ghost);
       break;
-
     case "wheel":
       if (wheelTemplate) {
         ghost = wheelTemplate.clone(true);
@@ -3380,34 +3641,25 @@ function restartPlacementMode(mode) {
 
 function buildTriangleMountMap() {
   const mountMap = new Map();
-
   scene.traverse((o) => {
     if (!o.name?.startsWith("SOCKET_STRESS_CONNECTOR")) return;
     if (usedSockets.has(o.uuid)) return;
     if (ghost && isDescendantOf(o, ghost)) return;
-
     let m = o.parent;
     while (m && !m.userData?.isMount) m = m.parent;
     if (!m || m.userData.type !== "triangle_frame") return;
-
     o.updateMatrixWorld(true);
     const pos = new THREE.Vector3();
     o.getWorldPosition(pos);
-
     if (!mountMap.has(m)) mountMap.set(m, []);
     mountMap.get(m).push({ socket: o, pos });
   });
-
   return mountMap;
 }
 
 function canPlaceSupportBridge() {
   return buildTriangleMountMap().size >= 2;
 }
-
-/* =========================================================
-   RESOLVE BEST SUPPORT SOCKET PAIR
-   ========================================================= */
 
 function getParentRectFrame(triMount) {
   const attachSocket = triMount.userData?.socket;
@@ -3424,7 +3676,6 @@ function resolveBestSupportSocketPair(clickedSocket) {
   const mountMap = buildTriangleMountMap();
   if (mountMap.size < 2) return null;
 
-  // Find which triangle mount the clicked socket belongs to
   let clickedMount = clickedSocket.parent;
   while (clickedMount && !clickedMount.userData?.isMount)
     clickedMount = clickedMount.parent;
@@ -3432,9 +3683,6 @@ function resolveBestSupportSocketPair(clickedSocket) {
 
   const rectFrameA = getParentRectFrame(clickedMount);
 
-  // Find the closest socket PAIR across the two triangle mounts —
-  // one socket from each mount — so the bridge connectors land on
-  // real socket positions rather than averaged centroids.
   let bestSocketA = null,
     bestSocketB = null;
   let bestPosA = null,
@@ -3446,7 +3694,6 @@ function resolveBestSupportSocketPair(clickedSocket) {
       if (mount === clickedMount) continue;
       const rectFrameB = getParentRectFrame(mount);
       if (rectFrameA && rectFrameB && rectFrameA !== rectFrameB) continue;
-
       for (const entryB of entries) {
         const dist = entryA.pos.distanceTo(entryB.pos);
         if (dist < bestDist) {
@@ -3461,7 +3708,6 @@ function resolveBestSupportSocketPair(clickedSocket) {
   }
 
   if (!bestSocketA || !bestSocketB) return null;
-
   return {
     socketA: bestSocketA,
     posA: bestPosA,
@@ -3470,23 +3716,16 @@ function resolveBestSupportSocketPair(clickedSocket) {
   };
 }
 
-/* =========================================================
-   SUPPORT BRIDGE ALIGNMENT VALIDATION
-   ========================================================= */
-
 function checkSupportBridgeAlignment(pair) {
   const { posA, posB } = pair;
-
   const horizDist = Math.hypot(posB.x - posA.x, posB.z - posA.z);
   if (horizDist < 0.2) {
     return {
       ok: false,
       reason:
-        "The two Triangular Frame connectors are too close together to " +
-        "place a Support Bridge between them.",
+        "The two Triangular Frame connectors are too close together to place a Support Bridge between them.",
     };
   }
-
   return { ok: true };
 }
 
@@ -3531,10 +3770,10 @@ function applyTwoPointSupportSnap(
     const toAngle = Math.atan2(targetSpanX, targetSpanZ);
     const baseYaw = toAngle - fromAngle;
 
-    let bestYaw = baseYaw;
-    let bestConnector = connL;
-    let bestError = Infinity;
-    let bestFacingScore = -Infinity;
+    let bestYaw = baseYaw,
+      bestConnector = connL;
+    let bestError = Infinity,
+      bestFacingScore = -Infinity;
 
     const localExtrusionDir = new THREE.Vector3(0, 0, 1);
     if (connectorRoot) {
@@ -3542,9 +3781,8 @@ function applyTwoPointSupportSnap(
       const wCenter = tempBox.getCenter(new THREE.Vector3());
       const lCenter = connectorRoot.worldToLocal(wCenter.clone());
       lCenter.y = 0;
-      if (lCenter.lengthSq() > 0.0001) {
+      if (lCenter.lengthSq() > 0.0001)
         localExtrusionDir.copy(lCenter).normalize();
-      }
     }
 
     let triFrontWorld = new THREE.Vector3();
@@ -3557,7 +3795,6 @@ function applyTwoPointSupportSnap(
         const triCenter = triBox.getCenter(new THREE.Vector3());
         const socketPos = new THREE.Vector3();
         sourceSocket.getWorldPosition(socketPos);
-
         triFrontWorld.subVectors(socketPos, triCenter);
         triFrontWorld.y = 0;
         if (triFrontWorld.lengthSq() > 0.0001) triFrontWorld.normalize();
@@ -3567,17 +3804,16 @@ function applyTwoPointSupportSnap(
     for (const yaw of [baseYaw, baseYaw + Math.PI]) {
       mountGroup.rotation.set(0, yaw, 0);
       mountGroup.updateMatrixWorld(true);
-
       for (const [snap, other] of [
         [connL, connR],
         [connR, connL],
       ]) {
-        const sW = new THREE.Vector3();
-        const oW = new THREE.Vector3();
+        const sW = new THREE.Vector3(),
+          oW = new THREE.Vector3();
         snap.getWorldPosition(sW);
         other.getWorldPosition(oW);
-        const dx = posA.x - sW.x;
-        const dz = posA.z - sW.z;
+        const dx = posA.x - sW.x,
+          dz = posA.z - sW.z;
         const err = Math.hypot(oW.x + dx - posB.x, oW.z + dz - posB.z);
 
         let bridgeFrontWorld = new THREE.Vector3();
@@ -3585,11 +3821,9 @@ function applyTwoPointSupportSnap(
           const box = new THREE.Box3().setFromObject(connectorRoot);
           const center = box.getCenter(new THREE.Vector3());
           const localCenter = connectorRoot.worldToLocal(center.clone());
-
           const localSocket = new THREE.Vector3();
           snap.getWorldPosition(localSocket);
           connectorRoot.worldToLocal(localSocket);
-
           let bridgeFrontLocal = new THREE.Vector3().subVectors(
             localCenter,
             localSocket,
@@ -3597,45 +3831,41 @@ function applyTwoPointSupportSnap(
           bridgeFrontLocal.y = 0;
           if (bridgeFrontLocal.lengthSq() > 0.0001)
             bridgeFrontLocal.normalize();
-
           bridgeFrontWorld = bridgeFrontLocal
             .clone()
             .applyEuler(new THREE.Euler(0, yaw, 0));
         }
-
         const facingScore = bridgeFrontWorld.dot(triFrontWorld);
-
         if (err < bestError - 0.001) {
           bestError = err;
           bestYaw = yaw;
           bestConnector = snap;
           bestFacingScore = facingScore;
-        } else if (Math.abs(err - bestError) <= 0.001) {
-          if (facingScore > bestFacingScore) {
-            bestFacingScore = facingScore;
-            bestYaw = yaw;
-            bestConnector = snap;
-          }
+        } else if (
+          Math.abs(err - bestError) <= 0.001 &&
+          facingScore > bestFacingScore
+        ) {
+          bestFacingScore = facingScore;
+          bestYaw = yaw;
+          bestConnector = snap;
         }
       }
     }
 
     mountGroup.rotation.set(0, bestYaw + manualSteps * (Math.PI / 2), 0);
     mountGroup.updateMatrixWorld(true);
-
     const cWorld = new THREE.Vector3();
     bestConnector.getWorldPosition(cWorld);
     mountGroup.position.x += posA.x - cWorld.x;
     mountGroup.position.z += posA.z - cWorld.z;
     mountGroup.updateMatrixWorld(true);
 
-    const lW = new THREE.Vector3();
-    const rW = new THREE.Vector3();
+    const lW = new THREE.Vector3(),
+      rW = new THREE.Vector3();
     connL.getWorldPosition(lW);
     connR.getWorldPosition(rW);
     const connMidY = (lW.y + rW.y) / 2;
     mountGroup.position.y += targetY - connMidY + SUPPORT_SNAP_Y_ADJUST;
-
     mountGroup.rotation.set(0, mountGroup.rotation.y, 0);
     return;
   }
@@ -3664,12 +3894,9 @@ function onMouseMove(e) {
   if (!placementMode) {
     updateMouse(e);
     raycaster.setFromCamera(mouse, camera);
-
     const hits = raycaster.intersectObjects(scene.children, true);
-
-    let hitMesh = null;
-    let hitMount = null;
-
+    let hitMesh = null,
+      hitMount = null;
     for (const h of hits) {
       if (
         frameMarkers.includes(h.object) ||
@@ -3679,9 +3906,7 @@ function onMouseMove(e) {
         wheelMarkers.includes(h.object)
       )
         continue;
-
       if (ghost && isDescendantOf(h.object, ghost)) continue;
-
       const { mesh, mount } = resolveMeshAndMount(h.object);
       if (mount) {
         hitMesh = mesh;
@@ -3689,24 +3914,17 @@ function onMouseMove(e) {
         break;
       }
     }
-
     setHoverMesh(hitMesh, hitMount);
-
-    if (hitMount) {
-      showTooltip(hitMount, e.clientX, e.clientY);
-    } else {
-      hideTooltip();
-    }
+    if (hitMount) showTooltip(hitMount, e.clientX, e.clientY);
+    else hideTooltip();
     return;
   }
 
   if (isFinalized || !ghost) return;
-
   updateMouse(e);
   raycaster.setFromCamera(mouse, camera);
 
   if (placementMode === "frame") {
-    // ── Check for support socket hover first ─────────────────────────────────
     const supportHit = raycaster.intersectObjects(frameOnSupportMarkers)[0];
     if (supportHit) {
       frameHoverType = "support";
@@ -3714,9 +3932,7 @@ function onMouseMove(e) {
       socket.updateMatrixWorld(true);
       const pos = new THREE.Vector3();
       socket.getWorldPosition(pos);
-
       const localY = getFrameSupportSocketLocalY();
-
       ghost.position.set(
         pos.x,
         pos.y - localY + FRAME_ON_SUPPORT_Y_OFFSET,
@@ -3725,11 +3941,7 @@ function onMouseMove(e) {
       ghost.rotation.set(0, frameOnSupportRotationSteps * (Math.PI / 2), 0);
       return;
     }
-
-    if (frameHoverType === "support") {
-      frameHoverType = "frame";
-    }
-
+    if (frameHoverType === "support") frameHoverType = "frame";
     if (frameMarkers.length === 0) {
       const groundPlane = new THREE.Plane(
         new THREE.Vector3(0, 1, 0),
@@ -3743,10 +3955,8 @@ function onMouseMove(e) {
       }
       return;
     }
-
     const frameHit = raycaster.intersectObjects(frameMarkers)[0];
     if (!frameHit) return;
-
     frameHoverType = "frame";
     const socket = frameHit.object.userData.socket;
     const { mountPos } = computeFrameSnapPosition(socket);
@@ -3767,44 +3977,33 @@ function onMouseMove(e) {
 
   if (placementMode === "motor") {
     const hit = raycaster.intersectObjects(motorMarkers)[0];
-
     if (hoveredMotorMarker && hoveredMotorMarker !== hit?.object) {
       hoveredMotorMarker.material = MAT_MOTOR_ACTIVE;
       hoveredMotorMarker.scale.setScalar(1.5);
       hoveredMotorMarker = null;
     }
-
     if (!hit) return;
-
     const socket = hit.object.userData.socket;
     socket.updateMatrixWorld(true);
-
     if (hit.object !== hoveredMotorMarker) {
       hoveredMotorMarker = hit.object;
       hoveredMotorMarker.material = MAT_MOTOR_HOVER;
       hoveredMotorMarker.scale.setScalar(2.0);
     }
-
     const socketWorldPos = new THREE.Vector3();
     socket.getWorldPosition(socketWorldPos);
-
     const autoYaw = computeMotorAutoYaw(socket);
     motorAutoBaseYaw = autoYaw;
-
-    // Motor is auto-orient only — no manual rotation steps applied
     const finalYaw = motorAutoBaseYaw;
-
     ghost.position.copy(socketWorldPos);
     ghost.rotation.set(0, finalYaw, 0);
     motorRotationGroup.rotation.set(0, 0, 0);
-
     applySocketDepth(ghost, socket, 0.05);
     return;
   }
 
   if (placementMode === "support") {
     const targets = stressConnectorMarkers;
-
     if (!canPlaceSupportBridge()) {
       if (hoveredTriangleMarker) {
         hoveredTriangleMarker.material = MAT_TRI_ACTIVE;
@@ -3814,9 +4013,7 @@ function onMouseMove(e) {
       if (ghost) ghost.position.set(0, -9999, 0);
       return;
     }
-
     const hit = raycaster.intersectObjects(targets)[0];
-
     if (
       hoveredTriangleMarker &&
       hoveredTriangleMarker !== hit?.object &&
@@ -3826,15 +4023,12 @@ function onMouseMove(e) {
       hoveredTriangleMarker.scale.setScalar(1.5);
       hoveredTriangleMarker = null;
     }
-
     if (!hit) {
       if (ghost) ghost.position.set(0, -9999, 0);
       return;
     }
-
     const rawSocket = hit.object.userData.socket;
     rawSocket.updateMatrixWorld(true);
-
     if (
       hit.object !== hoveredTriangleMarker &&
       hit.object !== supportFirstMarker
@@ -3843,38 +4037,31 @@ function onMouseMove(e) {
       hoveredTriangleMarker.material = MAT_TRI_HOVER;
       hoveredTriangleMarker.scale.setScalar(2.0);
     }
-
     if (supportFirstSocket) {
-      let hoveredMount = rawSocket.parent;
-      while (hoveredMount && !hoveredMount.userData?.isMount)
-        hoveredMount = hoveredMount.parent;
-      let firstMount = supportFirstSocket.parent;
-      while (firstMount && !firstMount.userData?.isMount)
-        firstMount = firstMount.parent;
-
-      if (hoveredMount && firstMount && hoveredMount !== firstMount) {
-        const posA = new THREE.Vector3();
-        const posB = new THREE.Vector3();
+      let hm = rawSocket.parent;
+      while (hm && !hm.userData?.isMount) hm = hm.parent;
+      let fm = supportFirstSocket.parent;
+      while (fm && !fm.userData?.isMount) fm = fm.parent;
+      if (hm && fm && hm !== fm) {
+        const posA = new THREE.Vector3(),
+          posB = new THREE.Vector3();
         supportFirstSocket.getWorldPosition(posA);
         rawSocket.getWorldPosition(posB);
-
         ghost.position.set(0, 0, 0);
         ghost.rotation.set(0, 0, 0);
         ghost.scale.set(1, 1, 1);
         ghost.updateMatrixWorld(true);
-
         applyTwoPointSupportSnap(
           ghost,
           ghost,
           posA,
           posB,
-          0, // rotation disabled for support bridge
+          0,
           supportFirstSocket,
         );
         return;
       }
     }
-
     const pos = new THREE.Vector3();
     rawSocket.getWorldPosition(pos);
     ghost.position.copy(pos);
@@ -3883,41 +4070,29 @@ function onMouseMove(e) {
   }
 
   const targets = triangleSocketMarkers;
-
   const hit = raycaster.intersectObjects(targets)[0];
-
   if (hoveredTriangleMarker && hoveredTriangleMarker !== hit?.object) {
     hoveredTriangleMarker.material = MAT_TRI_ACTIVE;
     hoveredTriangleMarker.scale.setScalar(1.5);
     hoveredTriangleMarker = null;
     updateShortcutBar();
   }
-
   if (!hit) return;
-
   const socket = hit.object.userData.socket;
   socket.updateMatrixWorld(true);
-
   if (hit.object !== hoveredTriangleMarker) {
     const incomingUUID = socket.uuid;
     const isNewSocket = incomingUUID !== lastHoveredTriangleSocketUUID;
-
     hoveredTriangleMarker = hit.object;
     hoveredTriangleMarker.material = MAT_TRI_HOVER;
     hoveredTriangleMarker.scale.setScalar(2.0);
     lastHoveredTriangleSocketUUID = incomingUUID;
-
-    if (isNewSocket) {
-      triangleAutoBaseYaw = computeTriangleAutoYaw(socket);
-    }
+    if (isNewSocket) triangleAutoBaseYaw = computeTriangleAutoYaw(socket);
     updateShortcutBar();
   }
-
   const socketWorldPos = new THREE.Vector3();
   socket.getWorldPosition(socketWorldPos);
-
   const finalYaw = triangleAutoBaseYaw + triangleManualRotSteps * Math.PI;
-
   ghost.position.copy(socketWorldPos);
   ghost.rotation.set(0, finalYaw, 0);
   ghost.position.y = socketWorldPos.y + TRIANGLE_FRAME_Y_OFFSET;
@@ -3926,16 +4101,10 @@ function onMouseMove(e) {
 
 /* =========================================================
    CLICK HANDLER
-   =========================================================
-   CHANGE: Each placement branch now falls back to
-   findNearestMarkerOnScreen() before exiting placement mode,
-   so clicking slightly outside a socket marker still places
-   the part rather than exiting the mode.
    ========================================================= */
 
 function onClick(e) {
   if (isFinalized) return;
-
   updateMouse(e);
   raycaster.setFromCamera(mouse, camera);
 
@@ -3951,7 +4120,6 @@ function onClick(e) {
       )
         continue;
       if (ghost && isDescendantOf(h.object, ghost)) continue;
-
       const { mesh, mount } = resolveMeshAndMount(h.object);
       if (mount) {
         selectMesh(mesh, mount);
@@ -3975,8 +4143,6 @@ function onClick(e) {
       }
       return;
     }
-
-    // ── proximity fallback for support markers ────────────────────────────────
     const nearestSupport = findNearestMarkerOnScreen(frameOnSupportMarkers);
     if (nearestSupport) {
       const socket = nearestSupport.userData.socket;
@@ -3989,27 +4155,21 @@ function onClick(e) {
       }
       return;
     }
-
     if (frameMarkers.length === 0) {
       placeFrameAtPosition(ghost.position.x, ghost.position.z);
       restartPlacementMode("frame");
       checkQueuedIntent();
       return;
     }
-
-    // ── Try direct raycast hit, then proximity fallback ───────────────────────
     let frameHitObj = raycaster.intersectObjects(frameMarkers)[0];
     if (!frameHitObj) {
       const nearest = findNearestMarkerOnScreen(frameMarkers);
       if (nearest) frameHitObj = { object: nearest };
     }
-
-    // No marker anywhere near click — exit placement mode
     if (!frameHitObj) {
       clearGhost();
       return;
     }
-
     const socket = frameHitObj.object.userData.socket;
     if (usedSockets.has(socket.uuid)) return;
     placeFrame(socket);
@@ -4025,44 +4185,30 @@ function onClick(e) {
       );
       return;
     }
-
-    // ── Try direct raycast, then proximity fallback ───────────────────────────
     let hit = raycaster.intersectObjects(stressConnectorMarkers)[0];
     if (!hit) {
       const nearest = findNearestMarkerOnScreen(stressConnectorMarkers);
       if (nearest) hit = { object: nearest };
     }
-
-    // Click on empty space → exit placement mode
     if (!hit) {
       clearGhost();
       return;
     }
-
     const rawSocket = hit.object.userData.socket;
     if (usedSockets.has(rawSocket.uuid)) return;
-
-    // ── AUTO-RESOLVE: single click places the bridge automatically ───────────
-    // resolveBestSupportSocketPair picks the best matching socket on the
-    // opposing triangle frame based on outward normals, so it doesn't matter
-    // which specific socket the user clicks — the result is always correct.
     const pair = resolveBestSupportSocketPair(rawSocket);
-
     if (!pair) {
       showHudMessage(
         "⚠ Could not find a matching socket on a second Triangle Frame",
       );
       return;
     }
-
     const { socketA, posA, socketB, posB } = pair;
-
-    // Diagonal guard — resolved pair must run along X or Z axis, not diagonally
     {
-      const dx = Math.abs(posB.x - posA.x);
-      const dz = Math.abs(posB.z - posA.z);
-      const major = Math.max(dx, dz);
-      const minor = Math.min(dx, dz);
+      const dx = Math.abs(posB.x - posA.x),
+        dz = Math.abs(posB.z - posA.z);
+      const major = Math.max(dx, dz),
+        minor = Math.min(dx, dz);
       if (major > 0.1 && minor > 0.3 && minor / major > 0.3) {
         showPopup(
           "Support Bridges must run along a straight axis (X or Z).\n\n" +
@@ -4072,22 +4218,18 @@ function onClick(e) {
         return;
       }
     }
-
     if (usedSockets.has(socketA.uuid) || usedSockets.has(socketB.uuid)) {
       showHudMessage("⚠ One of those sockets is already used");
       return;
     }
-
-    // Guard: only one bridge per triangle pair
     let mountA = socketA.parent;
     while (mountA && !mountA.userData?.isMount) mountA = mountA.parent;
     let mountB = socketB.parent;
     while (mountB && !mountB.userData?.isMount) mountB = mountB.parent;
-
     const existingBridgeBetween = getAllMounts().some((m) => {
       if (m.userData.type !== "support_frame") return false;
-      const sA = m.userData.socket;
-      const sB = m.userData.socketB;
+      const sA = m.userData.socket,
+        sB = m.userData.socketB;
       if (!sA) return false;
       let mA = sA.parent;
       while (mA && !mA.userData?.isMount) mA = mA.parent;
@@ -4097,36 +4239,24 @@ function onClick(e) {
         (mA === mountA && mB === mountB) || (mA === mountB && mB === mountA)
       );
     });
-
     if (existingBridgeBetween) {
       showPopup(
-        "A Support Bridge already connects these two Triangle Frames.\n\n" +
-          "Only one bridge is allowed per triangle pair.",
+        "A Support Bridge already connects these two Triangle Frames.\n\nOnly one bridge is allowed per triangle pair.",
       );
       return;
     }
-
     if (hoveredTriangleMarker) {
       hoveredTriangleMarker.material = MAT_TRI_ACTIVE;
       hoveredTriangleMarker.scale.setScalar(1.5);
       hoveredTriangleMarker = null;
     }
-
-    placeSupportBridgeFromPair(
-      socketA,
-      posA,
-      socketB,
-      posB,
-      0, // rotation disabled for support bridge
-      socketA,
-    );
+    placeSupportBridgeFromPair(socketA, posA, socketB, posB, 0, socketA);
     restartPlacementMode("support");
     checkQueuedIntent();
     return;
   }
 
   if (placementMode === "wheel") {
-    // ── Try direct raycast, then proximity fallback ───────────────────────────
     let hit = raycaster.intersectObjects(wheelMarkers)[0];
     if (!hit) {
       const nearest = findNearestMarkerOnScreen(wheelMarkers);
@@ -4139,11 +4269,9 @@ function onClick(e) {
     const socket = hit.object.userData.socket;
     if (usedSockets.has(socket.uuid)) return;
     placeWheel(socket);
-
     rebuildSocketMarkers();
     updateWheelButtonState();
     applySocketHighlights();
-
     if (wheelMarkers.length === 0) {
       showHudMessage("All wheel sockets occupied — exiting placement");
       clearGhost();
@@ -4155,7 +4283,6 @@ function onClick(e) {
   }
 
   if (placementMode === "motor") {
-    // ── Try direct raycast, then proximity fallback ───────────────────────────
     let hit = raycaster.intersectObjects(motorMarkers)[0];
     if (!hit) {
       const nearest = findNearestMarkerOnScreen(motorMarkers);
@@ -4167,16 +4294,11 @@ function onClick(e) {
     }
     const socket = hit.object.userData.socket;
     if (usedSockets.has(socket.uuid)) return;
-
-    // Always recompute autoYaw from the actual socket being placed onto,
-    // in case the click used the proximity fallback (not the hovered socket).
     const finalMotorYaw = computeMotorAutoYaw(socket);
     placeMotor(socket, finalMotorYaw, 0);
-
     rebuildSocketMarkers();
     updateWheelButtonState();
     applySocketHighlights();
-
     if (motorMarkers.length === 0) {
       showHudMessage("All motor sockets occupied — exiting placement");
       clearGhost();
@@ -4188,7 +4310,6 @@ function onClick(e) {
   }
 
   if (placementMode === "triangle") {
-    // ── Try direct raycast, then proximity fallback ───────────────────────────
     let hit = raycaster.intersectObjects(triangleSocketMarkers)[0];
     if (!hit) {
       const nearest = findNearestMarkerOnScreen(triangleSocketMarkers);
@@ -4214,7 +4335,6 @@ function onClick(e) {
 function placeFrameAtPosition(x, z) {
   const frame = frameTemplate.clone(true);
   makeSolid(frame);
-
   const mount = new THREE.Group();
   mount.userData = { isMount: true, type: "frame" };
   mount.position.set(x, baseFrameYLevel, z);
@@ -4227,27 +4347,22 @@ function placeFrameAtPosition(x, z) {
 
 function placeFrame(socket) {
   if (usedSockets.has(socket.uuid)) return;
-
   const clickedSuffix = socket.name
     .replace(/^SOCKET_FRAME_/i, "")
     .toUpperCase();
   const snapSuffix = OPPOSITE_SOCKET_SUFFIX[clickedSuffix] ?? null;
   const snapSocketName = snapSuffix ? `SOCKET_FRAME_${snapSuffix}` : null;
-
   const { mountPos } = computeFrameSnapPosition(socket);
 
   const frame = frameTemplate.clone(true);
   makeSolid(frame);
-
   const mount = new THREE.Group();
   mount.userData = { isMount: true, socket, type: "frame" };
   mount.rotation.set(0, 0, 0);
   mount.position.copy(mountPos);
   mount.add(frame);
   scene.add(mount);
-
   scene.updateMatrixWorld(true);
-
   usedSockets.add(socket.uuid);
   const usedUuids = [socket.uuid];
 
@@ -4269,8 +4384,8 @@ function placeFrame(socket) {
   if (!snapFound) {
     const clickedPos = new THREE.Vector3();
     socket.getWorldPosition(clickedPos);
-    let closestUuid = null;
-    let closestDist = Infinity;
+    let closestUuid = null,
+      closestDist = Infinity;
     mount.traverse((o) => {
       if (!o.name) return;
       if (!o.name.toUpperCase().startsWith("SOCKET_FRAME")) return;
@@ -4296,26 +4411,18 @@ function placeFrame(socket) {
 function placeMotor(socket, autoBaseYaw = 0, manualSteps = 0) {
   const mount = new THREE.Group();
   mount.userData = { isMount: true, socket, type: "motor" };
-
   socket.updateMatrixWorld(true);
-
   const socketPos = new THREE.Vector3();
   socket.getWorldPosition(socketPos);
-
-  // Motor is auto-orient only — manualSteps is always 0 at call site
   const finalYaw = autoBaseYaw + manualSteps * (Math.PI / 2);
-
   mount.position.copy(socketPos);
   mount.rotation.set(0, finalYaw, 0);
-
   applySocketDepth(mount, socket, 0.05);
-
   const solidRotGroup = new THREE.Group();
   const solidMotor = motorTemplate.clone(true);
   makeSolid(solidMotor);
   solidRotGroup.add(solidMotor);
   mount.add(solidRotGroup);
-
   scene.add(mount);
   usedSockets.add(socket.uuid);
   addToInventory("motor");
@@ -4346,21 +4453,17 @@ function startWheelPlacement() {
     .forEach((b) => b.classList.remove("active-mode"));
   const _ab = document.getElementById("addWheelBtn");
   if (_ab) _ab.classList.add("active-mode");
-
   clearGhost();
   placementMode = "wheel";
-  // ── CURSOR: entering placement mode ──
   document.body.classList.add("placement-mode");
   applySocketHighlights();
   updateShortcutBar();
   updateLegendHighlight();
   showInstructionPanel("wheel");
-
   if (!wheelTemplate) {
     console.warn("Wheel template not loaded yet");
     return;
   }
-
   ghost = wheelTemplate.clone(true);
   makeGhost(ghost);
   scene.add(ghost);
@@ -4368,36 +4471,27 @@ function startWheelPlacement() {
 
 function placeWheel(socket) {
   if (!wheelTemplate) return;
-
   const wheel = wheelTemplate.clone(true);
   makeSolid(wheel);
-
   socket.updateMatrixWorld(true);
-
-  const socketPos = new THREE.Vector3();
-  const socketQuat = new THREE.Quaternion();
+  const socketPos = new THREE.Vector3(),
+    socketQuat = new THREE.Quaternion();
   socket.getWorldPosition(socketPos);
   socket.getWorldQuaternion(socketQuat);
-
   let connector = null;
   wheel.traverse((o) => {
     if (o.name && o.name.toUpperCase() === "MOTOR_CONNECTOR") connector = o;
   });
-
   const mount = new THREE.Group();
   mount.userData = { isMount: true, socket, type: "wheel" };
-
   mount.quaternion.copy(socketQuat);
-
   if (connector) {
     mount.position.set(0, 0, 0);
     mount.add(wheel);
     scene.add(mount);
     mount.updateMatrixWorld(true);
-
     const connectorWorldPos = new THREE.Vector3();
     connector.getWorldPosition(connectorWorldPos);
-
     mount.position.x += socketPos.x - connectorWorldPos.x;
     mount.position.y += socketPos.y - connectorWorldPos.y;
     mount.position.z += socketPos.z - connectorWorldPos.z;
@@ -4407,7 +4501,6 @@ function placeWheel(socket) {
     mount.add(wheel);
     scene.add(mount);
   }
-
   usedSockets.add(socket.uuid);
   addToInventory("wheel");
   pushUndo(mount, [socket.uuid], "wheel");
@@ -4419,33 +4512,24 @@ function placeWheel(socket) {
 function placeTriangle(socket, autoBaseYaw = 0, manualSteps = 0) {
   const triangle = triangleTemplate.clone(true);
   makeSolid(triangle);
-
   let connector = null;
   triangle.traverse((o) => {
     if (o.name === "SOCKET_FRAME_CONNECTOR") connector = o;
   });
-
   socket.updateMatrixWorld(true);
-
   const socketPos = new THREE.Vector3();
   socket.getWorldPosition(socketPos);
-
   const finalYaw = autoBaseYaw + manualSteps * Math.PI;
-
   const mount = new THREE.Group();
   mount.userData = { isMount: true, socket, type: "triangle_frame" };
-
   mount.rotation.set(0, finalYaw, 0);
-
   if (connector) {
     mount.position.set(0, 0, 0);
     mount.add(triangle);
     scene.add(mount);
     mount.updateMatrixWorld(true);
-
     const connectorWorldPos = new THREE.Vector3();
     connector.getWorldPosition(connectorWorldPos);
-
     mount.position.x += socketPos.x - connectorWorldPos.x;
     mount.position.y = socketPos.y + TRIANGLE_FRAME_Y_OFFSET;
     mount.position.z += socketPos.z - connectorWorldPos.z;
@@ -4458,7 +4542,6 @@ function placeTriangle(socket, autoBaseYaw = 0, manualSteps = 0) {
     mount.add(triangle);
     scene.add(mount);
   }
-
   usedSockets.add(socket.uuid);
   addToInventory("triangle_frame");
   pushUndo(mount, [socket.uuid], "triangle_frame");
@@ -4468,13 +4551,11 @@ function placeFrameOnSupport(socket, rotationSteps) {
   socket.updateMatrixWorld(true);
   const posSupA = new THREE.Vector3();
   socket.getWorldPosition(posSupA);
-
   let parentMount = socket.parent;
   while (parentMount && !parentMount.userData?.isMount)
     parentMount = parentMount.parent;
-
-  let siblingSocket = null;
-  let posSupB = null;
+  let siblingSocket = null,
+    posSupB = null;
   if (parentMount) {
     parentMount.updateMatrixWorld(true);
     let bestDist = -1;
@@ -4491,15 +4572,12 @@ function placeFrameOnSupport(socket, rotationSteps) {
       }
     });
   }
-
   const frame = frameTemplate.clone(true);
   makeSolid(frame);
-
   frame.position.set(0, 0, 0);
   frame.rotation.set(0, 0, 0);
   frame.scale.set(1, 1, 1);
   frame.updateMatrixWorld(true);
-
   const rectConnectors = [];
   frame.traverse((o) => {
     if (!o.name) return;
@@ -4510,7 +4588,6 @@ function placeFrameOnSupport(socket, rotationSteps) {
       rectConnectors.push({ name: o.name, x: wp.x, y: wp.y, z: wp.z });
     }
   });
-
   if (rectConnectors.length === 0) {
     const mount = new THREE.Group();
     mount.userData = { isMount: true, socket, type: "frame" };
@@ -4531,7 +4608,6 @@ function placeFrameOnSupport(socket, rotationSteps) {
     pushUndo(mount, uuids, "frame");
     return;
   }
-
   const candidateAngles = [];
   if (posSupB) {
     const axisAngle = Math.atan2(posSupB.x - posSupA.x, posSupB.z - posSupA.z);
@@ -4540,20 +4616,17 @@ function placeFrameOnSupport(socket, rotationSteps) {
   } else {
     for (let i = 0; i < 4; i++) candidateAngles.push((i * Math.PI) / 2);
   }
-
-  let bestError = Infinity;
-  let bestAngle = 0;
-  let bestSnapConn = rectConnectors[0];
-
+  let bestError = Infinity,
+    bestAngle = 0,
+    bestSnapConn = rectConnectors[0];
   for (const snapConn of rectConnectors) {
     for (const angle of candidateAngles) {
       const cos = Math.cos(angle),
         sin = Math.sin(angle);
       const rsX = cos * snapConn.x + sin * snapConn.z;
       const rsZ = -sin * snapConn.x + cos * snapConn.z;
-      const mX = posSupA.x - rsX;
-      const mZ = posSupA.z - rsZ;
-
+      const mX = posSupA.x - rsX,
+        mZ = posSupA.z - rsZ;
       let error = 0;
       if (posSupB) {
         let minDist = Infinity;
@@ -4566,7 +4639,6 @@ function placeFrameOnSupport(socket, rotationSteps) {
         }
         error = minDist;
       }
-
       if (error < bestError) {
         bestError = error;
         bestAngle = angle;
@@ -4574,18 +4646,14 @@ function placeFrameOnSupport(socket, rotationSteps) {
       }
     }
   }
-
   const finalAngle = bestAngle + rotationSteps * (Math.PI / 2);
   const cos = Math.cos(finalAngle),
     sin = Math.sin(finalAngle);
-
   const rsX = cos * bestSnapConn.x + sin * bestSnapConn.z;
   const rsZ = -sin * bestSnapConn.x + cos * bestSnapConn.z;
-
   const finalMountX = posSupA.x - rsX;
   const finalMountY = posSupA.y - bestSnapConn.y + FRAME_ON_SUPPORT_Y_OFFSET;
   const finalMountZ = posSupA.z - rsZ;
-
   const mount = new THREE.Group();
   mount.userData = { isMount: true, socket, type: "frame" };
   mount.rotation.set(0, finalAngle, 0);
@@ -4593,7 +4661,6 @@ function placeFrameOnSupport(socket, rotationSteps) {
   mount.add(frame);
   scene.add(mount);
   mount.updateMatrixWorld(true);
-
   usedSockets.add(socket.uuid);
   if (siblingSocket) usedSockets.add(siblingSocket.uuid);
   addToInventory("frame");
@@ -4605,26 +4672,20 @@ function placeFrameOnSupport(socket, rotationSteps) {
 function placeSupportBridge(socket, manualSteps = 0) {
   const support = supportTemplate.clone(true);
   makeSolid(support);
-
   socket.updateMatrixWorld(true);
   const posA = new THREE.Vector3();
   socket.getWorldPosition(posA);
-
   const opposite = findOppositeTriangleSocket(socket);
   const posB = opposite?.pos ?? null;
   const socketB = opposite?.socket ?? null;
-
   const mount = new THREE.Group();
   mount.userData = { isMount: true, socket, socketB, type: "support_frame" };
-
   mount.position.set(0, 0, 0);
   mount.rotation.set(0, 0, 0);
   mount.add(support);
   scene.add(mount);
   mount.updateMatrixWorld(true);
-
   applyTwoPointSupportSnap(mount, support, posA, posB, manualSteps, socket);
-
   usedSockets.add(socket.uuid);
   if (socketB) usedSockets.add(socketB.uuid);
   addToInventory("support_frame");
@@ -4645,7 +4706,6 @@ function placeSupportBridgeFromPair(
 ) {
   const support = supportTemplate.clone(true);
   makeSolid(support);
-
   const mount = new THREE.Group();
   mount.userData = {
     isMount: true,
@@ -4653,15 +4713,12 @@ function placeSupportBridgeFromPair(
     socketB: socketB ?? null,
     type: "support_frame",
   };
-
   mount.position.set(0, 0, 0);
   mount.rotation.set(0, 0, 0);
   mount.add(support);
   scene.add(mount);
   mount.updateMatrixWorld(true);
-
   applyTwoPointSupportSnap(mount, support, posA, posB, manualSteps, socketA);
-
   usedSockets.add(socketA.uuid);
   if (socketB) usedSockets.add(socketB.uuid);
   addToInventory("support_frame");
@@ -4690,20 +4747,13 @@ function setHoverMesh(mesh, mount) {
     hoveredMount = mount;
     return;
   }
-
-  if (hoveredMesh && hoveredMesh !== selectedMesh) {
+  if (hoveredMesh && hoveredMesh !== selectedMesh)
     restoreMeshEmissive(hoveredMesh, hoveredOrigEm);
-  }
-
   hoveredMesh = mesh;
   hoveredMount = mount;
-
   if (hoveredMesh) {
-    if (hoveredMesh === selectedMesh) {
-      hoveredOrigEm.copy(selectedOrigEm);
-    } else {
-      hoveredOrigEm = setMeshEmissive(hoveredMesh, 0x001a2e);
-    }
+    if (hoveredMesh === selectedMesh) hoveredOrigEm.copy(selectedOrigEm);
+    else hoveredOrigEm = setMeshEmissive(hoveredMesh, 0x001a2e);
   }
 }
 
@@ -4714,34 +4764,25 @@ function selectMesh(mesh, mount) {
     selectedMount = null;
     return;
   }
-
   if (selectedMesh) {
     if (selectedMesh === hoveredMesh) {
       restoreMeshEmissive(selectedMesh, selectedOrigEm);
       setMeshEmissive(selectedMesh, 0x001a2e);
-    } else {
-      restoreMeshEmissive(selectedMesh, selectedOrigEm);
-    }
+    } else restoreMeshEmissive(selectedMesh, selectedOrigEm);
     selectedMesh = null;
   }
-
   selectedMount = mount;
   selectedMesh = mesh;
-
   if (selectedMesh) {
-    if (selectedMesh === hoveredMesh) {
-      selectedOrigEm = hoveredOrigEm.clone();
-    } else {
-      selectedOrigEm = setMeshEmissive(selectedMesh, 0x3d0020);
-    }
-    if (selectedMesh?.material?.emissive) {
+    if (selectedMesh === hoveredMesh) selectedOrigEm = hoveredOrigEm.clone();
+    else selectedOrigEm = setMeshEmissive(selectedMesh, 0x3d0020);
+    if (selectedMesh?.material?.emissive)
       selectedMesh.material.emissive.set(0x3d0020);
-    }
   }
 }
 
 /* =========================================================
-   UNDO
+   UNDO / REDO
    ========================================================= */
 
 function updateUndoRedoButtons() {
@@ -4766,10 +4807,8 @@ function performUndo() {
     showHudMessage("NOTHING TO UNDO");
     return;
   }
-
   const entry = undoStack.pop();
   const { mount, socketUuids, type } = entry;
-
   if (selectedMount === mount) {
     restoreMeshEmissive(selectedMesh, selectedOrigEm);
     selectedMesh = null;
@@ -4780,22 +4819,16 @@ function performUndo() {
     hoveredMesh = null;
     hoveredMount = null;
   }
-
   socketUuids.forEach((uuid) => usedSockets.delete(uuid));
-
   if (hoveredMotorMarker) hoveredMotorMarker = null;
   if (hoveredTriangleMarker) hoveredTriangleMarker = null;
-
   scene.remove(mount);
   removeFromInventory(type);
-
   redoStack.push(entry);
-
   rebuildSocketMarkers();
   updateWheelButtonState();
   applySocketHighlights();
   updateUndoRedoButtons();
-
   showHudMessage("UNDO ✓");
 }
 
@@ -4804,29 +4837,20 @@ function performRedo() {
     showHudMessage("NOTHING TO REDO");
     return;
   }
-
   const { mount, socketUuids, type } = redoStack.pop();
-
   scene.add(mount);
   socketUuids.forEach((uuid) => usedSockets.add(uuid));
   addToInventory(type);
-
   undoStack.push({ mount, socketUuids: [...socketUuids], type });
-
   rebuildSocketMarkers();
   updateWheelButtonState();
   applySocketHighlights();
   updateUndoRedoButtons();
-
   showHudMessage("REDO ✓");
 }
 
 /* =========================================================
    KEYBOARD HANDLER
-   =========================================================
-   CHANGE: ArrowLeft/Right no longer affect motor rotation.
-   Motor is auto-orient only. Keys still work for frame,
-   triangle, and support placement modes.
    ========================================================= */
 
 function onKeyDown(e) {
@@ -4836,15 +4860,12 @@ function onKeyDown(e) {
     showHudMessage("USE CTRL+R OR BROWSER REFRESH TO RELOAD");
     return;
   }
-
   if (isFinalized) return;
-
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
     e.preventDefault();
     performUndo();
     return;
   }
-
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") {
     e.preventDefault();
     performRedo();
@@ -4862,9 +4883,8 @@ function onKeyDown(e) {
       showHudMessage("SELECTION CLEARED — click a connector to start again");
       return;
     }
-    if (placementMode) {
-      clearGhost();
-    } else if (selectedMount) {
+    if (placementMode) clearGhost();
+    else if (selectedMount) {
       restoreMeshEmissive(selectedMesh, selectedOrigEm);
       selectedMesh = null;
       selectedMount = null;
@@ -4873,13 +4893,10 @@ function onKeyDown(e) {
   }
 
   if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-    // ── CHANGE: motor mode intentionally excluded — motor auto-orients only ──
     if (!placementMode || placementMode === "motor") return;
     e.preventDefault();
-
     const dir = e.key === "ArrowRight" ? 1 : -1;
     flashArrowKey(e.key === "ArrowRight" ? "right" : "left");
-
     if (placementMode === "triangle" && ghost) {
       triangleManualRotSteps = (triangleManualRotSteps + 1) % 2;
       const totalDeg = triangleManualRotSteps * 180;
@@ -4892,17 +4909,13 @@ function onKeyDown(e) {
         0,
       );
     }
-
-    // Support bridge rotation disabled — no handler needed.
-
     if (placementMode === "frame") {
       frameOnSupportRotationSteps += dir;
       const deg = (((frameOnSupportRotationSteps % 4) + 4) % 4) * 90;
       showHudMessage(`Frame rotation on support: ${deg}°`);
       updateShortcutBar();
-      if (ghost && frameHoverType === "support") {
+      if (ghost && frameHoverType === "support")
         ghost.rotation.set(0, frameOnSupportRotationSteps * (Math.PI / 2), 0);
-      }
     }
   }
 
@@ -4919,14 +4932,11 @@ function onKeyDown(e) {
 
   if ((e.key === "Delete" || e.key === "Backspace") && selectedMount) {
     const mountToDelete = selectedMount;
-
     const result = checkDeletionAllowed(mountToDelete);
-
     if (!result.ok) {
       showDependencyBlockedPopup(mountToDelete, result);
       return;
     }
-
     executeDelete(mountToDelete);
   }
 }
@@ -4947,14 +4957,12 @@ function initColorLegend() {
   const legend = document.getElementById("colorLegend");
   const toggleBtn = document.getElementById("legendToggle");
   if (!legend) return;
-
   toggleBtn?.addEventListener("click", () => {
     legend.classList.toggle("collapsed");
     toggleBtn.title = legend.classList.contains("collapsed")
       ? "Expand"
       : "Collapse";
   });
-
   legend.querySelectorAll(".legend-item").forEach((el, i) => {
     el.style.animationDelay = `${0.05 + i * 0.06}s`;
   });
@@ -4963,9 +4971,7 @@ function initColorLegend() {
 function updateLegendHighlight() {
   const legend = document.getElementById("colorLegend");
   if (!legend) return;
-
   const relevantColors = placementMode ? LEGEND_MODE_MAP[placementMode] : null;
-
   if (!relevantColors || relevantColors.length === 0) {
     legend.classList.remove("mode-active");
     legend
@@ -4973,7 +4979,6 @@ function updateLegendHighlight() {
       .forEach((el) => el.classList.remove("legend-relevant"));
     return;
   }
-
   legend.classList.add("mode-active");
   legend.querySelectorAll(".legend-item").forEach((el) => {
     const strong = el.querySelector("strong");
@@ -5005,46 +5010,34 @@ function initIdleArrows() {
 }
 
 function getNextActionTarget() {
-  if (motorMarkers.length > 0 && countPlaced("motor") === 0) {
+  if (motorMarkers.length > 0 && countPlaced("motor") === 0)
     return { id: "addMotor", label: "Click to add a Motor" };
-  }
   if (
     countPlaced("motor") > 0 &&
     wheelMarkers.length > 0 &&
     countPlaced("wheel") === 0
-  ) {
+  )
     return { id: "addWheelBtn", label: "Click to add Wheels" };
-  }
-  if (countPlaced("triangle_frame") < 2) {
+  if (countPlaced("triangle_frame") < 2)
     return { id: "addTriangle", label: "Add Tri. Frames for structure" };
-  }
-  if (
-    countPlaced("triangle_frame") >= 2 &&
-    countPlaced("support_frame") === 0
-  ) {
+  if (countPlaced("triangle_frame") >= 2 && countPlaced("support_frame") === 0)
     return { id: "addSupportFrame", label: "Now add a Support Frame" };
-  }
   return { id: "addFrame", label: "Expand with more Frames" };
 }
 
 function showIdleArrows() {
   if (placementMode || isFinalized) return;
   hideIdleArrows();
-
   const target = getNextActionTarget();
   const btnEl = document.getElementById(target.id);
   if (!btnEl) return;
-
   const container = document.getElementById("idle-arrows");
   if (!container) return;
-
   const rect = btnEl.getBoundingClientRect();
-
   const arrow = document.createElement("div");
   arrow.className = "idle-arrow";
   arrow.style.left = `${rect.right + 6}px`;
   arrow.style.top = `${rect.top + rect.height / 2 - 14}px`;
-
   arrow.innerHTML = `
     <div class="idle-arrow-shaft">
       <div class="idle-arrow-line"></div>
@@ -5052,20 +5045,16 @@ function showIdleArrows() {
     </div>
     <div class="idle-arrow-label">${target.label}</div>
   `;
-
   btnEl.style.transition = "box-shadow 0.4s ease";
   btnEl.style.boxShadow =
     "0 0 18px rgba(204,34,0,0.45), inset 0 0 12px rgba(204,34,0,0.08)";
-
   container.appendChild(arrow);
   idleArrowsShown = true;
-
   arrow.dataset.btnId = target.id;
 }
 
 function hideIdleArrows() {
   if (!idleArrowsShown) return;
-
   const container = document.getElementById("idle-arrows");
   if (container) {
     container.querySelectorAll(".idle-arrow").forEach((arrow) => {
@@ -5074,7 +5063,6 @@ function hideIdleArrows() {
     });
     container.innerHTML = "";
   }
-
   idleArrowsShown = false;
 }
 
@@ -5095,14 +5083,11 @@ let ctxTargetMount = null;
 
 function buildContextMenu(mount, screenX, screenY) {
   destroyContextMenu();
-
   ctxTargetMount = mount;
-
   const type = mount.userData.type ?? "frame";
   const label = PART_LABELS[type] ?? type.replace(/_/g, " ");
   const glyph = PART_GLYPHS[type] ?? "◈";
   const cost = PART_COSTS[type] ?? 0;
-
   const delResult = checkDeletionAllowed(mount);
   const depCount = delResult.ok ? 0 : delResult.dependents.length;
 
@@ -5167,11 +5152,8 @@ function buildContextMenu(mount, screenX, screenY) {
     danger: true,
     onClick: () => {
       destroyContextMenu();
-      if (depCount > 0) {
-        showDependencyBlockedPopup(mount, delResult);
-      } else {
-        executeDelete(mount);
-      }
+      if (depCount > 0) showDependencyBlockedPopup(mount, delResult);
+      else executeDelete(mount);
     },
   });
 
@@ -5183,24 +5165,20 @@ function buildContextMenu(mount, screenX, screenY) {
   }
 
   items.appendChild(deleteItem);
-
   menu.appendChild(items);
-
   document.body.appendChild(menu);
   ctxMenuEl = menu;
 
-  const mw = menu.offsetWidth || 220;
-  const mh = menu.offsetHeight || 180;
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-
-  let x = screenX + 4;
-  let y = screenY + 4;
+  const mw = menu.offsetWidth || 220,
+    mh = menu.offsetHeight || 180;
+  const vw = window.innerWidth,
+    vh = window.innerHeight;
+  let x = screenX + 4,
+    y = screenY + 4;
   if (x + mw > vw - 8) x = screenX - mw - 4;
   if (y + mh > vh - 8) y = screenY - mh - 4;
   x = Math.max(8, x);
   y = Math.max(8, y);
-
   menu.style.left = `${x}px`;
   menu.style.top = `${y}px`;
 
@@ -5216,7 +5194,6 @@ function makeCtxItem({ icon, label, hint, kbd, danger, disabled, onClick }) {
     "ctx-item" +
     (danger ? " ctx-danger" : "") +
     (disabled ? " ctx-disabled" : "");
-
   item.innerHTML = `
     <span class="ctx-item-icon">${icon}</span>
     <span class="ctx-item-body">
@@ -5224,7 +5201,6 @@ function makeCtxItem({ icon, label, hint, kbd, danger, disabled, onClick }) {
       ${hint ? `<span class="ctx-item-hint">${hint}</span>` : ""}
     </span>
     ${kbd ? `<span class="ctx-item-kbd">${kbd}</span>` : ""}`;
-
   if (!disabled) item.addEventListener("click", onClick);
   return item;
 }
@@ -5246,27 +5222,19 @@ function destroyContextMenu() {
 }
 
 function onCtxOutsideClick(e) {
-  if (ctxMenuEl && !ctxMenuEl.contains(e.target)) {
-    destroyContextMenu();
-  }
+  if (ctxMenuEl && !ctxMenuEl.contains(e.target)) destroyContextMenu();
 }
 
 function onCtxKeyDown(e) {
-  if (e.key === "Escape") {
-    destroyContextMenu();
-  }
+  if (e.key === "Escape") destroyContextMenu();
 }
 
 function onContextMenu(e) {
   e.preventDefault();
-
   if (placementMode || isFinalized) return;
-
   updateMouse(e);
   raycaster.setFromCamera(mouse, camera);
-
   const hits = raycaster.intersectObjects(scene.children, true);
-
   for (const h of hits) {
     if (
       frameMarkers.includes(h.object) ||
@@ -5276,7 +5244,6 @@ function onContextMenu(e) {
       wheelMarkers.includes(h.object)
     )
       continue;
-
     const { mount } = resolveMeshAndMount(h.object);
     if (mount) {
       let mesh = null;
@@ -5284,12 +5251,10 @@ function onContextMenu(e) {
         if (!mesh && o.isMesh) mesh = o;
       });
       selectMesh(mesh, mount);
-
       buildContextMenu(mount, e.clientX, e.clientY);
       return;
     }
   }
-
   destroyContextMenu();
 }
 
@@ -5304,17 +5269,13 @@ function executeDelete(mount) {
     hoveredMesh = null;
     hoveredMount = null;
   }
-
   const { socket, socketB, type } = mount.userData;
   usedSockets.delete(socket?.uuid);
   if (socketB) usedSockets.delete(socketB.uuid);
-
   for (const entry of undoStack) {
-    if (entry.mount === mount) {
+    if (entry.mount === mount)
       entry.socketUuids.forEach((uuid) => usedSockets.delete(uuid));
-    }
   }
-
   scene.remove(mount);
   removeFromInventory(type);
   rebuildSocketMarkers();
@@ -5326,10 +5287,8 @@ function executeDelete(mount) {
 function duplicateFrame(sourceMount) {
   const frame = frameTemplate.clone(true);
   makeSolid(frame);
-
   const mount = new THREE.Group();
   mount.userData = { isMount: true, type: "frame" };
-
   mount.position.set(
     sourceMount.position.x + 1.2,
     sourceMount.position.y,
@@ -5338,7 +5297,6 @@ function duplicateFrame(sourceMount) {
   mount.rotation.copy(sourceMount.rotation);
   mount.add(frame);
   scene.add(mount);
-
   addToInventory("frame");
   pushUndo(mount, [], "frame");
   rebuildSocketMarkers();
@@ -5349,7 +5307,7 @@ function duplicateFrame(sourceMount) {
 }
 
 /* =========================================================
-   LOOP
+   RENDER LOOP
    ========================================================= */
 
 function animate() {
@@ -5359,7 +5317,6 @@ function animate() {
   if (placementMode) {
     const t = Date.now() * 0.003;
     const pulse = 1.3 + Math.sin(t) * 0.3;
-
     const activeList =
       placementMode === "motor"
         ? motorMarkers
@@ -5372,15 +5329,11 @@ function animate() {
               : placementMode === "wheel"
                 ? wheelMarkers
                 : [];
-
     activeList.forEach((m) => {
       if (placementMode === "motor" && m === hoveredMotorMarker) return;
       m.scale.setScalar(pulse);
     });
   }
-
-  // ── Pulse the support axis guide line opacity in the render loop ──────────
-  // ─────────────────────────────────────────────────────────────────────────
 
   renderer.render(scene, camera);
 }
