@@ -1771,6 +1771,7 @@ function showAddressOverlay() {
     return r;
   };
 
+  const fName = mkField("Full Name", "e.g. Rahul Sharma");
   const fLine1 = mkField("Address Line 1", "House / Flat No., Building Name");
   const fLine2 = mkField("Address Line 2", "Street, Area, Landmark", false);
   const fLine3 = mkField("Address Line 3", "Locality / Neighbourhood", false);
@@ -1779,6 +1780,7 @@ function showAddressOverlay() {
   const fPin = mkField("PIN Code", "560001");
   const fPhone = mkField("Phone Number", "+91 98765 43210", true, "tel");
 
+  body.appendChild(mkRow("addr-row-1", fName));
   body.appendChild(mkRow("addr-row-1", fLine1));
   body.appendChild(mkRow("addr-row-1", fLine2));
   body.appendChild(mkRow("addr-row-1", fLine3));
@@ -1821,7 +1823,7 @@ function showAddressOverlay() {
   submitBtn.className = "addr-btn addr-btn-submit";
   submitBtn.innerHTML = `<span>▶</span> CONFIRM ORDER`;
   submitBtn.onclick = async () => {
-    const requiredFields = [fLine1, fCity, fState, fPin, fPhone];
+    const requiredFields = [fName, fLine1, fCity, fState, fPin, fPhone];
     let valid = true;
     requiredFields.forEach((f) => {
       if (!f.inp.value.trim()) {
@@ -1857,7 +1859,7 @@ function showAddressOverlay() {
       fPhone.inp.value.trim(),
     ].filter(Boolean);
 
-    const customerName = fLine1.inp.value.trim() || "Customer";
+    const customerName = fName.inp.value.trim();
     const customerPhone = fPhone.inp.value.replace(/\D/g, "").slice(-10);
 
     try {
@@ -1905,7 +1907,7 @@ function showAddressOverlay() {
   backdrop.appendChild(card);
   document.body.appendChild(backdrop);
 
-  setTimeout(() => fLine1.inp.focus(), 120);
+  setTimeout(() => fName.inp.focus(), 120);
 }
 
 /* =========================================================
@@ -2073,8 +2075,8 @@ function showOrderConfirmOverlay(
   closeBtn.className = "addr-btn addr-btn-submit";
   closeBtn.style.margin = "0 auto";
   closeBtn.style.justifyContent = "center";
-  closeBtn.textContent = "CLOSE";
-  closeBtn.onclick = () => backdrop.remove();
+  closeBtn.textContent = "START NEW BUILD";
+  closeBtn.onclick = () => window.location.reload();
 
   card.appendChild(icon);
   card.appendChild(title);
@@ -2418,12 +2420,46 @@ async function uploadPrintReport(orderId, orderRef) {
   try {
     showHudMessage("GENERATING REPORT...");
 
-    // Capture ISO screenshot with technical overlay
-    const rawShot = captureFromAngle("iso");
-    const overlaid = await addTechnicalOverlay(rawShot, "ISOMETRIC");
+    // Capture all 8 angles with technical overlays — same as printDesign()
+    const angleKeys = [
+      "perspective",
+      "front",
+      "back",
+      "top",
+      "bottom",
+      "left",
+      "right",
+      "iso",
+    ];
+    const overlayLabels = {
+      perspective: "PERSPECTIVE",
+      front: "FRONT",
+      back: "BACK",
+      top: "TOP",
+      bottom: "BOTTOM",
+      left: "LEFT",
+      right: "RIGHT",
+      iso: "ISOMETRIC",
+    };
+    const angleLabels = {
+      perspective: "Perspective",
+      front: "Front",
+      back: "Back",
+      top: "Top",
+      bottom: "Bottom",
+      left: "Left",
+      right: "Right",
+      iso: "Isometric",
+    };
 
-    // Build report HTML and convert to Blob
-    const reportHTML = buildReportHTMLBlob(overlaid, orderRef);
+    const screenshots = {};
+    for (const key of angleKeys) {
+      const raw = captureFromAngle(key);
+      screenshots[key] = await addTechnicalOverlay(raw, overlayLabels[key]);
+    }
+
+    // Build the full report HTML (identical to printDesign output)
+    const reportHTML = buildFullReportHTML(screenshots, angleLabels, orderRef);
     const blob = new Blob([reportHTML], { type: "text/html" });
     const filePath = `orders/${orderId}/${orderRef}_report.html`;
 
@@ -2436,61 +2472,204 @@ async function uploadPrintReport(orderId, orderRef) {
       return;
     }
 
-    // Create a signed URL valid for 1 year
+    // Signed URL valid for 1 year
     const { data: urlData } = await supabase.storage
       .from("reports")
       .createSignedUrl(filePath, 60 * 60 * 24 * 365);
 
     const publicUrl = urlData?.signedUrl ?? null;
 
-    // Save record in print_reports table
-    await supabase.from("print_reports").insert({
-      order_id: orderId,
-      storage_path: filePath,
-      public_url: publicUrl,
-    });
+    // Upsert so re-orders update the existing record
+    await supabase
+      .from("print_reports")
+      .upsert(
+        { order_id: orderId, storage_path: filePath, public_url: publicUrl },
+        { onConflict: "order_id" },
+      );
 
     console.log(`[SUPABASE] Report uploaded: ${filePath}`);
     showHudMessage("REPORT SAVED ✓");
   } catch (err) {
     console.error("[REPORT UPLOAD ERROR]", err);
+    showHudMessage("⚠ Report upload failed");
   }
 }
 
-function buildReportHTMLBlob(isoImageDataURL, orderRef) {
+function buildFullReportHTML(screenshots, angleLabels, orderRef) {
+  // Collect counts + costs — same logic as printDesign()
   const counts = {};
   scene.traverse((o) => {
     if (!o.userData?.isMount) return;
     const t = o.userData.type ?? "unknown";
     counts[t] = (counts[t] ?? 0) + 1;
   });
+
+  const partCostMap = PART_COSTS_DB;
+  const partLabelMap = PART_LABELS_DB;
   const total = document.getElementById("totalPrice")?.textContent ?? "0";
+  const totalParts = Object.values(counts).reduce((a, b) => a + b, 0);
   const now = new Date().toLocaleString();
-  const parts = Object.entries(counts)
+
+  // Manifest rows
+  let computedTotal = 0;
+  const manifestRows = Object.entries(counts)
     .map(([t, n]) => {
-      const cost = (PART_COSTS_DB[t] ?? 0) * n;
-      return `<tr><td>${(PART_LABELS_DB[t] ?? t).toUpperCase()}</td><td>${n}</td><td>₹${cost.toLocaleString("en-IN")}</td></tr>`;
+      const cost = (partCostMap[t] ?? 0) * n;
+      computedTotal += cost;
+      return `<tr>
+      <td>${(partLabelMap[t] ?? t.replace(/_/g, " ")).toUpperCase()}</td>
+      <td style="text-align:center">${n}</td>
+      <td style="text-align:right;font-family:'Courier New',monospace;color:#cc2200">₹${cost.toLocaleString("en-IN")}</td>
+    </tr>`;
     })
     .join("");
 
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
-<title>Report ${orderRef}</title>
-<style>
-  body{font-family:monospace;padding:24px;background:#fff;color:#111}
-  h1{font-size:18px;letter-spacing:0.1em;border-bottom:3px solid #111;padding-bottom:8px}
-  .meta{font-size:11px;color:#555;margin-bottom:20px}
-  img{max-width:100%;border:2px solid #222;margin-bottom:20px;display:block}
-  table{border-collapse:collapse;width:400px;font-size:12px}
-  td,th{padding:6px 12px;border:1px solid #ddd}
-  th{background:#111;color:#fff}
-  .total{font-size:16px;font-weight:700;margin-top:16px}
-</style></head><body>
-<h1>ROBOT CONFIGURATOR — ${orderRef}</h1>
-<div class="meta">Generated: ${now} &nbsp;·&nbsp; ${isFinalized ? "✓ Finalized" : "Draft"}</div>
-<img src="${isoImageDataURL}" alt="ISO View"/>
-<table><tr><th>Part</th><th>Qty</th><th>Cost</th></tr>${parts}</table>
-<div class="total">TOTAL: ₹${total}</div>
-</body></html>`;
+  // Cost breakdown rows with bracket separators
+  const costGroupRows = Object.entries(counts)
+    .map(([t, n]) => {
+      const unitCost = partCostMap[t] ?? 0;
+      const groupCost = unitCost * n;
+      const label = partLabelMap[t] ?? t.replace(/_/g, " ");
+      return `
+      <tr>
+        <td colspan="2" style="font-family:'Courier New',monospace;font-size:8px;letter-spacing:0.18em;color:#999;padding:5px 12px 2px;border-top:1px solid #ddd;border-left:3px solid #cc2200;background:#fafafa;">
+          [ ${label.toUpperCase()} ]
+        </td>
+      </tr>
+      <tr>
+        <td style="padding-left:18px;border-left:3px solid rgba(204,34,0,0.18)">${n}× ${label}</td>
+        <td style="text-align:right;font-family:'Courier New',monospace;font-weight:700">₹${groupCost.toLocaleString("en-IN")}</td>
+      </tr>
+      <tr>
+        <td style="padding-left:18px;font-size:10px;color:#888;font-family:'Courier New',monospace;border-left:3px solid rgba(204,34,0,0.18)">@ ₹${unitCost.toLocaleString("en-IN")} each</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td colspan="2" style="padding:1px 12px 4px;border-left:3px solid #cc2200;border-bottom:1px solid #e0e0e0;font-size:7px;color:#ccc"> </td>
+      </tr>`;
+    })
+    .join("");
+
+  const mainShot = screenshots["iso"];
+  const otherAngles = [
+    "perspective",
+    "front",
+    "back",
+    "top",
+    "bottom",
+    "left",
+    "right",
+  ];
+  const otherAnglesHTML = otherAngles
+    .map(
+      (k) => `
+    <div class="angle-card">
+      <img src="${screenshots[k]}" alt="${angleLabels[k]} view"/>
+    </div>`,
+    )
+    .join("");
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8"/>
+  <title>Robot Design — ${orderRef}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#fff;color:#111;font-family:'Rajdhani',sans-serif;padding:22px 28px}
+    .print-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px;border-bottom:3px solid #1a1a1a;margin-bottom:18px}
+    .print-title{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;letter-spacing:0.12em;color:#111;line-height:1}
+    .print-subtitle{font-family:'Share Tech Mono',monospace;font-size:10px;color:#666;letter-spacing:0.15em;text-transform:uppercase;margin-top:5px}
+    .print-meta{text-align:right;font-family:'Share Tech Mono',monospace;font-size:10px;color:#555;line-height:1.7;letter-spacing:0.05em}
+    .status-badge{display:inline-block;padding:2px 10px;font-size:9px;font-family:'Orbitron',sans-serif;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;border:1.5px solid;margin-top:4px}
+    .status-final{color:#166534;border-color:#166534;background:#f0fdf4}
+    .status-draft{color:#7f1d1d;border-color:#cc2200;background:#fff5f5}
+    .main-view-wrap{width:100%;border:2px solid #222;margin-bottom:14px;background:#f0f0f0;overflow:hidden}
+    .main-view-wrap img{width:100%;display:block;max-height:440px;object-fit:contain}
+    .section-title{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.2em;color:#111;text-transform:uppercase;border-left:4px solid #cc2200;padding-left:10px;margin-bottom:10px}
+    .angles-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px}
+    .angle-card{border:1.5px solid #222;background:#f0f0f0;overflow:hidden}
+    .angle-card img{width:100%;display:block;max-height:180px;object-fit:contain}
+    .tables-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+    .table-card{border:1.5px solid #222}
+    .table-card-header{background:#1a1a1a;color:#cc2200;font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.18em;padding:6px 12px;text-transform:uppercase}
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    td{padding:6px 12px;border-bottom:1px solid #e5e5e5;font-family:'Rajdhani',sans-serif;letter-spacing:0.03em}
+    tr:last-child td{border-bottom:none}
+    tr:nth-child(even) td{background:#fafafa}
+    .manifest-subtotal td{font-family:'Share Tech Mono',monospace!important;font-size:11px!important;font-weight:700!important;color:#cc2200!important;background:#fff5f5!important;border-top:2px solid #cc2200!important;border-bottom:none!important}
+    .manifest-total-parts td{font-family:'Share Tech Mono',monospace!important;font-size:10px!important;color:#555!important;background:#f8f8f8!important;border-bottom:none!important}
+    .cost-table td{padding:4px 12px;font-size:12px;border-bottom:none}
+    .cost-table tr:nth-child(even) td{background:transparent}
+    .total-bar{display:flex;justify-content:space-between;align-items:center;border:2px solid #1a1a1a;padding:10px 20px;margin-bottom:16px;background:#f8f8f8}
+    .total-label{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.1em;color:#111}
+    .total-value{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;color:#cc2200;letter-spacing:0.06em}
+    .print-footer{border-top:1px solid #ccc;padding-top:10px;display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:9px;color:#888;letter-spacing:0.08em}
+    @media print{body{padding:12px 16px}}
+  </style>
+</head>
+<body>
+  <div class="print-header">
+    <div>
+      <div class="print-title">ROBOT CONFIGURATOR</div>
+      <div class="print-subtitle">Design Report &nbsp;·&nbsp; MK-1 Unit &nbsp;·&nbsp; ${orderRef}</div>
+    </div>
+    <div class="print-meta">
+      Generated: ${now}<br>
+      Parts: ${totalParts}<br>
+      <span class="status-badge ${isFinalized ? "status-final" : "status-draft"}">
+        ${isFinalized ? "✓ Finalized" : "⚠ Draft"}
+      </span>
+    </div>
+  </div>
+
+  <div class="main-view-wrap">
+    <img src="${mainShot}" alt="Isometric View"/>
+  </div>
+
+  <div class="section-title">◼ MULTI-ANGLE VIEWS</div>
+  <div class="angles-grid">${otherAnglesHTML}</div>
+
+  <div class="tables-row">
+    <div class="table-card">
+      <div class="table-card-header">Component Manifest</div>
+      <table>
+        <tr>
+          <td><strong>Type</strong></td>
+          <td style="text-align:center"><strong>Qty</strong></td>
+          <td style="text-align:right"><strong>Cost</strong></td>
+        </tr>
+        ${manifestRows || "<tr><td colspan='3'>No parts placed</td></tr>"}
+        <tr class="manifest-subtotal">
+          <td colspan="2">SUBTOTAL</td>
+          <td style="text-align:right">₹${computedTotal.toLocaleString("en-IN")}</td>
+        </tr>
+        <tr class="manifest-total-parts">
+          <td colspan="3">${totalParts} PARTS &nbsp;·&nbsp; ${Object.keys(counts).length} TYPES</td>
+        </tr>
+      </table>
+    </div>
+    <div class="table-card">
+      <div class="table-card-header">Cost Breakdown</div>
+      <table class="cost-table">
+        ${costGroupRows || "<tr><td colspan='2'>Empty</td></tr>"}
+      </table>
+    </div>
+  </div>
+
+  <div class="total-bar">
+    <span class="total-label">TOTAL REQUISITION COST</span>
+    <span class="total-value">₹${total}</span>
+  </div>
+
+  <div class="print-footer">
+    <span>ROBOT CONFIGURATOR v1.0 — UNIT MK-1</span>
+    <span>ORDER REF: ${orderRef}</span>
+    <span>${now}</span>
+  </div>
+</body>
+</html>`;
 }
 
 /* =========================================================
