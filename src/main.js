@@ -2722,7 +2722,7 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
 
   <div class="total-bar">
     <span class="total-label">TOTAL REQUISITION COST</span>
-    <span class="total-value">₹${total}</span>
+    <span class="total-value">₹${computedTotal.toLocaleString("en-IN")}</span>
   </div>
 
   <div class="print-footer">
@@ -3241,7 +3241,7 @@ async function printDesign() {
 
   <div class="total-bar">
     <span class="total-label">TOTAL REQUISITION COST</span>
-    <span class="total-value">₹${total}</span>
+    <span class="total-value">₹${computedTotal.toLocaleString("en-IN")}</span>
   </div>
 
   <div class="print-footer">
@@ -4805,10 +4805,28 @@ function onMouseMove(e) {
         return;
       }
     }
-    const pos = new THREE.Vector3();
-    rawSocket.getWorldPosition(pos);
-    ghost.position.copy(pos);
-    ghost.rotation.set(0, 0, 0);
+    // Try to preview the full bridge snap even before first click
+    const previewPair = resolveBestSupportSocketPair(rawSocket);
+    if (previewPair) {
+      const { posA, posB } = previewPair;
+      ghost.position.set(0, 0, 0);
+      ghost.rotation.set(0, 0, 0);
+      ghost.scale.set(1, 1, 1);
+      ghost.updateMatrixWorld(true);
+      applyTwoPointSupportSnap(
+        ghost,
+        ghost,
+        posA,
+        posB,
+        0,
+        previewPair.socketA,
+      );
+    } else {
+      const pos = new THREE.Vector3();
+      rawSocket.getWorldPosition(pos);
+      ghost.position.copy(pos);
+      ghost.rotation.set(0, 0, 0);
+    }
     return;
   }
 

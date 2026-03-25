@@ -1522,7 +1522,7 @@ canvas#app {
 #viewport-rot-controls {
   position: fixed;
   bottom: 80px;
-  left: calc(var(--panel-w) + (100vw - 2 * var(--panel-w)) / 2);
+  left: calc(var(--panel-w) + (100vw - 2 * var(--panel-w)) / 2 - 135px);
   transform: translateX(-50%);
   display: none;
   flex-direction: column;
