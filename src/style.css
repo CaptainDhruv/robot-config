@@ -348,6 +348,7 @@ body::after {
 .section-toggle.collapsed .chevron {
   transform: rotate(-90deg);
 }
+
 .section-body {
   padding: clamp(4px, 0.6vh, 8px) clamp(6px, 0.8vw, 12px)
     clamp(6px, 0.9vh, 12px);
@@ -384,6 +385,12 @@ body::after {
 }
 .section-body.animate-in > *:nth-child(6) {
   animation-delay: 0.23s;
+}
+
+/* ── BTN-TIP-WRAP — ensures pointer events even on disabled buttons ── */
+.btn-tip-wrap {
+  display: block;
+  width: 100%;
 }
 
 .btn {
@@ -494,7 +501,7 @@ body::after {
   animation: pulse-ring 1.2s ease-out infinite;
 }
 
-/* MOTOR */
+/* ── MOTOR ── */
 .btn-motor .btn-inner {
   background: #1e1800;
   border-color: #f9b100;
@@ -537,7 +544,7 @@ body::after {
   color: #0e0c00;
 }
 
-/* FRAME */
+/* ── FRAME ── */
 .btn-frame .btn-inner {
   background: #111314;
   border-color: #797979;
@@ -574,7 +581,7 @@ body::after {
   color: #0a0a0a;
 }
 
-/* TRIANGLE */
+/* ── TRIANGLE ── */
 .btn-triangle .btn-inner {
   background: #18161a;
   border-color: #ada7ab;
@@ -611,7 +618,7 @@ body::after {
   color: #0a0a0a;
 }
 
-/* SUPPORT */
+/* ── SUPPORT ── */
 .btn-support .btn-inner {
   background: #1e0e00;
   border-color: #ff770e;
@@ -648,7 +655,7 @@ body::after {
   color: #0e0800;
 }
 
-/* WHEEL */
+/* ── WHEEL ── */
 .btn-wheel .btn-inner {
   background: #0a0e10;
   border-color: #36454f;
@@ -727,7 +734,7 @@ body::after {
   text-transform: uppercase;
 }
 
-/* PRIMARY */
+/* ── PRIMARY ── */
 .btn-primary .btn-inner {
   background: var(--amb);
   border: 2px solid var(--amb);
@@ -745,7 +752,7 @@ body::after {
   transform: translate(4px, 4px);
 }
 
-/* SECONDARY */
+/* ── SECONDARY ── */
 .btn-secondary .btn-inner {
   background: #18202e;
   border: 2px solid #344858;
@@ -759,7 +766,7 @@ body::after {
   box-shadow: 7px 7px 0 #1a2838;
 }
 
-/* VIEWPORT */
+/* ── VIEWPORT ── */
 .viewport {
   position: relative;
   background: #2a3a52;
@@ -802,7 +809,7 @@ canvas#app {
   z-index: 1;
 }
 
-/* CAMERA */
+/* ── CAMERA ── */
 .panel-section-camera {
   border-bottom: none;
   flex-shrink: 0;
@@ -879,6 +886,7 @@ canvas#app {
   border-top: 1px solid var(--border);
 }
 
+/* ── BASKET HEADER ── */
 .basket-header {
   padding: clamp(10px, 1.4vh, 18px) clamp(10px, 1.2vw, 18px)
     clamp(8px, 1.1vh, 14px) clamp(12px, 1.5vw, 20px);
@@ -934,8 +942,6 @@ canvas#app {
   flex-direction: column;
   gap: clamp(2px, 0.3vh, 4px);
 }
-
-/* ── BASKET ITEM ROWS — thinner, subtler amber stripe ── */
 .basket-items > * {
   font-family: var(--font-display);
   font-size: clamp(10px, 0.88vw, 12px);
@@ -959,7 +965,6 @@ canvas#app {
   border-color: #3a5068;
 }
 
-/* ── BASKET DIVIDER + SUMMARY ROW — readable ── */
 .basket-divider {
   height: 1px;
   background: var(--border-amb);
@@ -979,7 +984,6 @@ canvas#app {
   padding: 0 4px;
 }
 
-/* Summary / totals row rendered by inventory.js */
 .basket-summary-row,
 .basket-items .basket-summary {
   font-family: var(--font-mono) !important;
@@ -1512,7 +1516,7 @@ canvas#app {
 }
 
 /* ═══════════════════════════════════════════════════
-   ARROW KEY CLUSTER
+   ARROW KEY CLUSTER — fixed uniform layout
    ═══════════════════════════════════════════════════ */
 
 #viewport-rot-controls {
@@ -1535,14 +1539,13 @@ canvas#app {
   justify-content: center;
 }
 
-/* ── Base key cap ── */
+/* ── Base key cap shared by all keys ── */
 .arrow-key {
-  width: 52px;
-  height: 52px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: 8px;
   position: relative;
   user-select: none;
   background: linear-gradient(170deg, #ffffff 0%, #f5f5f3 45%, #e8e8e5 100%);
@@ -1550,25 +1553,27 @@ canvas#app {
   border-top-color: #e8e8e4;
   border-left-color: #e0e0dc;
   border-right-color: #a8a8a4;
-  border-bottom: 1.5px solid #a0a09c;
+  border-bottom: 3px solid #a0a09c;
   box-shadow:
     2px 2px 0 #d0d0cc,
-    4px 4px 0 #b8b8b4,
-    6px 6px 0 #a0a09c,
-    7px 7px 0 #888884,
-    2px 8px 10px rgba(0, 0, 0, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    inset 1px 0 0 rgba(255, 255, 255, 0.6);
+    3px 3px 0 #b8b8b4,
+    2px 5px 8px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
-/* ── Labeled keys (← →) are wider to fit glyph + text ── */
+/* ── Small square keys: ↑ ↓ ── */
+.arrow-key-center {
+  width: 44px;
+  flex-shrink: 0;
+}
+
+/* ── Labeled keys: same fixed width so cluster is symmetric ── */
 .arrow-key.arrow-key-labeled {
-  width: auto;
-  min-width: 52px;
-  height: 52px;
+  width: 110px;
+  flex-shrink: 0;
   flex-direction: row;
-  gap: 7px;
-  padding: 0 16px;
+  gap: 6px;
+  padding: 0 12px;
 }
 
 .arrow-key-inactive {
@@ -1586,58 +1591,49 @@ canvas#app {
   transform: translate(-1px, -1px);
   box-shadow:
     3px 3px 0 #d0d0cc,
-    5px 5px 0 #b8b8b4,
-    7px 7px 0 #a0a09c,
-    8px 8px 0 #888884,
-    3px 9px 12px rgba(0, 0, 0, 0.32),
-    inset 0 1px 0 rgba(255, 255, 255, 1),
-    inset 1px 0 0 rgba(255, 255, 255, 0.7);
+    4px 4px 0 #b8b8b4,
+    3px 6px 10px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
 }
 
 .arrow-key-active:active,
 .arrow-key-active.arrow-key-pressed {
-  transform: translate(5px, 5px) !important;
+  transform: translate(3px, 3px) !important;
   background: linear-gradient(
     170deg,
     #e0e0de 0%,
     #d8d8d5 45%,
     #ccccca 100%
   ) !important;
+  border-bottom-width: 1.5px !important;
   box-shadow:
     0 0 0 #d0d0cc,
-    1px 1px 0 #b8b8b4,
-    1px 2px 4px rgba(0, 0, 0, 0.2),
-    inset 0 2px 4px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+    1px 1px 3px rgba(0, 0, 0, 0.18),
+    inset 0 2px 4px rgba(0, 0, 0, 0.1) !important;
   transition: none !important;
 }
 
-/* ── Arrow glyph ── */
 .arrow-key-glyph {
-  font-size: 22px;
+  font-size: 18px;
   line-height: 1;
   pointer-events: none;
-  font-family:
-    "Segoe UI Symbol", "Apple Color Emoji", "Noto Sans Symbols2", Arial,
-    sans-serif;
+  font-family: "Segoe UI Symbol", "Apple Color Emoji", Arial, sans-serif;
   color: #111111;
-  position: relative;
-  z-index: 1;
-  -webkit-text-stroke: 1px #111111;
   flex-shrink: 0;
+  -webkit-text-stroke: 0.5px #111111;
 }
 
-/* ── Label text beside arrow glyph ── */
+/* Hidden on non-labeled keys, shown on labeled ones */
 .arrow-key-label {
   display: none;
 }
 
 .arrow-key-labeled .arrow-key-label {
   display: block;
-  font-family: "Orbitron", "Segoe UI", Arial, sans-serif;
-  font-size: 8.5px;
+  font-family: "Orbitron", Arial, sans-serif;
+  font-size: 7.5px;
   font-weight: 800;
-  letter-spacing: 0.13em;
+  letter-spacing: 0.11em;
   text-transform: uppercase;
   color: #1a1a1a;
   white-space: nowrap;
@@ -1646,57 +1642,10 @@ canvas#app {
   user-select: none;
 }
 
-/* ── Wheel button locked/unlocked state ── */
+/* ── Wheel / support button disabled states ── */
 #addWheelBtn[disabled],
 #addWheelBtn[disabled] * {
   cursor: not-allowed !important;
-}
-
-@media (min-width: 1600px) {
-  :root {
-    --panel-w: clamp(260px, 16vw, 320px);
-  }
-}
-@media (max-width: 1023px) {
-  :root {
-    --panel-w: clamp(160px, 20vw, 240px);
-  }
-  .btn-desc {
-    display: none;
-  }
-  .sidebar-cam-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 3px;
-  }
-  .color-legend {
-    min-width: clamp(140px, 14vw, 200px);
-  }
-  .legend-text {
-    display: none;
-  }
-  .legend-item {
-    gap: 5px;
-  }
-}
-@media (max-width: 767px) {
-  :root {
-    --panel-w: clamp(130px, 22vw, 180px);
-  }
-  .logo-sub {
-    display: none;
-  }
-  .btn-tag {
-    display: none;
-  }
-  .cam-hint {
-    display: none;
-  }
-  .basket-count {
-    display: none;
-  }
-  .sidebar-cam-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 
 /* ── UNDO / REDO BUTTONS ── */
@@ -1771,4 +1720,134 @@ canvas#app {
   opacity: 0.45;
   margin-left: 2px;
   white-space: nowrap;
+}
+
+/* ── COMPONENT BUTTON TOOLTIPS ── */
+.comp-tooltip {
+  position: fixed;
+  z-index: 99990;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-8px);
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+  min-width: 230px;
+  max-width: 290px;
+  background: #0a1018;
+  border: 1px solid rgba(208, 88, 24, 0.35);
+  border-left: 3px solid var(--amb);
+  box-shadow:
+    6px 6px 0 rgba(0, 0, 0, 0.5),
+    0 0 24px rgba(208, 88, 24, 0.1),
+    0 0 0 1px rgba(0, 0, 0, 0.9);
+  padding: 11px 14px 13px;
+}
+.comp-tooltip.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+.comp-tooltip-title {
+  font-family: "Orbitron", sans-serif;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--amb-bright);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.comp-tooltip-title::before {
+  content: "◈";
+  font-size: 8px;
+  opacity: 0.6;
+}
+.comp-tooltip-desc {
+  font-family: "Share Tech Mono", monospace;
+  font-size: 10px;
+  color: #7a9ab8;
+  letter-spacing: 0.03em;
+  line-height: 1.65;
+  margin-bottom: 9px;
+}
+.comp-tooltip-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid rgba(208, 88, 24, 0.14);
+  padding-top: 8px;
+}
+.comp-tooltip-cost {
+  font-family: "Orbitron", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #d8e8f4;
+  letter-spacing: 0.06em;
+}
+.comp-tooltip-req {
+  font-family: "Share Tech Mono", monospace;
+  font-size: 8px;
+  color: #cc4422;
+  letter-spacing: 0.05em;
+  line-height: 1.5;
+  text-align: right;
+}
+.comp-tooltip-req:empty {
+  display: none;
+}
+
+/* ── WEIGHT SECTION (injected by JS) ── */
+#weight-section-styles {
+  display: none;
+}
+
+/* ── RESPONSIVE ── */
+@media (min-width: 1600px) {
+  :root {
+    --panel-w: clamp(260px, 16vw, 320px);
+  }
+}
+@media (max-width: 1023px) {
+  :root {
+    --panel-w: clamp(160px, 20vw, 240px);
+  }
+  .btn-desc {
+    display: none;
+  }
+  .sidebar-cam-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+  }
+  .color-legend {
+    min-width: clamp(140px, 14vw, 200px);
+  }
+  .legend-text {
+    display: none;
+  }
+  .legend-item {
+    gap: 5px;
+  }
+}
+@media (max-width: 767px) {
+  :root {
+    --panel-w: clamp(130px, 22vw, 180px);
+  }
+  .logo-sub {
+    display: none;
+  }
+  .btn-tag {
+    display: none;
+  }
+  .cam-hint {
+    display: none;
+  }
+  .basket-count {
+    display: none;
+  }
+  .sidebar-cam-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }

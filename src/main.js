@@ -199,6 +199,14 @@ const PART_LABELS = {
   support_frame: "Support Frame",
   wheel: "Wheel",
 };
+/* ── Part weights in grams ── */
+const PART_WEIGHTS = {
+  frame: 450,
+  motor: 380,
+  triangle_frame: 180,
+  support_frame: 220,
+  wheel: 290,
+};
 
 /* =========================================================
    CAMERA ANGLE PRESETS
@@ -413,6 +421,9 @@ const SUPPORT_SNAP_Y_ADJUST = 0.1;
 
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
+let _mouseDownX = 0;
+let _mouseDownY = 0;
+const CLICK_MOVE_THRESHOLD = 5; // pixels
 
 /* =========================================================
    SOCKET MARKERS — LARGER SIZE + WIDER PROXIMITY
@@ -911,7 +922,9 @@ function performCascadeDelete(targetMount, directDependents) {
 
   rebuildSocketMarkers();
   updateWheelButtonState();
+  updateSupportButtonState();
   applySocketHighlights();
+  updateWeightDisplay();
 
   const count = toDelete.size;
   showHudMessage(
@@ -996,13 +1009,24 @@ async function init() {
   initColorLegend();
   initIdleArrows();
   initMinimap();
+  initWeightSection();
   rebuildSocketMarkers();
   updateWheelButtonState();
+  updateSupportButtonState();
   updateUndoRedoButtons();
   applySocketHighlights();
 
   canvas.addEventListener("mousemove", onMouseMove);
-  canvas.addEventListener("click", onClick);
+  canvas.addEventListener("mousedown", (e) => {
+    _mouseDownX = e.clientX;
+    _mouseDownY = e.clientY;
+  });
+  canvas.addEventListener("click", (e) => {
+    const dx = e.clientX - _mouseDownX;
+    const dy = e.clientY - _mouseDownY;
+    if (Math.hypot(dx, dy) > CLICK_MOVE_THRESHOLD) return;
+    onClick(e);
+  });
   canvas.addEventListener("contextmenu", onContextMenu);
   window.addEventListener("keydown", onKeyDown);
 
@@ -2078,12 +2102,50 @@ function showOrderConfirmOverlay(
   closeBtn.textContent = "START NEW BUILD";
   closeBtn.onclick = () => window.location.reload();
 
+  const printBtn = document.createElement("button");
+  printBtn.className = "addr-btn";
+  Object.assign(printBtn.style, {
+    margin: "0 auto",
+    justifyContent: "center",
+    background: "transparent",
+    borderColor: "#2a6868",
+    color: "#4a9898",
+    boxShadow: "4px 4px 0 #0e2626",
+  });
+  printBtn.onmouseover = () => {
+    printBtn.style.background = "#2a6868";
+    printBtn.style.color = "#0a1010";
+    printBtn.style.borderColor = "#3a8888";
+    printBtn.style.boxShadow = "6px 6px 0 #0e2626";
+  };
+  printBtn.onmouseout = () => {
+    printBtn.style.background = "transparent";
+    printBtn.style.color = "#4a9898";
+    printBtn.style.borderColor = "#2a6868";
+    printBtn.style.boxShadow = "4px 4px 0 #0e2626";
+  };
+  printBtn.innerHTML = `<span style="margin-right:8px">▤</span> PRINT REPORT`;
+  printBtn.onclick = () => {
+    printDesign();
+  };
+
+  const btnGroup = document.createElement("div");
+  Object.assign(btnGroup.style, {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+    width: "100%",
+    alignItems: "center",
+  });
+  btnGroup.appendChild(closeBtn);
+  btnGroup.appendChild(printBtn);
+
   card.appendChild(icon);
   card.appendChild(title);
   card.appendChild(sub);
   card.appendChild(addrBox);
   card.appendChild(refEl);
-  card.appendChild(closeBtn);
+  card.appendChild(btnGroup);
   backdrop.appendChild(card);
   document.body.appendChild(backdrop);
 }
@@ -4102,6 +4164,22 @@ function updateWheelButtonState() {
       ? "All wheel sockets are occupied"
       : "";
 }
+function updateSupportButtonState() {
+  const btn = document.getElementById("addSupportFrame");
+  if (!btn) return;
+  const triPlaced = countPlaced("triangle_frame");
+  const hasFreeSockets = stressConnectorMarkers.length > 0;
+  const shouldEnable = triPlaced >= 2 && hasFreeSockets;
+  btn.disabled = !shouldEnable;
+  btn.style.opacity = shouldEnable ? "1" : "0.35";
+  btn.style.pointerEvents = shouldEnable ? "auto" : "none";
+  btn.title =
+    triPlaced < 2
+      ? `Place ${2 - triPlaced} more Tri. Frame${2 - triPlaced !== 1 ? "s" : ""} to unlock`
+      : !hasFreeSockets
+        ? "All stress connector sockets are occupied"
+        : "";
+}
 
 function startMotorPlacement() {
   hideIdleArrows();
@@ -4295,6 +4373,7 @@ function restartPlacementMode(mode) {
 
   rebuildSocketMarkers();
   updateWheelButtonState();
+  updateSupportButtonState();
   applySocketHighlights();
   updateShortcutBar();
 }
@@ -4935,6 +5014,7 @@ function onClick(e) {
     placeWheel(socket);
     rebuildSocketMarkers();
     updateWheelButtonState();
+    updateSupportButtonState();
     applySocketHighlights();
     if (wheelMarkers.length === 0) {
       showHudMessage("All wheel sockets occupied — exiting placement");
@@ -4962,6 +5042,7 @@ function onClick(e) {
     placeMotor(socket, finalMotorYaw, 0);
     rebuildSocketMarkers();
     updateWheelButtonState();
+    updateSupportButtonState();
     applySocketHighlights();
     if (motorMarkers.length === 0) {
       showHudMessage("All motor sockets occupied — exiting placement");
@@ -5007,6 +5088,7 @@ function placeFrameAtPosition(x, z) {
   scene.add(mount);
   addToInventory("frame");
   pushUndo(mount, [], "frame");
+  updateWeightDisplay();
 }
 
 function placeFrame(socket) {
@@ -5070,6 +5152,7 @@ function placeFrame(socket) {
 
   addToInventory("frame");
   pushUndo(mount, usedUuids, "frame");
+  updateWeightDisplay();
 }
 
 function placeMotor(socket, autoBaseYaw = 0, manualSteps = 0) {
@@ -5091,6 +5174,7 @@ function placeMotor(socket, autoBaseYaw = 0, manualSteps = 0) {
   usedSockets.add(socket.uuid);
   addToInventory("motor");
   pushUndo(mount, [socket.uuid], "motor");
+  updateWeightDisplay();
 }
 
 function startWheelPlacement() {
@@ -5168,8 +5252,10 @@ function placeWheel(socket) {
   usedSockets.add(socket.uuid);
   addToInventory("wheel");
   pushUndo(mount, [socket.uuid], "wheel");
+  updateWeightDisplay();
   rebuildSocketMarkers();
   updateWheelButtonState();
+  updateSupportButtonState();
   applySocketHighlights();
 }
 
@@ -5209,6 +5295,7 @@ function placeTriangle(socket, autoBaseYaw = 0, manualSteps = 0) {
   usedSockets.add(socket.uuid);
   addToInventory("triangle_frame");
   pushUndo(mount, [socket.uuid], "triangle_frame");
+  updateWeightDisplay();
 }
 
 function placeFrameOnSupport(socket, rotationSteps) {
@@ -5331,6 +5418,7 @@ function placeFrameOnSupport(socket, rotationSteps) {
   const fosUuids = [socket.uuid];
   if (siblingSocket) fosUuids.push(siblingSocket.uuid);
   pushUndo(mount, fosUuids, "frame");
+  updateWeightDisplay();
 }
 
 function placeSupportBridge(socket, manualSteps = 0) {
@@ -5391,6 +5479,7 @@ function placeSupportBridgeFromPair(
     socketB ? [socketA.uuid, socketB.uuid] : [socketA.uuid],
     "support_frame",
   );
+  updateWeightDisplay();
 }
 
 /* =========================================================
@@ -5491,7 +5580,9 @@ function performUndo() {
   redoStack.push(entry);
   rebuildSocketMarkers();
   updateWheelButtonState();
+  updateSupportButtonState();
   applySocketHighlights();
+  updateWeightDisplay();
   updateUndoRedoButtons();
   showHudMessage("UNDO ✓");
 }
@@ -5508,7 +5599,9 @@ function performRedo() {
   undoStack.push({ mount, socketUuids: [...socketUuids], type });
   rebuildSocketMarkers();
   updateWheelButtonState();
+  updateSupportButtonState();
   applySocketHighlights();
+  updateWeightDisplay();
   updateUndoRedoButtons();
   showHudMessage("REDO ✓");
 }
@@ -5944,7 +6037,9 @@ function executeDelete(mount) {
   removeFromInventory(type);
   rebuildSocketMarkers();
   updateWheelButtonState();
+  updateSupportButtonState();
   applySocketHighlights();
+  updateWeightDisplay();
   showHudMessage(`DELETED: ${(PART_LABELS[type] ?? type).toUpperCase()}`);
 }
 
@@ -5965,6 +6060,7 @@ function duplicateFrame(sourceMount) {
   pushUndo(mount, [], "frame");
   rebuildSocketMarkers();
   updateWheelButtonState();
+  updateSupportButtonState();
   applySocketHighlights();
   frameObject(mount);
   showHudMessage("FRAME DUPLICATED ✓");
@@ -6001,6 +6097,280 @@ function animate() {
 
   renderer.render(scene, camera);
   renderMinimap();
+}
+/* =========================================================
+   WEIGHT SECTION — live total + per-type breakdown
+   ========================================================= */
+
+function initWeightSection() {
+  if (!document.getElementById("weight-section-styles")) {
+    const s = document.createElement("style");
+    s.id = "weight-section-styles";
+    s.textContent = `
+      #weight-section {
+        border-top: 1px solid rgba(208,88,24,0.18);
+        flex-shrink: 0;
+      }
+      #weight-section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 9px 14px 8px 16px;
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.12s;
+      }
+      #weight-section-header:hover { background: rgba(208,88,24,0.05); }
+      #weight-section-title {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: #d05818;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      #weight-total-badge {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        color: #d8e8f4;
+        letter-spacing: 0.06em;
+      }
+      #weight-chevron {
+        font-size: 9px;
+        color: #384858;
+        transition: transform 0.2s ease, color 0.12s;
+        font-family: 'Share Tech Mono', monospace;
+        margin-left: 8px;
+      }
+      #weight-section-header:hover #weight-chevron { color: #d05818; }
+      #weight-body {
+        overflow: hidden;
+        transition: max-height 0.25s ease, opacity 0.2s ease;
+        max-height: 300px;
+        opacity: 1;
+      }
+      #weight-body.collapsed { max-height: 0; opacity: 0; }
+      #weight-rows {
+        padding: 4px 12px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .weight-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 5px 10px;
+        background: #1a2636;
+        border: 1px solid #263848;
+        border-left: 2px solid rgba(208,88,24,0.5);
+        clip-path: polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,0 100%);
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 10px;
+        letter-spacing: 0.04em;
+      }
+      .weight-row-label {
+        color: #6a8098;
+        text-transform: uppercase;
+        font-size: 9px;
+        letter-spacing: 0.08em;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .weight-row-qty {
+        font-size: 8px;
+        color: #384858;
+        background: #111820;
+        border: 1px solid #2a3848;
+        padding: 1px 5px;
+        letter-spacing: 0.06em;
+      }
+      .weight-row-val {
+        color: #8aacbf;
+        font-size: 10px;
+        letter-spacing: 0.06em;
+      }
+      .weight-row-unit {
+        color: #384858;
+        font-size: 8px;
+        margin-left: 2px;
+      }
+      #weight-total-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 7px 10px;
+        margin: 0 12px 10px;
+        background: rgba(208,88,24,0.06);
+        border: 1px solid rgba(208,88,24,0.25);
+        border-left: 3px solid #d05818;
+      }
+      #weight-total-label {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        color: #6a8098;
+        text-transform: uppercase;
+      }
+      #weight-total-value {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 14px;
+        font-weight: 700;
+        color: #d8e8f4;
+        letter-spacing: 0.06em;
+      }
+      #weight-total-value span {
+        font-size: 9px;
+        color: #384858;
+        margin-left: 3px;
+      }
+      @keyframes weightIn {
+        from { opacity:0; transform:translateY(4px); }
+        to   { opacity:1; transform:translateY(0); }
+      }
+      #weight-section { animation: weightIn 0.35s ease 0.3s both; }
+    `;
+    document.head.appendChild(s);
+  }
+
+  const section = document.createElement("div");
+  section.id = "weight-section";
+
+  const header = document.createElement("div");
+  header.id = "weight-section-header";
+  header.innerHTML = `
+    <div id="weight-section-title">
+      <span style="color:#384858;font-size:11px">⊕</span>
+      WEIGHT
+    </div>
+    <div style="display:flex;align-items:center;gap:0">
+      <div id="weight-total-badge">0 g</div>
+      <div id="weight-chevron">▾</div>
+    </div>`;
+  header.addEventListener("click", () => {
+    const body = document.getElementById("weight-body");
+    const chev = document.getElementById("weight-chevron");
+    const collapsed = body.classList.toggle("collapsed");
+    chev.style.transform = collapsed ? "rotate(-90deg)" : "rotate(0deg)";
+    chev.style.color = collapsed ? "#d05818" : "#384858";
+  });
+  section.appendChild(header);
+
+  const body = document.createElement("div");
+  body.id = "weight-body";
+
+  const rows = document.createElement("div");
+  rows.id = "weight-rows";
+  body.appendChild(rows);
+
+  const totalRow = document.createElement("div");
+  totalRow.id = "weight-total-row";
+  totalRow.innerHTML = `
+    <div id="weight-total-label">TOTAL WEIGHT</div>
+    <div id="weight-total-value">0 <span>g</span></div>`;
+  body.appendChild(totalRow);
+
+  section.appendChild(body);
+
+  // Insert into right panel — above the basket-footer
+  const basketFooter = document.querySelector(".basket-footer");
+  if (basketFooter && basketFooter.parentElement) {
+    basketFooter.parentElement.insertBefore(section, basketFooter);
+  } else {
+    const rightPanel = document.querySelector(".panel-right");
+    if (rightPanel) rightPanel.appendChild(section);
+  }
+
+  updateWeightDisplay();
+}
+
+const PART_GLYPHS_W = {
+  frame: "▬",
+  motor: "⬡",
+  triangle_frame: "▲",
+  support_frame: "╬",
+  wheel: "◉",
+};
+
+function updateWeightDisplay() {
+  const rowsEl = document.getElementById("weight-rows");
+  const totalVal = document.getElementById("weight-total-value");
+  const badge = document.getElementById("weight-total-badge");
+  if (!rowsEl) return;
+
+  // Count parts by type
+  const counts = {};
+  scene.traverse((o) => {
+    if (!o.userData?.isMount) return;
+    const t = o.userData.type ?? "unknown";
+    counts[t] = (counts[t] ?? 0) + 1;
+  });
+
+  rowsEl.innerHTML = "";
+
+  let totalGrams = 0;
+
+  const typeOrder = [
+    "frame",
+    "motor",
+    "triangle_frame",
+    "support_frame",
+    "wheel",
+  ];
+  for (const type of typeOrder) {
+    const qty = counts[type] ?? 0;
+    if (qty === 0) continue;
+    const unitG = PART_WEIGHTS[type] ?? 0;
+    const totalG = unitG * qty;
+    totalGrams += totalG;
+
+    const label = PART_LABELS[type] ?? type.replace(/_/g, " ");
+    const glyph = PART_GLYPHS_W[type] ?? "◈";
+
+    const row = document.createElement("div");
+    row.className = "weight-row";
+    row.innerHTML = `
+      <div class="weight-row-label">
+        <span>${glyph}</span>
+        ${label.toUpperCase()}
+        <span class="weight-row-qty">${qty}×</span>
+      </div>
+      <div class="weight-row-val">
+        ${
+          totalG >= 1000
+            ? (totalG / 1000).toFixed(2) +
+              ' <span class="weight-row-unit">kg</span>'
+            : totalG + ' <span class="weight-row-unit">g</span>'
+        }
+        <span class="weight-row-unit" style="color:#263848;font-size:7px;margin-left:3px">
+          @${unitG}g ea
+        </span>
+      </div>`;
+    rowsEl.appendChild(row);
+  }
+
+  if (Object.keys(counts).length === 0) {
+    rowsEl.innerHTML = `<div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#2a3848;text-align:center;padding:8px 0;letter-spacing:0.1em;text-transform:uppercase;">No parts placed</div>`;
+  }
+
+  const displayG =
+    totalGrams >= 1000
+      ? (totalGrams / 1000).toFixed(2) + " kg"
+      : totalGrams + " g";
+
+  if (totalVal)
+    totalVal.innerHTML =
+      totalGrams >= 1000
+        ? `${(totalGrams / 1000).toFixed(2)} <span>kg</span>`
+        : `${totalGrams} <span>g</span>`;
+
+  if (badge) badge.textContent = displayG;
 }
 
 /* =========================================================

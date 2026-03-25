@@ -26,66 +26,77 @@
             <span class="chevron">▼</span>
           </button>
           <div class="section-body" id="sec-components">
-            <button id="addFrame" class="btn btn-frame">
-              <div class="btn-inner">
-                <span class="btn-glyph">▬</span>
-                <span class="btn-body">
-                  <span class="btn-label">Rect. Frame</span>
-                  <span class="btn-desc">Structural base</span>
-                </span>
-                <span class="btn-tag">FRM</span>
-              </div>
-            </button>
+            <!-- Each button is wrapped in .btn-tip-wrap so hover works even when disabled -->
+            <div class="btn-tip-wrap" data-tip="addFrame">
+              <button id="addFrame" class="btn btn-frame">
+                <div class="btn-inner">
+                  <span class="btn-glyph">▬</span>
+                  <span class="btn-body">
+                    <span class="btn-label">Rect. Frame</span>
+                    <span class="btn-desc">Structural base</span>
+                  </span>
+                  <span class="btn-tag">FRM</span>
+                </div>
+              </button>
+            </div>
 
-            <button id="addMotor" class="btn btn-motor">
-              <div class="btn-inner">
-                <span class="btn-glyph">⬡</span>
-                <span class="btn-body">
-                  <span class="btn-label">Add Motor</span>
-                  <span class="btn-desc">Drive unit housing</span>
-                </span>
-                <span class="btn-tag">MOT</span>
-              </div>
-            </button>
+            <div class="btn-tip-wrap" data-tip="addMotor">
+              <button id="addMotor" class="btn btn-motor">
+                <div class="btn-inner">
+                  <span class="btn-glyph">⬡</span>
+                  <span class="btn-body">
+                    <span class="btn-label">Add Motor</span>
+                    <span class="btn-desc">Drive unit housing</span>
+                  </span>
+                  <span class="btn-tag">MOT</span>
+                </div>
+              </button>
+            </div>
 
-            <button
-              id="addWheelBtn"
-              class="btn btn-wheel"
-              disabled
-              style="opacity: 0.35; pointer-events: none"
-              title="Place a Motor first to unlock wheels"
-            >
-              <div class="btn-inner">
-                <span class="btn-glyph">◉</span>
-                <span class="btn-body">
-                  <span class="btn-label">Add Wheel</span>
-                  <span class="btn-desc">Motor-driven wheel</span>
-                </span>
-                <span class="btn-tag">WHL</span>
-              </div>
-            </button>
+            <div class="btn-tip-wrap" data-tip="addWheelBtn">
+              <button
+                id="addWheelBtn"
+                class="btn btn-wheel"
+                disabled
+                style="opacity: 0.35; pointer-events: none"
+                title="Place a Motor first to unlock wheels"
+              >
+                <div class="btn-inner">
+                  <span class="btn-glyph">◉</span>
+                  <span class="btn-body">
+                    <span class="btn-label">Add Wheel</span>
+                    <span class="btn-desc">Motor-driven wheel</span>
+                  </span>
+                  <span class="btn-tag">WHL</span>
+                </div>
+              </button>
+            </div>
 
-            <button id="addTriangle" class="btn btn-triangle">
-              <div class="btn-inner">
-                <span class="btn-glyph">▲</span>
-                <span class="btn-body">
-                  <span class="btn-label">Tri. Frame</span>
-                  <span class="btn-desc">Angular brace</span>
-                </span>
-                <span class="btn-tag">TRI</span>
-              </div>
-            </button>
+            <div class="btn-tip-wrap" data-tip="addTriangle">
+              <button id="addTriangle" class="btn btn-triangle">
+                <div class="btn-inner">
+                  <span class="btn-glyph">▲</span>
+                  <span class="btn-body">
+                    <span class="btn-label">Tri. Frame</span>
+                    <span class="btn-desc">Angular brace</span>
+                  </span>
+                  <span class="btn-tag">TRI</span>
+                </div>
+              </button>
+            </div>
 
-            <button id="addSupportFrame" class="btn btn-support">
-              <div class="btn-inner">
-                <span class="btn-glyph">╬</span>
-                <span class="btn-body">
-                  <span class="btn-label">Stress Bridge</span>
-                  <span class="btn-desc">Cross-bridge span</span>
-                </span>
-                <span class="btn-tag">SUP</span>
-              </div>
-            </button>
+            <div class="btn-tip-wrap" data-tip="addSupportFrame">
+              <button id="addSupportFrame" class="btn btn-support">
+                <div class="btn-inner">
+                  <span class="btn-glyph">╬</span>
+                  <span class="btn-body">
+                    <span class="btn-label">Stress Bridge</span>
+                    <span class="btn-desc">Cross-bridge span</span>
+                  </span>
+                  <span class="btn-tag">SUP</span>
+                </div>
+              </button>
+            </div>
           </div>
         </section>
 
@@ -182,23 +193,30 @@
         <div id="viewport-rot-controls" style="display: none">
           <!-- top row: ↑ key (inactive/decorative) -->
           <div class="arrow-key-row arrow-key-row-top">
-            <div class="arrow-key arrow-key-inactive" id="arrowKeyUp">
+            <div
+              class="arrow-key arrow-key-inactive arrow-key-center"
+              id="arrowKeyUp"
+            >
               <span class="arrow-key-glyph">↑</span>
             </div>
           </div>
-          <!-- bottom row: ← · ↓ · → -->
+          <!-- bottom row: Rotate L ← · ↓ · → Rotate R -->
           <div class="arrow-key-row arrow-key-row-bottom">
-            <!-- ← Rotate L -->
+            <!-- Rotate L ← -->
             <button
               class="arrow-key arrow-key-active arrow-key-labeled"
               id="arrowKeyLeft"
               title="Rotate left (← Arrow)"
             >
-              <span class="arrow-key-glyph">←</span>
               <span class="arrow-key-label">Rotate L</span>
+              <span class="arrow-key-glyph">←</span>
             </button>
 
-            <div class="arrow-key arrow-key-inactive" id="arrowKeyDown">
+            <!-- ↓ inactive -->
+            <div
+              class="arrow-key arrow-key-inactive arrow-key-center"
+              id="arrowKeyDown"
+            >
               <span class="arrow-key-glyph">↓</span>
             </div>
 
@@ -258,8 +276,8 @@
       </aside>
     </div>
 
-    <!-- Collapsible section logic -->
     <script>
+      // ── Collapsible sections ──────────────────────────────────────
       document.querySelectorAll(".section-toggle").forEach((toggle) => {
         const targetId = toggle.dataset.target;
         const body = document.getElementById(targetId);
@@ -277,6 +295,7 @@
         });
       });
 
+      // ── Basket item counter ───────────────────────────────────────
       const basketEl = document.getElementById("basketItems");
       const countEl = document.getElementById("basketCount");
       if (basketEl && countEl) {
@@ -285,6 +304,92 @@
           countEl.textContent = n + (n === 1 ? " ITEM" : " ITEMS");
         }).observe(basketEl, { childList: true });
       }
+
+      // ── COMPONENT BUTTON TOOLTIPS ─────────────────────────────────
+      (function () {
+        const TIPS = {
+          addFrame: {
+            title: "RECTANGULAR FRAME",
+            desc: "Primary structural base. Extends chassis via edge sockets. Place freely or snap to existing frame joints.",
+            cost: "₹1,200",
+            req: "",
+          },
+          addMotor: {
+            title: "MOTOR HOUSING",
+            desc: "Drive unit for wheels. Mounts on motor sockets around the frame perimeter. Each motor exposes one wheel shaft.",
+            cost: "₹2,500",
+            req: "Needs: free motor socket on a frame",
+          },
+          addWheelBtn: {
+            title: "WHEEL",
+            desc: "Motorised wheel assembly. Snaps directly onto motor output shafts. Stays locked until a motor is placed.",
+            cost: "₹1,100",
+            req: "Needs: 1× Motor placed first",
+          },
+          addTriangle: {
+            title: "TRIANGULAR FRAME",
+            desc: "Corner brace with stress-connector sockets. Two tri. frames are required before a Support Bridge can be placed.",
+            cost: "₹650",
+            req: "",
+          },
+          addSupportFrame: {
+            title: "STRESS BRIDGE",
+            desc: "Cross-span connector that locks two triangular frames together. Bridges must run along a straight X or Z axis.",
+            cost: "₹900",
+            req: "Needs: 2× Triangular Frames",
+          },
+        };
+
+        const tip = document.createElement("div");
+        tip.className = "comp-tooltip";
+        tip.innerHTML = `
+          <div class="comp-tooltip-title"></div>
+          <div class="comp-tooltip-desc"></div>
+          <div class="comp-tooltip-row">
+            <div class="comp-tooltip-cost"></div>
+            <div class="comp-tooltip-req"></div>
+          </div>`;
+        document.body.appendChild(tip);
+
+        const titleEl = tip.querySelector(".comp-tooltip-title");
+        const descEl = tip.querySelector(".comp-tooltip-desc");
+        const costEl = tip.querySelector(".comp-tooltip-cost");
+        const reqEl = tip.querySelector(".comp-tooltip-req");
+
+        let hideTimer = null;
+
+        document.querySelectorAll(".btn-tip-wrap").forEach(function (wrap) {
+          const id = wrap.dataset.tip;
+          const data = TIPS[id];
+          if (!data) return;
+
+          wrap.addEventListener("mouseenter", function () {
+            clearTimeout(hideTimer);
+            titleEl.textContent = data.title;
+            descEl.textContent = data.desc;
+            costEl.textContent = data.cost;
+            reqEl.textContent = data.req;
+
+            const rect = wrap.getBoundingClientRect();
+            tip.style.left = rect.right + 12 + "px";
+            tip.style.top =
+              Math.max(
+                8,
+                Math.min(
+                  rect.top + rect.height / 2 - 55,
+                  window.innerHeight - 160,
+                ),
+              ) + "px";
+            tip.classList.add("visible");
+          });
+
+          wrap.addEventListener("mouseleave", function () {
+            hideTimer = setTimeout(function () {
+              tip.classList.remove("visible");
+            }, 80);
+          });
+        });
+      })();
     </script>
 
     <script type="module" src="/src/main.js"></script>
