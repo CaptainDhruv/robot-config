@@ -2,24 +2,10 @@
    INVENTORY.JS — Robot Configurator
    Tracks placed parts, renders basket rows with sub-totals,
    and exposes add / remove / init helpers.
+   Prices & labels are loaded live from partConfig.js
    ========================================================= */
 
-const PRICES = {
-  frame: 1200,
-  motor: 850,
-  triangle_frame: 650,
-  support_frame: 900,
-  wheel: 750, // NEW — Wheel attaches to motor WHEEL_SOCKET
-};
-
-// Human-readable labels for each type key
-const LABELS = {
-  frame: "Rectangular Frame",
-  motor: "Motor Housing",
-  triangle_frame: "Triangular Frame",
-  support_frame: "Support Frame",
-  wheel: "Wheel",
-};
+import { getPrice, getLabel } from "../partConfig.js";
 
 // Accent colours matching the Military HUD button palette
 const COLOURS = {
@@ -53,12 +39,12 @@ function render() {
   Object.entries(state).forEach(([type, count]) => {
     if (count <= 0) return;
 
-    const unitPrice = PRICES[type] ?? 0;
+    const unitPrice = getPrice(type); // ← live from DB
+    const label = getLabel(type); // ← live from DB
     const lineTotal = unitPrice * count;
     total += lineTotal;
     totalItems += count;
 
-    const label = LABELS[type] ?? type;
     const colour = COLOURS[type] ?? "#d4922a";
 
     const row = document.createElement("div");
@@ -136,7 +122,6 @@ function render() {
     divider.appendChild(label);
     itemsEl.appendChild(divider);
 
-    // Parts count summary row
     const summary = document.createElement("div");
     summary.style.cssText = `
       display: flex;
@@ -186,5 +171,10 @@ export function initInventory(initial = {}) {
   Object.entries(initial).forEach(([k, v]) => {
     if (k in state) state[k] = v;
   });
+  render();
+}
+
+/** Call this after a live partConfig update to re-render with new prices */
+export function refreshInventory() {
   render();
 }

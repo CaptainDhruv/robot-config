@@ -9,8 +9,24 @@ import {
   addToInventory,
   removeFromInventory,
   initInventory,
+  refreshInventory,
 } from "./ui/inventory.js";
 import { supabase } from "./supabaseClient.js";
+
+// ── PART CONFIG — loaded dynamically from Supabase part_config table ──────────
+import {
+  getPartConfig,
+  subscribePartConfig,
+  getPrice,
+  getLabel,
+  getAllPrices,
+  getAllLabels,
+} from "./partConfig.js";
+
+// Dynamic getters — replace all PART_COSTS[x] with PART_COSTS()[x]
+const PART_COSTS = () => getAllPrices();
+const PART_LABELS = () => getAllLabels();
+
 /* =========================================================
    GLOBAL STATE
    ========================================================= */
@@ -49,27 +65,18 @@ let motorManualRotSteps = 0;
 let triangleAutoBaseYaw = 0;
 let triangleManualRotSteps = 0;
 let hoveredTriangleMarker = null;
-// ── Tracks the UUID of the last triangle socket hovered so that returning to
-//    the same socket after briefly leaving does NOT reset the manual rotation.
 let lastHoveredTriangleSocketUUID = null;
 
 // ── Support auto-orientation state (1-click placement) ───────────────────────
 let supportManualRotSteps = 0;
-// ── Two-click support bridge state ───────────────────────────────────────────
-// After the user clicks the first socket, it is stored here until they click
-// the second socket on a different triangle mount.
 let supportFirstSocket = null;
-let supportFirstMarker = null; // the marker mesh that got locked
-// ─────────────────────────────────────────────────────────────────────────────
+let supportFirstMarker = null;
 
-// ── Frame-on-support rotation (used inside unified frame mode) ───────────────
+// ── Frame-on-support rotation ─────────────────────────────────────────────────
 let frameOnSupportRotationSteps = 0;
-// ─────────────────────────────────────────────────────────────────────────────
 
 // ── Tracks which socket type the ghost is currently hovering ─────────────────
-// "frame" = regular SOCKET_FRAME, "support" = SOCKET_FRAME_SUPPORT
 let frameHoverType = "frame";
-// ─────────────────────────────────────────────────────────────────────────────
 
 // ── Undo history ─────────────────────────────────────────────────────────────
 const undoStack = [];
@@ -79,11 +86,9 @@ const MAX_UNDO = 50;
 function pushUndo(mount, socketUuids, type) {
   undoStack.push({ mount, socketUuids: [...socketUuids], type });
   if (undoStack.length > MAX_UNDO) undoStack.shift();
-  // Any new action clears the redo history
   redoStack.length = 0;
   updateUndoRedoButtons();
 }
-// ─────────────────────────────────────────────────────────────────────────────
 
 /* =========================================================
    QUEUED INTENT — Smart prerequisite chaining
@@ -181,25 +186,9 @@ function injectChainToastKeyframe() {
 }
 
 /* =========================================================
-   PART COSTS + LABELS
+   PART WEIGHTS (stays static — not in DB)
    ========================================================= */
 
-const PART_COSTS = {
-  frame: 1200,
-  motor: 2500,
-  triangle_frame: 650,
-  support_frame: 900,
-  wheel: 1100,
-};
-
-const PART_LABELS = {
-  frame: "Rectangular Frame",
-  motor: "Motor Housing",
-  triangle_frame: "Triangular Frame",
-  support_frame: "Stress Bridge",
-  wheel: "Wheel",
-};
-/* ── Part weights in grams ── */
 const PART_WEIGHTS = {
   frame: 450,
   motor: 380,
@@ -310,11 +299,9 @@ function applyCameraPreset(presetKey) {
   function animateCam(now) {
     const t = Math.min((now - startTime) / duration, 1);
     const ease = 1 - Math.pow(1 - t, 3);
-
     camera.position.lerpVectors(startPos, targetPos, ease);
     controls.target.lerpVectors(startTarget, lookAtPos, ease);
     controls.update();
-
     if (t < 1) requestAnimationFrame(animateCam);
   }
   requestAnimationFrame(animateCam);
@@ -358,7 +345,6 @@ function captureFromAngle(presetKey) {
   controls.target.copy(lookAtPos);
   controls.update();
 
-  // ── Switch to clean white background, hide floor ──────────────────────────
   const savedBg = scene.background ? scene.background.clone() : null;
   const savedFog = scene.fog;
   scene.background = new THREE.Color(0xffffff);
@@ -367,19 +353,16 @@ function captureFromAngle(presetKey) {
   if (sceneGridMajor) sceneGridMajor.visible = false;
   if (sceneGridMinor) sceneGridMinor.visible = false;
   if (sceneGround) sceneGround.visible = false;
-  // ─────────────────────────────────────────────────────────────────────────
 
   renderer.render(scene, camera);
   const dataURL = renderer.domElement.toDataURL("image/png");
 
-  // ── Restore scene state ───────────────────────────────────────────────────
   scene.background = savedBg ?? new THREE.Color(0x8aaec8);
   scene.fog = savedFog;
   renderer.setClearColor(0x8aaec8, 1);
   if (sceneGridMajor) sceneGridMajor.visible = true;
   if (sceneGridMinor) sceneGridMinor.visible = true;
   if (sceneGround) sceneGround.visible = true;
-  // ─────────────────────────────────────────────────────────────────────────
 
   camera.position.copy(savedPos);
   camera.quaternion.copy(savedQuat);
@@ -423,10 +406,10 @@ const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let _mouseDownX = 0;
 let _mouseDownY = 0;
-const CLICK_MOVE_THRESHOLD = 5; // pixels
+const CLICK_MOVE_THRESHOLD = 5;
 
 /* =========================================================
-   SOCKET MARKERS — LARGER SIZE + WIDER PROXIMITY
+   SOCKET MARKERS
    ========================================================= */
 
 const socketGeo = new THREE.SphereGeometry(0.09, 12, 12);
@@ -437,19 +420,15 @@ const wheelSocketMat = new THREE.MeshBasicMaterial({ color: 0xb84a14 });
 
 let frameMarkers = [];
 let motorMarkers = [];
-
 let triangleSocketMarkers = [];
 let stressConnectorMarkers = [];
 let triangleMarkers = [];
-
 let frameOnSupportMarkers = [];
 let wheelMarkers = [];
 
-// ── Scene floor objects — stored so captureFromAngle can hide them ────────────
 let sceneGridMajor = null;
 let sceneGridMinor = null;
 let sceneGround = null;
-// ─────────────────────────────────────────────────────────────────────────────
 
 /* =========================================================
    SUPPORT SOCKET PAIRS (TRIANGLE)
@@ -461,7 +440,7 @@ const SUPPORT_TRIANGLE_PAIRS = [
 ];
 
 /* =========================================================
-   FRAME SOCKET HELPERS — EXACT Y LEVELING
+   FRAME SOCKET HELPERS
    ========================================================= */
 
 const OPPOSITE_SOCKET_SUFFIX = { A: "C", B: "D", C: "A", D: "B" };
@@ -706,7 +685,7 @@ function getDependentMounts(targetMount) {
 
 function mountLabel(mount) {
   const type = mount.userData.type ?? "unknown";
-  return PART_LABELS[type] ?? type.replace(/_/g, " ");
+  return PART_LABELS()[type] ?? type.replace(/_/g, " ");
 }
 
 function checkDeletionAllowed(targetMount) {
@@ -721,7 +700,7 @@ function checkDeletionAllowed(targetMount) {
   }
 
   const lines = Object.entries(typeCount).map(
-    ([t, n]) => `${n}× ${PART_LABELS[t] ?? t.replace(/_/g, " ")}`,
+    ([t, n]) => `${n}× ${PART_LABELS()[t] ?? t.replace(/_/g, " ")}`,
   );
 
   const targetLabel = mountLabel(targetMount);
@@ -963,11 +942,21 @@ async function init() {
 
   setupLights();
 
+  // ── Load part config from Supabase BEFORE any UI renders ─────────────────
+  await getPartConfig(supabase);
+
+  // Subscribe to live admin changes — updates basket/weight/tooltips instantly
+  subscribePartConfig(supabase, () => {
+    updateWeightDisplay();
+    updateBasketTotals();
+    refreshInventory();
+  });
+  // ─────────────────────────────────────────────────────────────────────────
+
   frameTemplate = await loadGLB("/assets/models/rectangle_frame.glb");
   motorTemplate = await loadGLB("/assets/models/motor_housing.glb");
   triangleTemplate = await loadGLB("/assets/models/triangle_frame.glb");
 
-  // Boost triangle material — GLB defaults can appear washed-out
   triangleTemplate.traverse((o) => {
     if (!o.isMesh) return;
     const mats = Array.isArray(o.material) ? o.material : [o.material];
@@ -976,7 +965,6 @@ async function init() {
       mat.transparent = false;
       mat.opacity = 1;
       mat.depthWrite = true;
-      // Increase perceived darkness/saturation so it reads clearly in the scene
       if (mat.color) mat.color.multiplyScalar(1.35);
       mat.needsUpdate = true;
     });
@@ -1047,6 +1035,35 @@ async function init() {
   });
 
   animate();
+}
+
+/* ── Helper to refresh basket totals when config updates live ── */
+function updateBasketTotals() {
+  // Re-render the inventory/basket with new prices
+  const counts = {};
+  scene.traverse((o) => {
+    if (!o.userData?.isMount) return;
+    const t = o.userData.type ?? "unknown";
+    counts[t] = (counts[t] ?? 0) + 1;
+  });
+
+  let total = 0;
+  const basketEl = document.getElementById("basketItems");
+  if (basketEl) {
+    basketEl.innerHTML = "";
+    for (const [type, qty] of Object.entries(counts)) {
+      const price = getPrice(type);
+      const label = getLabel(type);
+      const subtotal = price * qty;
+      total += subtotal;
+      const row = document.createElement("div");
+      row.innerHTML = `<span>${qty}× ${label}</span><span>₹${subtotal.toLocaleString("en-IN")}</span>`;
+      basketEl.appendChild(row);
+    }
+  }
+
+  const totalEl = document.getElementById("totalPrice");
+  if (totalEl) totalEl.textContent = total.toLocaleString("en-IN");
 }
 
 /* =========================================================
@@ -1174,7 +1191,6 @@ function bindUI() {
   const rotLeftBtn = document.getElementById("rotLeftBtn");
   const rotRightBtn = document.getElementById("rotRightBtn");
 
-  // Also wire the new keyboard-style arrow key buttons
   const arrowLeft = document.getElementById("arrowKeyLeft");
   const arrowRight = document.getElementById("arrowKeyRight");
 
@@ -1501,7 +1517,7 @@ function onProceedToPayment() {
 }
 
 /* =========================================================
-   ADDRESS OVERLAY — shown in-page, no navigation
+   ADDRESS OVERLAY
    ========================================================= */
 
 function showAddressOverlay() {
@@ -1811,13 +1827,13 @@ function showAddressOverlay() {
   body.appendChild(mkRow("addr-row-211", fCity, fState, fPin));
   body.appendChild(mkRow("addr-row-1", fPhone));
 
-  const divider = document.createElement("div");
-  Object.assign(divider.style, {
+  const divider2 = document.createElement("div");
+  Object.assign(divider2.style, {
     height: "1px",
     background: "rgba(255,255,255,0.05)",
     margin: "18px 0 16px",
   });
-  body.appendChild(divider);
+  body.appendChild(divider2);
 
   const btnRow = document.createElement("div");
   Object.assign(btnRow.style, {
@@ -1871,7 +1887,6 @@ function showAddressOverlay() {
       return;
     }
 
-    // Disable button to prevent double submit
     submitBtn.disabled = true;
     submitBtn.innerHTML = `<span>⟳</span> SAVING ORDER...`;
 
@@ -1910,8 +1925,6 @@ function showAddressOverlay() {
         null,
         savedOrder,
       );
-
-      // Generate and upload print report in background
       uploadPrintReport(savedOrder.id, orderRef);
     } catch (err) {
       console.error("[ORDER SAVE ERROR]", err);
@@ -2061,39 +2074,9 @@ function showOrderConfirmOverlay(
     fontWeight: "700",
     letterSpacing: "0.2em",
     color: "#384858",
-    marginBottom: paymentResult ? "12px" : "24px",
+    marginBottom: "24px",
     lineHeight: "1.8",
   });
-
-  // ── Payment confirmation details (shown when paid via Razorpay) ───────
-  if (paymentResult) {
-    const payBox = document.createElement("div");
-    Object.assign(payBox.style, {
-      background: "rgba(16,48,16,0.3)",
-      border: "1px solid rgba(50,160,50,0.3)",
-      borderLeft: "3px solid #22aa44",
-      padding: "10px 16px",
-      marginBottom: "24px",
-      textAlign: "left",
-    });
-    const METHOD_LABELS = {
-      card: "💳 Card",
-      upi: "⚡ UPI",
-      netbanking: "🏦 Net Banking",
-      wallet: "👛 Wallet",
-      emi: "📅 EMI",
-    };
-    const methodLabel =
-      METHOD_LABELS[paymentResult.method] || paymentResult.method || "Online";
-    payBox.innerHTML = `
-      <div style="font-family:'Orbitron',sans-serif;font-size:7px;font-weight:700;letter-spacing:0.25em;color:#22aa44;margin-bottom:8px">✓ PAYMENT CONFIRMED</div>
-      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:#8aacbf;line-height:1.8;letter-spacing:0.04em">
-        <span style="color:#384858">Payment ID: </span>${paymentResult.payment_id}<br>
-        <span style="color:#384858">Method: </span>${methodLabel}<br>
-        <span style="color:#384858">Amount: </span>₹${(paymentResult.amount / 100).toLocaleString("en-IN")}
-      </div>`;
-    card.appendChild(payBox);
-  }
 
   const closeBtn = document.createElement("button");
   closeBtn.className = "addr-btn addr-btn-submit";
@@ -2112,22 +2095,8 @@ function showOrderConfirmOverlay(
     color: "#4a9898",
     boxShadow: "4px 4px 0 #0e2626",
   });
-  printBtn.onmouseover = () => {
-    printBtn.style.background = "#2a6868";
-    printBtn.style.color = "#0a1010";
-    printBtn.style.borderColor = "#3a8888";
-    printBtn.style.boxShadow = "6px 6px 0 #0e2626";
-  };
-  printBtn.onmouseout = () => {
-    printBtn.style.background = "transparent";
-    printBtn.style.color = "#4a9898";
-    printBtn.style.borderColor = "#2a6868";
-    printBtn.style.boxShadow = "4px 4px 0 #0e2626";
-  };
   printBtn.innerHTML = `<span style="margin-right:8px">▤</span> PRINT REPORT`;
-  printBtn.onclick = () => {
-    printDesign();
-  };
+  printBtn.onclick = () => printDesign();
 
   const btnGroup = document.createElement("div");
   Object.assign(btnGroup.style, {
@@ -2151,261 +2120,8 @@ function showOrderConfirmOverlay(
 }
 
 /* =========================================================
-   RAZORPAY — Frontend checkout integration
-   =========================================================
-   Flow:
-   1. openRazorpayCheckout() → calls backend POST /api/create-order
-   2. Backend returns a Razorpay order_id
-   3. Razorpay checkout popup opens (loaded from Razorpay CDN)
-   4. User pays → Razorpay calls handler.success with payment IDs
-   5. We call backend POST /api/verify-payment to verify signature
-   6. On verified → show order confirmation overlay
+   SUPABASE — Order saving (uses dynamic prices from DB)
    ========================================================= */
-
-// ── CONFIG — update these for your environment ────────────────────────────
-const RAZORPAY_KEY_ID = "rzp_test_XXXXXXXXXXXXXXXX"; // ← paste your test key
-const BACKEND_URL = "http://localhost:4000"; // ← your backend URL
-
-// ── Load Razorpay checkout script once ───────────────────────────────────
-function loadRazorpayScript() {
-  return new Promise((resolve, reject) => {
-    if (window.Razorpay) {
-      resolve();
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Failed to load Razorpay script"));
-    document.head.appendChild(script);
-  });
-}
-
-// ── Main entry point called after address form submits ────────────────────
-async function openRazorpayCheckout({
-  addrLines,
-  orderRef,
-  totalCost,
-  totalParts,
-  customerName,
-  customerPhone,
-}) {
-  // Show loading state
-  showHudMessage("PREPARING CHECKOUT...");
-
-  try {
-    // 1. Load Razorpay SDK
-    await loadRazorpayScript();
-
-    // 2. Parse amount — totalCost is a string like "14,550" or "14550"
-    const amountRupees =
-      parseFloat(String(totalCost).replace(/[^0-9.]/g, "")) || 0;
-    if (amountRupees < 1) {
-      showHudMessage("⚠ Invalid order amount");
-      return;
-    }
-    const amountPaise = Math.round(amountRupees * 100);
-
-    // 3. Collect build state for order notes
-    const buildCounts = {};
-    scene.traverse((o) => {
-      if (!o.userData?.isMount) return;
-      const t = o.userData.type ?? "unknown";
-      buildCounts[t] = (buildCounts[t] ?? 0) + 1;
-    });
-    const buildSummary = Object.entries(buildCounts)
-      .map(([t, n]) => `${n}x ${t.replace(/_/g, " ")}`)
-      .join(", ");
-
-    // 4. Create order on backend
-    const orderRes = await fetch(`${BACKEND_URL}/api/create-order`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        amount_paise: amountPaise,
-        currency: "INR",
-        receipt: orderRef,
-        notes: {
-          order_ref: orderRef,
-          parts_count: totalParts,
-          build_summary: buildSummary,
-          address: addrLines.join(" | "),
-        },
-      }),
-    });
-
-    if (!orderRes.ok) {
-      const err = await orderRes.json().catch(() => ({}));
-      throw new Error(err.error || `Server error ${orderRes.status}`);
-    }
-
-    const { order_id } = await orderRes.json();
-
-    // 5. Open Razorpay checkout popup
-    const rzpOptions = {
-      key: RAZORPAY_KEY_ID,
-      amount: amountPaise,
-      currency: "INR",
-      name: "Robot Configurator",
-      description: `MK-1 Build — ${totalParts} parts  ·  ${orderRef}`,
-      order_id,
-
-      // Pre-fill customer details from address form
-      prefill: {
-        name: customerName,
-        contact: customerPhone,
-      },
-
-      // Branding
-      theme: { color: "#d05818" },
-
-      // Modal settings
-      modal: {
-        ondismiss: () => {
-          showHudMessage("PAYMENT CANCELLED");
-          // Re-show address overlay so user can try again
-          showAddressOverlay();
-        },
-        confirm_close: true,
-        escape: false,
-        animation: true,
-        backdropclose: false,
-      },
-
-      // ── Success handler ───────────────────────────────────────────────
-      handler: async (response) => {
-        showHudMessage("VERIFYING PAYMENT...");
-        try {
-          await verifyPayment(response, {
-            addrLines,
-            orderRef,
-            totalCost,
-            totalParts,
-          });
-        } catch (err) {
-          showPaymentErrorOverlay(
-            err.message || "Verification failed. Contact support.",
-          );
-        }
-      },
-    };
-
-    const rzp = new window.Razorpay(rzpOptions);
-
-    // Handle payment failure inside the popup
-    rzp.on("payment.failed", (response) => {
-      console.error("[RAZORPAY] Payment failed:", response.error);
-      showPaymentErrorOverlay(
-        response.error.description || "Payment failed. Please try again.",
-        response.error.code,
-      );
-    });
-
-    rzp.open();
-  } catch (err) {
-    console.error("[CHECKOUT ERROR]", err);
-    showPaymentErrorOverlay(
-      err.message || "Could not start checkout. Is the backend running?",
-    );
-  }
-}
-
-// ── Verify payment with backend after Razorpay success ───────────────────
-async function verifyPayment(
-  razorpayResponse,
-  { addrLines, orderRef, totalCost, totalParts },
-) {
-  const verifyRes = await fetch(`${BACKEND_URL}/api/verify-payment`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      razorpay_order_id: razorpayResponse.razorpay_order_id,
-      razorpay_payment_id: razorpayResponse.razorpay_payment_id,
-      razorpay_signature: razorpayResponse.razorpay_signature,
-    }),
-  });
-
-  const result = await verifyRes.json();
-
-  if (!verifyRes.ok || !result.verified) {
-    throw new Error(result.error || "Payment could not be verified");
-  }
-
-  console.log("[PAYMENT VERIFIED]", result);
-  showHudMessage("PAYMENT SUCCESSFUL ✓");
-
-  // Show the existing order confirmation overlay with payment details
-  showOrderConfirmOverlay(addrLines, orderRef, totalCost, totalParts, result);
-}
-
-// ── Payment error overlay ─────────────────────────────────────────────────
-function showPaymentErrorOverlay(message, code) {
-  const existing = document.getElementById("pay-error-overlay");
-  if (existing) existing.remove();
-
-  const backdrop = document.createElement("div");
-  backdrop.id = "pay-error-overlay";
-  Object.assign(backdrop.style, {
-    position: "fixed",
-    inset: "0",
-    background: "rgba(8,12,20,0.92)",
-    zIndex: "10000003",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    backdropFilter: "blur(8px)",
-  });
-
-  const card = document.createElement("div");
-  Object.assign(card.style, {
-    width: "min(440px,90vw)",
-    background: "#18202e",
-    border: "2px solid #cc2200",
-    borderLeft: "4px solid #cc2200",
-    clipPath: "polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%)",
-    padding: "36px 40px",
-    textAlign: "center",
-    boxShadow: "0 0 60px rgba(204,34,0,0.3)",
-  });
-
-  card.innerHTML = `
-    <div style="font-family:'Orbitron',sans-serif;font-size:32px;color:#cc2200;margin-bottom:12px">✕</div>
-    <div style="font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.18em;color:#d8e8f4;margin-bottom:10px">PAYMENT FAILED</div>
-    ${code ? `<div style="font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:0.15em;color:#cc2200;margin-bottom:10px">${code}</div>` : ""}
-    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:#6a8098;line-height:1.7;margin-bottom:28px;letter-spacing:0.04em">${message}</div>
-    <div style="display:flex;gap:12px;justify-content:center">
-      <button id="pay-err-retry" style="font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.18em;padding:10px 24px;background:#cc2200;border:none;color:#111;cursor:pointer;text-transform:uppercase">TRY AGAIN</button>
-      <button id="pay-err-close" style="font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.18em;padding:10px 24px;background:transparent;border:1.5px solid #384858;color:#6a8098;cursor:pointer;text-transform:uppercase">CANCEL</button>
-    </div>`;
-
-  backdrop.appendChild(card);
-  document.body.appendChild(backdrop);
-
-  document.getElementById("pay-err-retry").onclick = () => {
-    backdrop.remove();
-    showAddressOverlay(); // restart from address
-  };
-  document.getElementById("pay-err-close").onclick = () => backdrop.remove();
-}
-
-/* =========================================================
-   SUPABASE — Order saving + print report upload
-   ========================================================= */
-
-const PART_COSTS_DB = {
-  frame: 1200,
-  motor: 2500,
-  triangle_frame: 650,
-  support_frame: 900,
-  wheel: 1100,
-};
-const PART_LABELS_DB = {
-  frame: "Rectangular Frame",
-  motor: "Motor Housing",
-  triangle_frame: "Triangular Frame",
-  support_frame: "Stress Bridge",
-  wheel: "Wheel",
-};
 
 async function saveOrderToSupabase({
   orderRef,
@@ -2422,7 +2138,6 @@ async function saveOrderToSupabase({
 }) {
   const amountNum = parseFloat(String(totalCost).replace(/[^0-9.]/g, "")) || 0;
 
-  // 1. Insert order row
   const { data: order, error: orderErr } = await supabase
     .from("orders")
     .insert({
@@ -2444,7 +2159,7 @@ async function saveOrderToSupabase({
 
   if (orderErr) throw new Error(`Order insert failed: ${orderErr.message}`);
 
-  // 2. Build parts rows from current scene
+  // ── Use live prices from DB (via partConfig.js) ───────────────────────────
   const partRows = [];
   const countsByType = {};
   scene.traverse((o) => {
@@ -2454,8 +2169,8 @@ async function saveOrderToSupabase({
   });
 
   for (const [type, qty] of Object.entries(countsByType)) {
-    const unitCost = PART_COSTS_DB[type] ?? 0;
-    const partLabel = PART_LABELS_DB[type] ?? type.replace(/_/g, " ");
+    const unitCost = getPrice(type); // ← from partConfig.js
+    const partLabel = getLabel(type); // ← from partConfig.js
     partRows.push({
       order_id: order.id,
       part_type: type,
@@ -2482,7 +2197,6 @@ async function uploadPrintReport(orderId, orderRef) {
   try {
     showHudMessage("GENERATING REPORT...");
 
-    // Capture all 8 angles with technical overlays — same as printDesign()
     const angleKeys = [
       "perspective",
       "front",
@@ -2520,7 +2234,6 @@ async function uploadPrintReport(orderId, orderRef) {
       screenshots[key] = await addTechnicalOverlay(raw, overlayLabels[key]);
     }
 
-    // Build the full report HTML (identical to printDesign output)
     const reportHTML = buildFullReportHTML(screenshots, angleLabels, orderRef);
     const blob = new Blob([reportHTML], { type: "text/html" });
     const filePath = `orders/${orderId}/${orderRef}_report.html`;
@@ -2534,14 +2247,12 @@ async function uploadPrintReport(orderId, orderRef) {
       return;
     }
 
-    // Signed URL valid for 1 year
     const { data: urlData } = await supabase.storage
       .from("reports")
       .createSignedUrl(filePath, 60 * 60 * 24 * 365);
 
     const publicUrl = urlData?.signedUrl ?? null;
 
-    // Upsert so re-orders update the existing record
     await supabase
       .from("print_reports")
       .upsert(
@@ -2558,7 +2269,6 @@ async function uploadPrintReport(orderId, orderRef) {
 }
 
 function buildFullReportHTML(screenshots, angleLabels, orderRef) {
-  // Collect counts + costs — same logic as printDesign()
   const counts = {};
   scene.traverse((o) => {
     if (!o.userData?.isMount) return;
@@ -2566,13 +2276,15 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
     counts[t] = (counts[t] ?? 0) + 1;
   });
 
-  const partCostMap = PART_COSTS_DB;
-  const partLabelMap = PART_LABELS_DB;
+  // ── Use live prices/labels from DB ────────────────────────────────────────
+  const partCostMap = getAllPrices();
+  const partLabelMap = getAllLabels();
+  // ─────────────────────────────────────────────────────────────────────────
+
   const total = document.getElementById("totalPrice")?.textContent ?? "0";
   const totalParts = Object.values(counts).reduce((a, b) => a + b, 0);
   const now = new Date().toLocaleString();
 
-  // Manifest rows
   let computedTotal = 0;
   const manifestRows = Object.entries(counts)
     .map(([t, n]) => {
@@ -2586,29 +2298,16 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
     })
     .join("");
 
-  // Cost breakdown rows with bracket separators
   const costGroupRows = Object.entries(counts)
     .map(([t, n]) => {
       const unitCost = partCostMap[t] ?? 0;
       const groupCost = unitCost * n;
       const label = partLabelMap[t] ?? t.replace(/_/g, " ");
       return `
-      <tr>
-        <td colspan="2" style="font-family:'Courier New',monospace;font-size:8px;letter-spacing:0.18em;color:#999;padding:5px 12px 2px;border-top:1px solid #ddd;border-left:3px solid #cc2200;background:#fafafa;">
-          [ ${label.toUpperCase()} ]
-        </td>
-      </tr>
-      <tr>
-        <td style="padding-left:18px;border-left:3px solid rgba(204,34,0,0.18)">${n}× ${label}</td>
-        <td style="text-align:right;font-family:'Courier New',monospace;font-weight:700">₹${groupCost.toLocaleString("en-IN")}</td>
-      </tr>
-      <tr>
-        <td style="padding-left:18px;font-size:10px;color:#888;font-family:'Courier New',monospace;border-left:3px solid rgba(204,34,0,0.18)">@ ₹${unitCost.toLocaleString("en-IN")} each</td>
-        <td></td>
-      </tr>
-      <tr>
-        <td colspan="2" style="padding:1px 12px 4px;border-left:3px solid #cc2200;border-bottom:1px solid #e0e0e0;font-size:7px;color:#ccc"> </td>
-      </tr>`;
+      <tr><td colspan="2" style="font-family:'Courier New',monospace;font-size:8px;letter-spacing:0.18em;color:#999;padding:5px 12px 2px;border-top:1px solid #ddd;border-left:3px solid #cc2200;background:#fafafa;">[ ${label.toUpperCase()} ]</td></tr>
+      <tr><td style="padding-left:18px;border-left:3px solid rgba(204,34,0,0.18)">${n}× ${label}</td><td style="text-align:right;font-family:'Courier New',monospace;font-weight:700">₹${groupCost.toLocaleString("en-IN")}</td></tr>
+      <tr><td style="padding-left:18px;font-size:10px;color:#888;font-family:'Courier New',monospace;border-left:3px solid rgba(204,34,0,0.18)">@ ₹${unitCost.toLocaleString("en-IN")} each</td><td></td></tr>
+      <tr><td colspan="2" style="padding:1px 12px 4px;border-left:3px solid #cc2200;border-bottom:1px solid #e0e0e0;font-size:7px;color:#ccc"> </td></tr>`;
     })
     .join("");
 
@@ -2624,119 +2323,88 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
   ];
   const otherAnglesHTML = otherAngles
     .map(
-      (k) => `
-    <div class="angle-card">
-      <img src="${screenshots[k]}" alt="${angleLabels[k]} view"/>
-    </div>`,
+      (k) =>
+        `<div class="angle-card"><img src="${screenshots[k]}" alt="${angleLabels[k]} view"/></div>`,
     )
     .join("");
 
   return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8"/>
-  <title>Robot Design — ${orderRef}</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap');
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{background:#fff;color:#111;font-family:'Rajdhani',sans-serif;padding:22px 28px}
-    .print-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px;border-bottom:3px solid #1a1a1a;margin-bottom:18px}
-    .print-title{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;letter-spacing:0.12em;color:#111;line-height:1}
-    .print-subtitle{font-family:'Share Tech Mono',monospace;font-size:10px;color:#666;letter-spacing:0.15em;text-transform:uppercase;margin-top:5px}
-    .print-meta{text-align:right;font-family:'Share Tech Mono',monospace;font-size:10px;color:#555;line-height:1.7;letter-spacing:0.05em}
-    .status-badge{display:inline-block;padding:2px 10px;font-size:9px;font-family:'Orbitron',sans-serif;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;border:1.5px solid;margin-top:4px}
-    .status-final{color:#166534;border-color:#166534;background:#f0fdf4}
-    .status-draft{color:#7f1d1d;border-color:#cc2200;background:#fff5f5}
-    .main-view-wrap{width:100%;border:2px solid #222;margin-bottom:14px;background:#f0f0f0;overflow:hidden}
-    .main-view-wrap img{width:100%;display:block;max-height:440px;object-fit:contain}
-    .section-title{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.2em;color:#111;text-transform:uppercase;border-left:4px solid #cc2200;padding-left:10px;margin-bottom:10px}
-    .angles-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px}
-    .angle-card{border:1.5px solid #222;background:#f0f0f0;overflow:hidden}
-    .angle-card img{width:100%;display:block;max-height:180px;object-fit:contain}
-    .tables-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
-    .table-card{border:1.5px solid #222}
-    .table-card-header{background:#1a1a1a;color:#cc2200;font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.18em;padding:6px 12px;text-transform:uppercase}
-    table{width:100%;border-collapse:collapse;font-size:12px}
-    td{padding:6px 12px;border-bottom:1px solid #e5e5e5;font-family:'Rajdhani',sans-serif;letter-spacing:0.03em}
-    tr:last-child td{border-bottom:none}
-    tr:nth-child(even) td{background:#fafafa}
-    .manifest-subtotal td{font-family:'Share Tech Mono',monospace!important;font-size:11px!important;font-weight:700!important;color:#cc2200!important;background:#fff5f5!important;border-top:2px solid #cc2200!important;border-bottom:none!important}
-    .manifest-total-parts td{font-family:'Share Tech Mono',monospace!important;font-size:10px!important;color:#555!important;background:#f8f8f8!important;border-bottom:none!important}
-    .cost-table td{padding:4px 12px;font-size:12px;border-bottom:none}
-    .cost-table tr:nth-child(even) td{background:transparent}
-    .total-bar{display:flex;justify-content:space-between;align-items:center;border:2px solid #1a1a1a;padding:10px 20px;margin-bottom:16px;background:#f8f8f8}
-    .total-label{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.1em;color:#111}
-    .total-value{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;color:#cc2200;letter-spacing:0.06em}
-    .print-footer{border-top:1px solid #ccc;padding-top:10px;display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:9px;color:#888;letter-spacing:0.08em}
-    @media print{body{padding:12px 16px}}
-  </style>
-</head>
-<body>
+<html><head><meta charset="UTF-8"/><title>Robot Design — ${orderRef}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#fff;color:#111;font-family:'Rajdhani',sans-serif;padding:22px 28px}
+  .print-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px;border-bottom:3px solid #1a1a1a;margin-bottom:18px}
+  .print-title{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;letter-spacing:0.12em;color:#111;line-height:1}
+  .print-subtitle{font-family:'Share Tech Mono',monospace;font-size:10px;color:#666;letter-spacing:0.15em;text-transform:uppercase;margin-top:5px}
+  .print-meta{text-align:right;font-family:'Share Tech Mono',monospace;font-size:10px;color:#555;line-height:1.7;letter-spacing:0.05em}
+  .status-badge{display:inline-block;padding:2px 10px;font-size:9px;font-family:'Orbitron',sans-serif;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;border:1.5px solid;margin-top:4px}
+  .status-final{color:#166534;border-color:#166534;background:#f0fdf4}
+  .status-draft{color:#7f1d1d;border-color:#cc2200;background:#fff5f5}
+  .main-view-wrap{width:100%;border:2px solid #222;margin-bottom:14px;background:#f0f0f0;overflow:hidden}
+  .main-view-wrap img{width:100%;display:block;max-height:440px;object-fit:contain}
+  .section-title{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.2em;color:#111;text-transform:uppercase;border-left:4px solid #cc2200;padding-left:10px;margin-bottom:10px}
+  .angles-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px}
+  .angle-card{border:1.5px solid #222;background:#f0f0f0;overflow:hidden}
+  .angle-card img{width:100%;display:block;max-height:180px;object-fit:contain}
+  .tables-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+  .table-card{border:1.5px solid #222}
+  .table-card-header{background:#1a1a1a;color:#cc2200;font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.18em;padding:6px 12px;text-transform:uppercase}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  td{padding:6px 12px;border-bottom:1px solid #e5e5e5;font-family:'Rajdhani',sans-serif;letter-spacing:0.03em}
+  tr:last-child td{border-bottom:none}
+  tr:nth-child(even) td{background:#fafafa}
+  .manifest-subtotal td{font-family:'Share Tech Mono',monospace!important;font-size:11px!important;font-weight:700!important;color:#cc2200!important;background:#fff5f5!important;border-top:2px solid #cc2200!important;border-bottom:none!important}
+  .manifest-total-parts td{font-family:'Share Tech Mono',monospace!important;font-size:10px!important;color:#555!important;background:#f8f8f8!important;border-bottom:none!important}
+  .cost-table td{padding:4px 12px;font-size:12px;border-bottom:none}
+  .cost-table tr:nth-child(even) td{background:transparent}
+  .total-bar{display:flex;justify-content:space-between;align-items:center;border:2px solid #1a1a1a;padding:10px 20px;margin-bottom:16px;background:#f8f8f8}
+  .total-label{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.1em;color:#111}
+  .total-value{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;color:#cc2200;letter-spacing:0.06em}
+  .print-footer{border-top:1px solid #ccc;padding-top:10px;display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:9px;color:#888;letter-spacing:0.08em}
+  @media print{body{padding:12px 16px}}
+</style></head><body>
   <div class="print-header">
     <div>
       <div class="print-title">ROBOT CONFIGURATOR</div>
-      <div class="print-subtitle">Design Report &nbsp;·&nbsp; MK-1 Unit &nbsp;·&nbsp; ${orderRef}</div>
+      <div class="print-subtitle">Design Report · MK-1 Unit · ${orderRef}</div>
     </div>
-    <div class="print-meta">
-      Generated: ${now}<br>
-      Parts: ${totalParts}<br>
-      <span class="status-badge ${isFinalized ? "status-final" : "status-draft"}">
-        ${isFinalized ? "✓ Finalized" : "⚠ Draft"}
-      </span>
+    <div class="print-meta">Generated: ${now}<br>Parts: ${totalParts}<br>
+      <span class="status-badge ${isFinalized ? "status-final" : "status-draft"}">${isFinalized ? "✓ Finalized" : "⚠ Draft"}</span>
     </div>
   </div>
-
-  <div class="main-view-wrap">
-    <img src="${mainShot}" alt="Isometric View"/>
-  </div>
-
+  <div class="main-view-wrap"><img src="${mainShot}" alt="Isometric View"/></div>
   <div class="section-title">◼ MULTI-ANGLE VIEWS</div>
   <div class="angles-grid">${otherAnglesHTML}</div>
-
   <div class="tables-row">
     <div class="table-card">
       <div class="table-card-header">Component Manifest</div>
       <table>
-        <tr>
-          <td><strong>Type</strong></td>
-          <td style="text-align:center"><strong>Qty</strong></td>
-          <td style="text-align:right"><strong>Cost</strong></td>
-        </tr>
+        <tr><td><strong>Type</strong></td><td style="text-align:center"><strong>Qty</strong></td><td style="text-align:right"><strong>Cost</strong></td></tr>
         ${manifestRows || "<tr><td colspan='3'>No parts placed</td></tr>"}
-        <tr class="manifest-subtotal">
-          <td colspan="2">SUBTOTAL</td>
-          <td style="text-align:right">₹${computedTotal.toLocaleString("en-IN")}</td>
-        </tr>
-        <tr class="manifest-total-parts">
-          <td colspan="3">${totalParts} PARTS &nbsp;·&nbsp; ${Object.keys(counts).length} TYPES</td>
-        </tr>
+        <tr class="manifest-subtotal"><td colspan="2">SUBTOTAL</td><td style="text-align:right">₹${computedTotal.toLocaleString("en-IN")}</td></tr>
+        <tr class="manifest-total-parts"><td colspan="3">${totalParts} PARTS · ${Object.keys(counts).length} TYPES</td></tr>
       </table>
     </div>
     <div class="table-card">
       <div class="table-card-header">Cost Breakdown</div>
-      <table class="cost-table">
-        ${costGroupRows || "<tr><td colspan='2'>Empty</td></tr>"}
-      </table>
+      <table class="cost-table">${costGroupRows || "<tr><td colspan='2'>Empty</td></tr>"}</table>
     </div>
   </div>
-
   <div class="total-bar">
     <span class="total-label">TOTAL REQUISITION COST</span>
     <span class="total-value">₹${computedTotal.toLocaleString("en-IN")}</span>
   </div>
-
   <div class="print-footer">
     <span>ROBOT CONFIGURATOR v1.0 — UNIT MK-1</span>
     <span>ORDER REF: ${orderRef}</span>
     <span>${now}</span>
   </div>
-</body>
-</html>`;
+</body></html>`;
 }
 
 /* =========================================================
-   TECHNICAL OVERLAY — draws grid + dimension annotations
-   onto a screenshot dataURL using an offscreen Canvas.
+   TECHNICAL OVERLAY
    ========================================================= */
 
 function addTechnicalOverlay(dataURL, viewLabel) {
@@ -2750,16 +2418,10 @@ function addTechnicalOverlay(dataURL, viewLabel) {
       canvas.width = W;
       canvas.height = H;
       const ctx = canvas.getContext("2d");
-
-      // 1. Draw the original screenshot
       ctx.drawImage(img, 0, 0, W, H);
 
-      // 2. FIRST scan bounding box BEFORE drawing the grid
-      //    (grid lines would pollute the pixel scan otherwise)
       const imageData = ctx.getImageData(0, 0, W, H);
       const data = imageData.data;
-      // Background is pure white (255,255,255) — anything clearly darker is the model
-      // Use a tight threshold so faint shadows/AA edges don't balloon the box
       const BG_THRESH = 200;
 
       let minX = W,
@@ -2773,7 +2435,6 @@ function addTechnicalOverlay(dataURL, viewLabel) {
             g = data[i + 1],
             b = data[i + 2],
             a = data[i + 3];
-          // Only count pixels that are clearly non-white and opaque
           if (a > 128 && (r < BG_THRESH || g < BG_THRESH || b < BG_THRESH)) {
             if (px < minX) minX = px;
             if (px > maxX) maxX = px;
@@ -2783,7 +2444,6 @@ function addTechnicalOverlay(dataURL, viewLabel) {
         }
       }
 
-      // Fallback if detection finds nothing or a degenerate box
       if (maxX <= minX + 40 || maxY <= minY + 40) {
         minX = Math.round(W * 0.25);
         maxX = Math.round(W * 0.75);
@@ -2791,8 +2451,7 @@ function addTechnicalOverlay(dataURL, viewLabel) {
         maxY = Math.round(H * 0.8);
       }
 
-      // 3. Now draw grid AFTER scan so it doesn't affect bbox
-      const GRID = Math.round(W / 30); // ~30 cells wide regardless of resolution
+      const GRID = Math.round(W / 30);
       ctx.save();
       ctx.strokeStyle = "rgba(100,120,140,0.15)";
       ctx.lineWidth = Math.max(0.5, W / 2400);
@@ -2808,7 +2467,6 @@ function addTechnicalOverlay(dataURL, viewLabel) {
         ctx.lineTo(W, y);
         ctx.stroke();
       }
-      // Major grid every 5 cells
       ctx.strokeStyle = "rgba(80,110,140,0.25)";
       ctx.lineWidth = Math.max(0.75, W / 1600);
       for (let x = 0; x <= W; x += GRID * 5) {
@@ -2825,12 +2483,11 @@ function addTechnicalOverlay(dataURL, viewLabel) {
       }
       ctx.restore();
 
-      // 4. Dimension arrows — scale everything to canvas size
-      const PAD = Math.round(W * 0.018); // ~18px at 1000px wide
-      const LW = Math.max(1.5, W / 600); // line width
-      const AH = Math.max(8, W / 100); // arrowhead size
-      const TICK = Math.max(6, W / 150); // tick length
-      const FONT_SZ = Math.max(14, W / 80); // label font size
+      const PAD = Math.round(W * 0.018);
+      const LW = Math.max(1.5, W / 600);
+      const AH = Math.max(8, W / 100);
+      const TICK = Math.max(6, W / 150);
+      const FONT_SZ = Math.max(14, W / 80);
       const LABEL_H = FONT_SZ + 6;
       const LABEL_P = Math.round(FONT_SZ * 0.35);
 
@@ -2841,16 +2498,11 @@ function addTechnicalOverlay(dataURL, viewLabel) {
         ctx.lineWidth = LW;
         ctx.font = `bold ${FONT_SZ}px 'Courier New', monospace`;
         ctx.textBaseline = "middle";
-
         const horizontal = Math.abs(x2 - x1) >= Math.abs(y2 - y1);
-
-        // Main line
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
         ctx.stroke();
-
-        // Arrowheads
         function arrowhead(ax, ay, dir) {
           ctx.beginPath();
           if (horizontal) {
@@ -2867,8 +2519,6 @@ function addTechnicalOverlay(dataURL, viewLabel) {
         }
         arrowhead(x1, y1, horizontal ? -1 : -1);
         arrowhead(x2, y2, horizontal ? 1 : 1);
-
-        // End ticks
         function tick(ax, ay) {
           ctx.beginPath();
           if (horizontal) {
@@ -2882,10 +2532,8 @@ function addTechnicalOverlay(dataURL, viewLabel) {
         }
         tick(x1, y1);
         tick(x2, y2);
-
-        // Label in white pill at midpoint
-        const mx = (x1 + x2) / 2;
-        const my = (y1 + y2) / 2;
+        const mx = (x1 + x2) / 2,
+          my = (y1 + y2) / 2;
         const tw = ctx.measureText(label).width;
         ctx.fillStyle = "rgba(255,255,255,0.92)";
         ctx.fillRect(
@@ -2894,7 +2542,6 @@ function addTechnicalOverlay(dataURL, viewLabel) {
           tw + LABEL_P * 2,
           LABEL_H,
         );
-        // Red border around label
         ctx.strokeStyle = "rgba(200,50,0,0.6)";
         ctx.lineWidth = Math.max(1, LW * 0.6);
         ctx.strokeRect(
@@ -2909,18 +2556,14 @@ function addTechnicalOverlay(dataURL, viewLabel) {
         ctx.restore();
       }
 
-      // Width arrow — sits just below the model
       const widthY = Math.min(maxY + PAD * 2, H - LABEL_H - 4);
       dimArrow(minX, widthY, maxX, widthY, "WIDTH");
-
-      // Height arrow — sits just to the right of the model
       const heightX = Math.min(maxX + PAD * 2, W - LABEL_H - 4);
       dimArrow(heightX, minY, heightX, maxY, "HEIGHT");
 
-      // Depth arrow — diagonal top-left, iso/perspective only
       if (viewLabel === "ISOMETRIC" || viewLabel === "PERSPECTIVE") {
-        const objW = maxX - minX;
-        const objH = maxY - minY;
+        const objW = maxX - minX,
+          objH = maxY - minY;
         const dLen = Math.min(objW, objH) * 0.32;
         const dx1 = Math.max(PAD * 2, minX - PAD);
         const dy1 = minY + Math.round(objH * 0.15);
@@ -2937,7 +2580,7 @@ function addTechnicalOverlay(dataURL, viewLabel) {
 }
 
 /* =========================================================
-   PRINT DESIGN — Multi-angle screenshots
+   PRINT DESIGN
    ========================================================= */
 
 async function printDesign() {
@@ -2975,29 +2618,18 @@ async function printDesign() {
   showHudMessage("CAPTURING VIEWS...");
 
   setTimeout(async () => {
-    // Capture raw screenshots
     const rawScreenshots = {};
-    for (const key of angleKeys) {
-      rawScreenshots[key] = captureFromAngle(key);
-    }
+    for (const key of angleKeys) rawScreenshots[key] = captureFromAngle(key);
 
-    // Add technical overlay (grid + dimensions) to each screenshot
     const screenshots = {};
-    for (const key of angleKeys) {
+    for (const key of angleKeys)
       screenshots[key] = await addTechnicalOverlay(
         rawScreenshots[key],
         overlayLabels[key],
       );
-    }
 
-    // Collect basket rows (for reference, kept for compatibility)
-    const basketRows = [];
-    document.querySelectorAll("#basketItems > *").forEach((row) => {
-      basketRows.push(row.textContent.trim().replace(/\s+/g, " "));
-    });
     const total = document.getElementById("totalPrice")?.textContent ?? "0";
 
-    // Count placed parts
     const counts = {};
     scene.traverse((obj) => {
       if (!obj.userData?.isMount) return;
@@ -3005,21 +2637,10 @@ async function printDesign() {
       counts[t] = (counts[t] ?? 0) + 1;
     });
 
-    // Compute per-type subtotals for manifest
-    const partCostMap = {
-      frame: 1200,
-      motor: 2500,
-      triangle_frame: 650,
-      support_frame: 900,
-      wheel: 1100,
-    };
-    const partLabelMap = {
-      frame: "Rectangular Frame",
-      motor: "Motor Housing",
-      triangle_frame: "Triangular Frame",
-      support_frame: "Support Frame",
-      wheel: "Wheel",
-    };
+    // ── Use live prices/labels from DB ──────────────────────────────────────
+    const partCostMap = getAllPrices();
+    const partLabelMap = getAllLabels();
+    // ───────────────────────────────────────────────────────────────────────
 
     let computedTotal = 0;
     const manifestRows = Object.entries(counts)
@@ -3036,51 +2657,20 @@ async function printDesign() {
 
     const totalParts = Object.values(counts).reduce((a, b) => a + b, 0);
 
-    // Build cost breakdown rows with bracket separators
     const costGroupRows = Object.entries(counts)
       .map(([t, n]) => {
         const unitCost = partCostMap[t] ?? 0;
         const groupCost = unitCost * n;
         const label = partLabelMap[t] ?? t.replace(/_/g, " ");
         return `
-        <tr>
-          <td colspan="2" style="
-            font-family:'Courier New',monospace;
-            font-size:8px;
-            letter-spacing:0.18em;
-            color:#999;
-            padding:5px 12px 2px;
-            border-top:1px solid #ddd;
-            border-left:3px solid #cc2200;
-            background:#fafafa;
-          ">[ ${label.toUpperCase()} ]</td>
-        </tr>
-        <tr>
-          <td style="padding-left:18px;border-left:3px solid rgba(204,34,0,0.18)">${n}× ${label}</td>
-          <td style="text-align:right;font-family:'Courier New',monospace;font-weight:700">₹${groupCost.toLocaleString("en-IN")}</td>
-        </tr>
-        <tr>
-          <td style="padding-left:18px;font-size:10px;color:#888;font-family:'Courier New',monospace;border-left:3px solid rgba(204,34,0,0.18)">
-            @ ₹${unitCost.toLocaleString("en-IN")} each
-          </td>
-          <td></td>
-        </tr>
-        <tr>
-          <td colspan="2" style="
-            padding:1px 12px 4px;
-            border-left:3px solid #cc2200;
-            border-bottom:1px solid #e0e0e0;
-            font-family:'Courier New',monospace;
-            font-size:7px;
-            color:#ccc;
-            letter-spacing:0.1em;
-          "> </td>
-        </tr>`;
+        <tr><td colspan="2" style="font-family:'Courier New',monospace;font-size:8px;letter-spacing:0.18em;color:#999;padding:5px 12px 2px;border-top:1px solid #ddd;border-left:3px solid #cc2200;background:#fafafa;">[ ${label.toUpperCase()} ]</td></tr>
+        <tr><td style="padding-left:18px;border-left:3px solid rgba(204,34,0,0.18)">${n}× ${label}</td><td style="text-align:right;font-family:'Courier New',monospace;font-weight:700">₹${groupCost.toLocaleString("en-IN")}</td></tr>
+        <tr><td style="padding-left:18px;font-size:10px;color:#888;font-family:'Courier New',monospace;border-left:3px solid rgba(204,34,0,0.18)">@ ₹${unitCost.toLocaleString("en-IN")} each</td><td></td></tr>
+        <tr><td colspan="2" style="padding:1px 12px 4px;border-left:3px solid #cc2200;border-bottom:1px solid #e0e0e0;font-size:7px;color:#ccc"> </td></tr>`;
       })
       .join("");
 
     const now = new Date().toLocaleString();
-
     const mainShot = screenshots["iso"];
     const otherAngles = [
       "perspective",
@@ -3091,168 +2681,18 @@ async function printDesign() {
       "left",
       "right",
     ];
-
     const otherAnglesHTML = otherAngles
       .map(
-        (k) => `
-        <div class="angle-card">
-          <img src="${screenshots[k]}" alt="${angleLabels[k]} view" />
-        </div>
-      `,
+        (k) =>
+          `<div class="angle-card"><img src="${screenshots[k]}" alt="${angleLabels[k]} view"/></div>`,
       )
       .join("");
 
-    const printHTML = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8"/>
-  <title>Robot Design — Print</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@400;600;700&display=swap');
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #fff; color: #111; font-family: 'Rajdhani', sans-serif; padding: 22px 28px; }
-
-    .print-header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 14px; border-bottom: 3px solid #1a1a1a; margin-bottom: 18px; }
-    .print-title { font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 900; letter-spacing: 0.12em; color: #111; line-height: 1; }
-    .print-subtitle { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #666; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 5px; }
-    .print-meta { text-align: right; font-family: 'Share Tech Mono', monospace; font-size: 10px; color: #555; line-height: 1.7; letter-spacing: 0.05em; }
-    .status-badge { display: inline-block; padding: 2px 10px; font-size: 9px; font-family: 'Orbitron', sans-serif; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; border: 1.5px solid; margin-top: 4px; }
-    .status-final  { color: #166534; border-color: #166534; background: #f0fdf4; }
-    .status-draft  { color: #7f1d1d; border-color: #cc2200; background: #fff5f5; }
-
-    /* Main isometric view — LARGER */
-    .main-view-wrap {
-      width: 100%;
-      border: 2px solid #222;
-      margin-bottom: 14px;
-      background: #f0f0f0;
-      overflow: hidden;
-      position: relative;
-    }
-    .main-view-wrap img {
-      width: 100%;
-      display: block;
-      max-height: 440px;
-      object-fit: contain;
-    }
-
-    .section-title { font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.2em; color: #111; text-transform: uppercase; border-left: 4px solid #cc2200; padding-left: 10px; margin-bottom: 10px; }
-
-    /* Multi-angle grid — LARGER cards */
-    .angles-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 18px; }
-    .angle-card { border: 1.5px solid #222; background: #f0f0f0; overflow: hidden; }
-    .angle-card img {
-      width: 100%;
-      display: block;
-      max-height: 180px;
-      object-fit: contain;
-    }
-
-    .tables-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-    .table-card { border: 1.5px solid #222; }
-    .table-card-header { background: #1a1a1a; color: #cc2200; font-family: 'Orbitron', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.18em; padding: 6px 12px; text-transform: uppercase; }
-
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    td { padding: 6px 12px; border-bottom: 1px solid #e5e5e5; font-family: 'Rajdhani', sans-serif; letter-spacing: 0.03em; }
-    tr:last-child td { border-bottom: none; }
-    tr:nth-child(even) td { background: #fafafa; }
-
-    /* Subtotal row in manifest */
-    .manifest-subtotal td {
-      font-family: 'Share Tech Mono', monospace !important;
-      font-size: 11px !important;
-      font-weight: 700 !important;
-      color: #cc2200 !important;
-      background: #fff5f5 !important;
-      border-top: 2px solid #cc2200 !important;
-      border-bottom: none !important;
-    }
-    .manifest-total-parts td {
-      font-family: 'Share Tech Mono', monospace !important;
-      font-size: 10px !important;
-      color: #555 !important;
-      background: #f8f8f8 !important;
-      border-bottom: none !important;
-    }
-
-    /* Cost breakdown — no alternating bg on bracket rows */
-    .cost-table td { padding: 4px 12px; font-size: 12px; border-bottom: none; }
-    .cost-table tr:nth-child(even) td { background: transparent; }
-
-    .total-bar { display: flex; justify-content: space-between; align-items: center; border: 2px solid #1a1a1a; padding: 10px 20px; margin-bottom: 16px; background: #f8f8f8; }
-    .total-label { font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.1em; color: #111; }
-    .total-value { font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 900; color: #cc2200; letter-spacing: 0.06em; }
-
-    .print-footer { border-top: 1px solid #ccc; padding-top: 10px; display: flex; justify-content: space-between; font-family: 'Share Tech Mono', monospace; font-size: 9px; color: #888; letter-spacing: 0.08em; }
-    @media print { body { padding: 12px 16px; } }
-  </style>
-</head>
-<body>
-  <div class="print-header">
-    <div>
-      <div class="print-title">ROBOT CONFIGURATOR</div>
-      <div class="print-subtitle">Design Report &nbsp;·&nbsp; MK-1 Unit &nbsp;·&nbsp; Multi-Angle View</div>
-    </div>
-    <div class="print-meta">
-      Generated: ${now}<br>
-      Parts: ${totalParts}<br>
-      <span class="status-badge ${isFinalized ? "status-final" : "status-draft"}">
-        ${isFinalized ? "✓ Finalized" : "⚠ Draft"}
-      </span>
-    </div>
-  </div>
-
-  <div class="main-view-wrap">
-    <img src="${mainShot}" alt="Isometric View"/>
-  </div>
-
-  <div class="section-title">◼ MULTI-ANGLE VIEWS</div>
-  <div class="angles-grid">${otherAnglesHTML}</div>
-
-  <div class="tables-row">
-    <!-- Component Manifest with Subtotal -->
-    <div class="table-card">
-      <div class="table-card-header">Component Manifest</div>
-      <table>
-        <tr>
-          <td><strong>Type</strong></td>
-          <td style="text-align:center"><strong>Qty</strong></td>
-          <td style="text-align:right"><strong>Cost</strong></td>
-        </tr>
-        ${manifestRows || "<tr><td colspan='3'>No parts placed</td></tr>"}
-        <tr class="manifest-subtotal">
-          <td colspan="2">SUBTOTAL</td>
-          <td style="text-align:right">₹${computedTotal.toLocaleString("en-IN")}</td>
-        </tr>
-        <tr class="manifest-total-parts">
-          <td colspan="3">${totalParts} PARTS &nbsp;·&nbsp; ${Object.keys(counts).length} TYPES</td>
-        </tr>
-      </table>
-    </div>
-
-    <!-- Cost Breakdown with bracket separators -->
-    <div class="table-card">
-      <div class="table-card-header">Cost Breakdown</div>
-      <table class="cost-table">
-        ${costGroupRows || "<tr><td colspan='2'>Empty</td></tr>"}
-      </table>
-    </div>
-  </div>
-
-  <div class="total-bar">
-    <span class="total-label">TOTAL REQUISITION COST</span>
-    <span class="total-value">₹${computedTotal.toLocaleString("en-IN")}</span>
-  </div>
-
-  <div class="print-footer">
-    <span>ROBOT CONFIGURATOR v1.0 — UNIT MK-1</span>
-    <span>CONFIDENTIAL — INTERNAL USE ONLY</span>
-    <span>${now}</span>
-  </div>
-
-  <script>window.onload = () => { window.print(); };<\/script>
-</body>
-</html>`;
+    const printHTML = buildFullReportHTML(
+      screenshots,
+      angleLabels,
+      "PRINT-" + Date.now().toString(36).toUpperCase(),
+    );
 
     const win = window.open("", "_blank", "width=1100,height=900");
     win.document.write(printHTML);
@@ -3263,7 +2703,7 @@ async function printDesign() {
 }
 
 /* =========================================================
-   KEYBOARD SHORTCUT BAR
+   SHORTCUT BAR
    ========================================================= */
 
 let shortcutBarEl = null;
@@ -3358,9 +2798,7 @@ function updateShortcutBar() {
     chainEl.className = "sb-chain-label";
     const placed = countPlaced(queuedIntent.requiredType);
     const need = queuedIntent.requiredCount - placed;
-    chainEl.innerHTML =
-      `<span style="color:#cc2200">⟳</span>` +
-      `<span>QUEUED: ${queuedIntent.label} — ${need} more needed</span>`;
+    chainEl.innerHTML = `<span style="color:#cc2200">⟳</span><span>QUEUED: ${queuedIntent.label} — ${need} more needed</span>`;
     chainEl.style.borderRight = "1px solid rgba(204,34,0,0.15)";
     shortcutBarEl.appendChild(chainEl);
   }
@@ -3390,15 +2828,12 @@ function updateShortcutBar() {
     const item = document.createElement("div");
     item.className = "sb-item";
     item.style.animationDelay = `${i * 0.04}s`;
-
     const key = document.createElement("span");
     key.className = "sb-key";
     key.textContent = def.key;
-
     const action = document.createElement("span");
     action.className = "sb-action";
     action.textContent = def.action;
-
     item.appendChild(key);
     item.appendChild(action);
     shortcutBarEl.appendChild(item);
@@ -3439,9 +2874,6 @@ function initShortcutBar() {
   Object.assign(helpBtn.style, {
     position: "fixed",
     bottom: "10px",
-    left: "auto",
-    right: "auto",
-    transform: "none",
     width: "38px",
     height: "34px",
     background: "rgba(12,18,28,0.95)",
@@ -3465,18 +2897,6 @@ function initShortcutBar() {
   positionHelpBtn();
 
   helpBtn.addEventListener("click", toggleShortcutBar);
-  helpBtn.addEventListener("mouseover", () => {
-    if (!shortcutBarVisible) {
-      helpBtn.style.background = "rgba(208,88,24,0.2)";
-      helpBtn.style.borderColor = "rgba(208,88,24,0.9)";
-    }
-  });
-  helpBtn.addEventListener("mouseout", () => {
-    if (!shortcutBarVisible) {
-      helpBtn.style.background = "rgba(12,18,28,0.95)";
-      helpBtn.style.borderColor = "rgba(208,88,24,0.6)";
-    }
-  });
   document.body.appendChild(helpBtn);
 
   window.addEventListener("resize", () => {
@@ -3490,18 +2910,15 @@ function initShortcutBar() {
     const s = document.createElement("style");
     s.id = "sb-kf";
     s.textContent = `
-      @keyframes sbItemIn {
-        from { opacity:0; transform:translateY(4px); }
-        to   { opacity:1; transform:translateY(0); }
-      }
-      .sb-sep { width:1px; height:18px; background:rgba(208,88,24,0.2); flex-shrink:0; margin:0; }
-      .sb-item { display:flex; align-items:center; gap:7px; padding:0 16px; height:100%; animation:sbItemIn 0.18s ease both; cursor:default; flex-shrink:0; transition:background 0.15s; }
-      .sb-item:hover { background:rgba(208,88,24,0.07); }
-      .sb-key { font-family:'Orbitron',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.1em; color:#e87030; background:rgba(208,88,24,0.15); border:1.5px solid rgba(208,88,24,0.5); padding:3px 8px; white-space:nowrap; line-height:1.4; }
-      .sb-action { font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:0.08em; color:#8aacbf; text-transform:uppercase; white-space:nowrap; }
-      .sb-mode-label { font-family:'Orbitron',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.2em; padding:0 18px; text-transform:uppercase; flex-shrink:0; white-space:nowrap; border-right:1px solid rgba(208,88,24,0.25); height:100%; display:flex; align-items:center; }
-      .sb-chain-label { font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:0.1em; color:#e87030; padding:0 14px; flex-shrink:0; white-space:nowrap; display:flex; align-items:center; gap:7px; border-right:1px solid rgba(208,88,24,0.2); }
-      #help-toggle-btn.help-btn-active { background:rgba(208,88,24,0.25) !important; border-color:#d05818 !important; box-shadow:0 3px 0 rgba(0,0,0,0.6), 0 0 12px rgba(208,88,24,0.3) !important; }
+      @keyframes sbItemIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+      .sb-sep{width:1px;height:18px;background:rgba(208,88,24,0.2);flex-shrink:0;margin:0}
+      .sb-item{display:flex;align-items:center;gap:7px;padding:0 16px;height:100%;animation:sbItemIn 0.18s ease both;cursor:default;flex-shrink:0;transition:background 0.15s}
+      .sb-item:hover{background:rgba(208,88,24,0.07)}
+      .sb-key{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.1em;color:#e87030;background:rgba(208,88,24,0.15);border:1.5px solid rgba(208,88,24,0.5);padding:3px 8px;white-space:nowrap;line-height:1.4}
+      .sb-action{font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:0.08em;color:#8aacbf;text-transform:uppercase;white-space:nowrap}
+      .sb-mode-label{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.2em;padding:0 18px;text-transform:uppercase;flex-shrink:0;white-space:nowrap;border-right:1px solid rgba(208,88,24,0.25);height:100%;display:flex;align-items:center}
+      .sb-chain-label{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:0.1em;color:#e87030;padding:0 14px;flex-shrink:0;white-space:nowrap;display:flex;align-items:center;gap:7px;border-right:1px solid rgba(208,88,24,0.2)}
+      #help-toggle-btn.help-btn-active{background:rgba(208,88,24,0.25)!important;border-color:#d05818!important;box-shadow:0 3px 0 rgba(0,0,0,0.6),0 0 12px rgba(208,88,24,0.3)!important}
     `;
     document.head.appendChild(s);
   }
@@ -3555,7 +2972,7 @@ function showHudMessage(text) {
 }
 
 /* =========================================================
-   PLACEMENT RULES — POPUP VALIDATION
+   PLACEMENT RULES
    ========================================================= */
 
 function countPlaced(type) {
@@ -3666,7 +3083,6 @@ function showPopup(message, actionLabel, actionFn) {
       letterSpacing: "0.12em",
     });
     btnRow.appendChild(orLabel);
-
     const addBtn = makeBtn(actionLabel, true);
     addBtn.onclick = () => {
       overlay.remove();
@@ -3679,11 +3095,9 @@ function showPopup(message, actionLabel, actionFn) {
   box.appendChild(msg);
   box.appendChild(btnRow);
   overlay.appendChild(box);
-
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) overlay.remove();
   });
-
   document.body.appendChild(overlay);
 }
 
@@ -3729,10 +3143,8 @@ function clearGhost() {
   applySocketHighlights();
   frameOnSupportRotationSteps = 0;
   frameHoverType = "frame";
-
   motorAutoBaseYaw = 0;
   motorManualRotSteps = 0;
-
   supportManualRotSteps = 0;
   supportFirstSocket = null;
   if (supportFirstMarker) {
@@ -3740,17 +3152,11 @@ function clearGhost() {
     supportFirstMarker.scale.setScalar(1.5);
     supportFirstMarker = null;
   }
-
   setHoverMesh(null, null);
   hideTooltip();
-
   frameOnSupportMarkers.forEach((m) => {
     m.material = supportFrameSocketMat;
   });
-
-  motorAutoBaseYaw = 0;
-  motorManualRotSteps = 0;
-
   triangleAutoBaseYaw = 0;
   triangleManualRotSteps = 0;
   lastHoveredTriangleSocketUUID = null;
@@ -3759,7 +3165,6 @@ function clearGhost() {
     hoveredTriangleMarker.scale.setScalar(1.5);
     hoveredTriangleMarker = null;
   }
-
   hideInstructionPanel();
   hideRotationControls();
   clearQueuedIntent();
@@ -3795,8 +3200,8 @@ function findNearestMarkerOnScreen(markers, thresholdPx) {
   const mouseScreenX = ((mouse.x + 1) / 2) * rect.width;
   const mouseScreenY = ((1 - mouse.y) / 2) * rect.height;
 
-  let best = null;
-  let bestDist = thresholdPx;
+  let best = null,
+    bestDist = thresholdPx;
 
   for (const m of markers) {
     if (!m.visible) continue;
@@ -3818,8 +3223,8 @@ function findNearestMarkerOnScreen(markers, thresholdPx) {
    ========================================================= */
 
 function resolveMeshAndMount(obj) {
-  let mount = null;
-  let o = obj;
+  let mount = null,
+    o = obj;
   while (o) {
     if (o.userData?.isMount) {
       mount = o;
@@ -3849,20 +3254,14 @@ function restoreMeshEmissive(mesh, savedColor) {
     mesh.material.dispose();
     mesh.material = mesh._origMat;
     delete mesh._origMat;
-  } else if (mesh.material.emissive) {
-    mesh.material.emissive.copy(savedColor);
-  }
+  } else if (mesh.material.emissive) mesh.material.emissive.copy(savedColor);
 }
 
-function getMeshesOfMount() {
-  return [];
-}
-function setEmissiveOnMeshes() {}
 let hoveredMeshes = [];
 let selectedMeshes = [];
 
 /* =========================================================
-   PAGE SIZE / RESIZE HANDLER
+   RESIZE
    ========================================================= */
 
 function onWindowResize() {
@@ -3901,9 +3300,9 @@ function rebuildSocketMarkers() {
   scene.updateMatrixWorld(true);
 
   const suppressedSockets = new Set();
-
   const SOCKET_MERGE_DIST = 0.12;
   const usedFramePositions = [];
+
   scene.traverse((o) => {
     if (!o.name || !isSocketNode(o.name)) return;
     if (!usedSockets.has(o.uuid)) return;
@@ -3916,8 +3315,11 @@ function rebuildSocketMarkers() {
   if (usedFramePositions.length > 0) {
     scene.traverse((o) => {
       if (!o.name || !isSocketNode(o.name)) return;
-      if (o.name.startsWith("SOCKET_MOTOR")) return;
-      if (o.name.startsWith("WHEEL_SOCKET")) return;
+      if (
+        o.name.startsWith("SOCKET_MOTOR") ||
+        o.name.startsWith("WHEEL_SOCKET")
+      )
+        return;
       if (usedSockets.has(o.uuid) || suppressedSockets.has(o.uuid)) return;
       if (ghost && isDescendantOf(o, ghost)) return;
       const wp = new THREE.Vector3();
@@ -3959,8 +3361,8 @@ function rebuildSocketMarkers() {
   }
 
   scene.traverse((o) => {
-    if (!o.name || usedSockets.has(o.uuid)) return;
-    if (suppressedSockets.has(o.uuid)) return;
+    if (!o.name || usedSockets.has(o.uuid) || suppressedSockets.has(o.uuid))
+      return;
     if (ghost && isDescendantOf(o, ghost)) return;
 
     if (o.name.toUpperCase() === "SOCKET_FRAME_SUPPORT_B") {
@@ -3974,7 +3376,6 @@ function rebuildSocketMarkers() {
       addMarker(o, frameOnSupportMarkers, supportFrameSocketMat);
       return;
     }
-
     if (o.name.startsWith("SOCKET_FRAME")) addMarker(o, frameMarkers, frameMat);
     if (o.name.startsWith("SOCKET_MOTOR")) addMarker(o, motorMarkers, motorMat);
     if (o.name.startsWith("WHEEL_SOCKET"))
@@ -4059,22 +3460,14 @@ function getValidStressConnectorSockets() {
 function applySocketHighlights() {
   const mode = placementMode;
 
-  frameMarkers.forEach((m) => {
-    m.visible = false;
-  });
-  frameOnSupportMarkers.forEach((m) => {
-    m.visible = false;
-  });
-  motorMarkers.forEach((m) => {
-    m.visible = false;
-  });
-  triangleSocketMarkers.forEach((m) => {
-    m.visible = false;
-  });
-  stressConnectorMarkers.forEach((m) => {
-    m.visible = false;
-  });
-  wheelMarkers.forEach((m) => {
+  [
+    ...frameMarkers,
+    ...frameOnSupportMarkers,
+    ...motorMarkers,
+    ...triangleSocketMarkers,
+    ...stressConnectorMarkers,
+    ...wheelMarkers,
+  ].forEach((m) => {
     m.visible = false;
   });
 
@@ -4090,20 +3483,18 @@ function applySocketHighlights() {
       m.scale.setScalar(1.5);
     });
   }
-  if (mode === "motor") {
+  if (mode === "motor")
     motorMarkers.forEach((m) => {
       m.visible = true;
       m.material = MAT_MOTOR_ACTIVE;
       m.scale.setScalar(1.5);
     });
-  }
-  if (mode === "triangle") {
+  if (mode === "triangle")
     triangleSocketMarkers.forEach((m) => {
       m.visible = true;
       m.material = MAT_TRI_ACTIVE;
       m.scale.setScalar(1.5);
     });
-  }
   if (mode === "support") {
     const validSet = new Set(getValidStressConnectorSockets());
     stressConnectorMarkers.forEach((m) => {
@@ -4114,13 +3505,12 @@ function applySocketHighlights() {
       }
     });
   }
-  if (mode === "wheel") {
+  if (mode === "wheel")
     wheelMarkers.forEach((m) => {
       m.visible = true;
       m.material = MAT_WHEEL_ACTIVE;
       m.scale.setScalar(1.5);
     });
-  }
 
   hoveredMotorMarker = null;
 }
@@ -4158,12 +3548,8 @@ function updateWheelButtonState() {
   btn.disabled = !shouldEnable;
   btn.style.opacity = shouldEnable ? "1" : "0.35";
   btn.style.pointerEvents = shouldEnable ? "auto" : "none";
-  btn.title = !motorsPlaced
-    ? "Place a Motor first to unlock wheels"
-    : !hasFreeSockets
-      ? "All wheel sockets are occupied"
-      : "";
 }
+
 function updateSupportButtonState() {
   const btn = document.getElementById("addSupportFrame");
   if (!btn) return;
@@ -4173,12 +3559,6 @@ function updateSupportButtonState() {
   btn.disabled = !shouldEnable;
   btn.style.opacity = shouldEnable ? "1" : "0.35";
   btn.style.pointerEvents = shouldEnable ? "auto" : "none";
-  btn.title =
-    triPlaced < 2
-      ? `Place ${2 - triPlaced} more Tri. Frame${2 - triPlaced !== 1 ? "s" : ""} to unlock`
-      : !hasFreeSockets
-        ? "All stress connector sockets are occupied"
-        : "";
 }
 
 function startMotorPlacement() {
@@ -4210,7 +3590,6 @@ function startMotorPlacement() {
   updateShortcutBar();
   updateLegendHighlight();
   showInstructionPanel("motor");
-
   ghost = new THREE.Group();
   motorRotationGroup = new THREE.Group();
   const m = motorTemplate.clone(true);
@@ -4269,8 +3648,7 @@ function startSupportPlacement() {
   hideIdleArrows();
   clearTimeout(idleTimer);
   if (countPlaced("triangle_frame") < 2) {
-    const have = countPlaced("triangle_frame");
-    const need = 2 - have;
+    const need = 2 - countPlaced("triangle_frame");
     setQueuedIntent({
       mode: "support",
       label: "Support Frame",
@@ -4297,6 +3675,46 @@ function startSupportPlacement() {
   updateLegendHighlight();
   showInstructionPanel("support");
   ghost = supportTemplate.clone(true);
+  makeGhost(ghost);
+  scene.add(ghost);
+}
+
+function startWheelPlacement() {
+  hideIdleArrows();
+  clearTimeout(idleTimer);
+  if (countPlaced("motor") < 1) {
+    setQueuedIntent({
+      mode: "wheel",
+      label: "Add Wheel",
+      requiredType: "motor",
+      requiredCount: 1,
+      intendedFn: startWheelPlacement,
+    });
+    showHudMessage("Place a Motor first → Wheel placement auto-activates");
+    startMotorPlacement();
+    return;
+  }
+  if (wheelMarkers.length === 0) {
+    showHudMessage("⚠ All wheel sockets are occupied");
+    return;
+  }
+  document
+    .querySelectorAll(".btn.active-mode")
+    .forEach((b) => b.classList.remove("active-mode"));
+  const _ab = document.getElementById("addWheelBtn");
+  if (_ab) _ab.classList.add("active-mode");
+  clearGhost();
+  placementMode = "wheel";
+  document.body.classList.add("placement-mode");
+  applySocketHighlights();
+  updateShortcutBar();
+  updateLegendHighlight();
+  showInstructionPanel("wheel");
+  if (!wheelTemplate) {
+    console.warn("Wheel template not loaded yet");
+    return;
+  }
+  ghost = wheelTemplate.clone(true);
   makeGhost(ghost);
   scene.add(ghost);
 }
@@ -4333,9 +3751,7 @@ function restartPlacementMode(mode) {
       hoveredTriangleMarker = null;
     }
   }
-  if (mode === "frame") {
-    frameHoverType = "frame";
-  }
+  if (mode === "frame") frameHoverType = "frame";
 
   switch (mode) {
     case "frame":
@@ -4379,7 +3795,7 @@ function restartPlacementMode(mode) {
 }
 
 /* =========================================================
-   SUPPORT FRAME — HELPERS
+   SUPPORT FRAME HELPERS
    ========================================================= */
 
 function buildTriangleMountMap() {
@@ -4415,7 +3831,6 @@ function getParentRectFrame(triMount) {
 function resolveBestSupportSocketPair(clickedSocket) {
   scene.updateMatrixWorld(true);
   clickedSocket.updateMatrixWorld(true);
-
   const mountMap = buildTriangleMountMap();
   if (mountMap.size < 2) return null;
 
@@ -4425,12 +3840,11 @@ function resolveBestSupportSocketPair(clickedSocket) {
   if (!clickedMount || !mountMap.has(clickedMount)) return null;
 
   const rectFrameA = getParentRectFrame(clickedMount);
-
   let bestSocketA = null,
-    bestSocketB = null;
-  let bestPosA = null,
-    bestPosB = null;
-  let bestDist = Infinity;
+    bestSocketB = null,
+    bestPosA = null,
+    bestPosB = null,
+    bestDist = Infinity;
 
   for (const entryA of mountMap.get(clickedMount)) {
     for (const [mount, entries] of mountMap) {
@@ -4459,23 +3873,6 @@ function resolveBestSupportSocketPair(clickedSocket) {
   };
 }
 
-function checkSupportBridgeAlignment(pair) {
-  const { posA, posB } = pair;
-  const horizDist = Math.hypot(posB.x - posA.x, posB.z - posA.z);
-  if (horizDist < 0.2) {
-    return {
-      ok: false,
-      reason:
-        "The two Triangular Frame connectors are too close together to place a Support Bridge between them.",
-    };
-  }
-  return { ok: true };
-}
-
-/* =========================================================
-   SUPPORT FRAME 2-POINT SNAP
-   ========================================================= */
-
 function applyTwoPointSupportSnap(
   mountGroup,
   connectorRoot,
@@ -4499,34 +3896,22 @@ function applyTwoPointSupportSnap(
   const targetY = posB ? (posA.y + posB.y) / 2 : posA.y;
 
   if (connL && connR && posB) {
-    const lWorld0 = new THREE.Vector3();
-    const rWorld0 = new THREE.Vector3();
+    const lWorld0 = new THREE.Vector3(),
+      rWorld0 = new THREE.Vector3();
     connL.getWorldPosition(lWorld0);
     connR.getWorldPosition(rWorld0);
-
-    const connSpanX = rWorld0.x - lWorld0.x;
-    const connSpanZ = rWorld0.z - lWorld0.z;
-    const targetSpanX = posB.x - posA.x;
-    const targetSpanZ = posB.z - posA.z;
-
-    const fromAngle = Math.atan2(connSpanX, connSpanZ);
-    const toAngle = Math.atan2(targetSpanX, targetSpanZ);
+    const connSpanX = rWorld0.x - lWorld0.x,
+      connSpanZ = rWorld0.z - lWorld0.z;
+    const targetSpanX = posB.x - posA.x,
+      targetSpanZ = posB.z - posA.z;
+    const fromAngle = Math.atan2(connSpanX, connSpanZ),
+      toAngle = Math.atan2(targetSpanX, targetSpanZ);
     const baseYaw = toAngle - fromAngle;
 
     let bestYaw = baseYaw,
-      bestConnector = connL;
-    let bestError = Infinity,
+      bestConnector = connL,
+      bestError = Infinity,
       bestFacingScore = -Infinity;
-
-    const localExtrusionDir = new THREE.Vector3(0, 0, 1);
-    if (connectorRoot) {
-      const tempBox = new THREE.Box3().setFromObject(connectorRoot);
-      const wCenter = tempBox.getCenter(new THREE.Vector3());
-      const lCenter = connectorRoot.worldToLocal(wCenter.clone());
-      lCenter.y = 0;
-      if (lCenter.lengthSq() > 0.0001)
-        localExtrusionDir.copy(lCenter).normalize();
-    }
 
     let triFrontWorld = new THREE.Vector3();
     if (sourceSocket) {
@@ -4558,7 +3943,6 @@ function applyTwoPointSupportSnap(
         const dx = posA.x - sW.x,
           dz = posA.z - sW.z;
         const err = Math.hypot(oW.x + dx - posB.x, oW.z + dz - posB.z);
-
         let bridgeFrontWorld = new THREE.Vector3();
         if (connectorRoot) {
           const box = new THREE.Box3().setFromObject(connectorRoot);
@@ -4602,7 +3986,6 @@ function applyTwoPointSupportSnap(
     mountGroup.position.x += posA.x - cWorld.x;
     mountGroup.position.z += posA.z - cWorld.z;
     mountGroup.updateMatrixWorld(true);
-
     const lW = new THREE.Vector3(),
       rW = new THREE.Vector3();
     connL.getWorldPosition(lW);
@@ -4642,11 +4025,13 @@ function onMouseMove(e) {
       hitMount = null;
     for (const h of hits) {
       if (
-        frameMarkers.includes(h.object) ||
-        motorMarkers.includes(h.object) ||
-        triangleMarkers.includes(h.object) ||
-        frameOnSupportMarkers.includes(h.object) ||
-        wheelMarkers.includes(h.object)
+        [
+          ...frameMarkers,
+          ...motorMarkers,
+          ...triangleMarkers,
+          ...frameOnSupportMarkers,
+          ...wheelMarkers,
+        ].includes(h.object)
       )
         continue;
       if (ghost && isDescendantOf(h.object, ghost)) continue;
@@ -4735,11 +4120,9 @@ function onMouseMove(e) {
     }
     const socketWorldPos = new THREE.Vector3();
     socket.getWorldPosition(socketWorldPos);
-    const autoYaw = computeMotorAutoYaw(socket);
-    motorAutoBaseYaw = autoYaw;
-    const finalYaw = motorAutoBaseYaw;
+    motorAutoBaseYaw = computeMotorAutoYaw(socket);
     ghost.position.copy(socketWorldPos);
-    ghost.rotation.set(0, finalYaw, 0);
+    ghost.rotation.set(0, motorAutoBaseYaw, 0);
     motorRotationGroup.rotation.set(0, 0, 0);
     applySocketDepth(ghost, socket, 0.05);
     return;
@@ -4780,32 +4163,6 @@ function onMouseMove(e) {
       hoveredTriangleMarker.material = MAT_TRI_HOVER;
       hoveredTriangleMarker.scale.setScalar(2.0);
     }
-    if (supportFirstSocket) {
-      let hm = rawSocket.parent;
-      while (hm && !hm.userData?.isMount) hm = hm.parent;
-      let fm = supportFirstSocket.parent;
-      while (fm && !fm.userData?.isMount) fm = fm.parent;
-      if (hm && fm && hm !== fm) {
-        const posA = new THREE.Vector3(),
-          posB = new THREE.Vector3();
-        supportFirstSocket.getWorldPosition(posA);
-        rawSocket.getWorldPosition(posB);
-        ghost.position.set(0, 0, 0);
-        ghost.rotation.set(0, 0, 0);
-        ghost.scale.set(1, 1, 1);
-        ghost.updateMatrixWorld(true);
-        applyTwoPointSupportSnap(
-          ghost,
-          ghost,
-          posA,
-          posB,
-          0,
-          supportFirstSocket,
-        );
-        return;
-      }
-    }
-    // Try to preview the full bridge snap even before first click
     const previewPair = resolveBestSupportSocketPair(rawSocket);
     if (previewPair) {
       const { posA, posB } = previewPair;
@@ -4842,8 +4199,8 @@ function onMouseMove(e) {
   const socket = hit.object.userData.socket;
   socket.updateMatrixWorld(true);
   if (hit.object !== hoveredTriangleMarker) {
-    const incomingUUID = socket.uuid;
-    const isNewSocket = incomingUUID !== lastHoveredTriangleSocketUUID;
+    const incomingUUID = socket.uuid,
+      isNewSocket = incomingUUID !== lastHoveredTriangleSocketUUID;
     hoveredTriangleMarker = hit.object;
     hoveredTriangleMarker.material = MAT_TRI_HOVER;
     hoveredTriangleMarker.scale.setScalar(2.0);
@@ -4873,11 +4230,13 @@ function onClick(e) {
     const hits = raycaster.intersectObjects(scene.children, true);
     for (const h of hits) {
       if (
-        frameMarkers.includes(h.object) ||
-        motorMarkers.includes(h.object) ||
-        triangleMarkers.includes(h.object) ||
-        frameOnSupportMarkers.includes(h.object) ||
-        wheelMarkers.includes(h.object)
+        [
+          ...frameMarkers,
+          ...motorMarkers,
+          ...triangleMarkers,
+          ...frameOnSupportMarkers,
+          ...wheelMarkers,
+        ].includes(h.object)
       )
         continue;
       if (ghost && isDescendantOf(h.object, ghost)) continue;
@@ -4965,19 +4324,15 @@ function onClick(e) {
       return;
     }
     const { socketA, posA, socketB, posB } = pair;
-    {
-      const dx = Math.abs(posB.x - posA.x),
-        dz = Math.abs(posB.z - posA.z);
-      const major = Math.max(dx, dz),
-        minor = Math.min(dx, dz);
-      if (major > 0.1 && minor > 0.3 && minor / major > 0.3) {
-        showPopup(
-          "Support Bridges must run along a straight axis (X or Z).\n\n" +
-            "The two Triangle Frame connectors are diagonal to each other. " +
-            "Only triangle frames facing each other directly can be bridged.",
-        );
-        return;
-      }
+    const dx = Math.abs(posB.x - posA.x),
+      dz = Math.abs(posB.z - posA.z);
+    const major = Math.max(dx, dz),
+      minor = Math.min(dx, dz);
+    if (major > 0.1 && minor > 0.3 && minor / major > 0.3) {
+      showPopup(
+        "Support Bridges must run along a straight axis (X or Z).\n\nThe two Triangle Frame connectors are diagonal to each other. Only triangle frames facing each other directly can be bridged.",
+      );
+      return;
     }
     if (usedSockets.has(socketA.uuid) || usedSockets.has(socketB.uuid)) {
       showHudMessage("⚠ One of those sockets is already used");
@@ -4987,7 +4342,7 @@ function onClick(e) {
     while (mountA && !mountA.userData?.isMount) mountA = mountA.parent;
     let mountB = socketB.parent;
     while (mountB && !mountB.userData?.isMount) mountB = mountB.parent;
-    const existingBridgeBetween = getAllMounts().some((m) => {
+    const existingBridge = getAllMounts().some((m) => {
       if (m.userData.type !== "support_frame") return false;
       const sA = m.userData.socket,
         sB = m.userData.socketB;
@@ -5000,7 +4355,7 @@ function onClick(e) {
         (mA === mountA && mB === mountB) || (mA === mountB && mB === mountA)
       );
     });
-    if (existingBridgeBetween) {
+    if (existingBridge) {
       showPopup(
         "A Support Bridge already connects these two Triangle Frames.\n\nOnly one bridge is allowed per triangle pair.",
       );
@@ -5037,9 +4392,7 @@ function onClick(e) {
     if (wheelMarkers.length === 0) {
       showHudMessage("All wheel sockets occupied — exiting placement");
       clearGhost();
-    } else {
-      restartPlacementMode("wheel");
-    }
+    } else restartPlacementMode("wheel");
     checkQueuedIntent();
     return;
   }
@@ -5056,8 +4409,7 @@ function onClick(e) {
     }
     const socket = hit.object.userData.socket;
     if (usedSockets.has(socket.uuid)) return;
-    const finalMotorYaw = computeMotorAutoYaw(socket);
-    placeMotor(socket, finalMotorYaw, 0);
+    placeMotor(socket, computeMotorAutoYaw(socket), 0);
     rebuildSocketMarkers();
     updateWheelButtonState();
     updateSupportButtonState();
@@ -5065,9 +4417,7 @@ function onClick(e) {
     if (motorMarkers.length === 0) {
       showHudMessage("All motor sockets occupied — exiting placement");
       clearGhost();
-    } else {
-      restartPlacementMode("motor");
-    }
+    } else restartPlacementMode("motor");
     checkQueuedIntent();
     return;
   }
@@ -5117,7 +4467,6 @@ function placeFrame(socket) {
   const snapSuffix = OPPOSITE_SOCKET_SUFFIX[clickedSuffix] ?? null;
   const snapSocketName = snapSuffix ? `SOCKET_FRAME_${snapSuffix}` : null;
   const { mountPos } = computeFrameSnapPosition(socket);
-
   const frame = frameTemplate.clone(true);
   makeSolid(frame);
   const mount = new THREE.Group();
@@ -5129,11 +4478,9 @@ function placeFrame(socket) {
   scene.updateMatrixWorld(true);
   usedSockets.add(socket.uuid);
   const usedUuids = [socket.uuid];
-
   let snapFound = false;
   mount.traverse((o) => {
-    if (snapFound) return;
-    if (!o.name) return;
+    if (snapFound || !o.name) return;
     if (o.name.toUpperCase().startsWith("SOCKET_FRAME_SUPPORT")) return;
     if (
       snapSocketName &&
@@ -5144,16 +4491,18 @@ function placeFrame(socket) {
       snapFound = true;
     }
   });
-
   if (!snapFound) {
     const clickedPos = new THREE.Vector3();
     socket.getWorldPosition(clickedPos);
     let closestUuid = null,
       closestDist = Infinity;
     mount.traverse((o) => {
-      if (!o.name) return;
-      if (!o.name.toUpperCase().startsWith("SOCKET_FRAME")) return;
-      if (o.name.toUpperCase().startsWith("SOCKET_FRAME_SUPPORT")) return;
+      if (
+        !o.name ||
+        !o.name.toUpperCase().startsWith("SOCKET_FRAME") ||
+        o.name.toUpperCase().startsWith("SOCKET_FRAME_SUPPORT")
+      )
+        return;
       const wp = new THREE.Vector3();
       o.getWorldPosition(wp);
       const d = wp.distanceTo(clickedPos);
@@ -5167,7 +4516,6 @@ function placeFrame(socket) {
       usedUuids.push(closestUuid);
     }
   }
-
   addToInventory("frame");
   pushUndo(mount, usedUuids, "frame");
   updateWeightDisplay();
@@ -5179,9 +4527,8 @@ function placeMotor(socket, autoBaseYaw = 0, manualSteps = 0) {
   socket.updateMatrixWorld(true);
   const socketPos = new THREE.Vector3();
   socket.getWorldPosition(socketPos);
-  const finalYaw = autoBaseYaw + manualSteps * (Math.PI / 2);
   mount.position.copy(socketPos);
-  mount.rotation.set(0, finalYaw, 0);
+  mount.rotation.set(0, autoBaseYaw + manualSteps * (Math.PI / 2), 0);
   applySocketDepth(mount, socket, 0.05);
   const solidRotGroup = new THREE.Group();
   const solidMotor = motorTemplate.clone(true);
@@ -5193,46 +4540,6 @@ function placeMotor(socket, autoBaseYaw = 0, manualSteps = 0) {
   addToInventory("motor");
   pushUndo(mount, [socket.uuid], "motor");
   updateWeightDisplay();
-}
-
-function startWheelPlacement() {
-  hideIdleArrows();
-  clearTimeout(idleTimer);
-  if (countPlaced("motor") < 1) {
-    setQueuedIntent({
-      mode: "wheel",
-      label: "Add Wheel",
-      requiredType: "motor",
-      requiredCount: 1,
-      intendedFn: startWheelPlacement,
-    });
-    showHudMessage("Place a Motor first → Wheel placement auto-activates");
-    startMotorPlacement();
-    return;
-  }
-  if (wheelMarkers.length === 0) {
-    showHudMessage("⚠ All wheel sockets are occupied");
-    return;
-  }
-  document
-    .querySelectorAll(".btn.active-mode")
-    .forEach((b) => b.classList.remove("active-mode"));
-  const _ab = document.getElementById("addWheelBtn");
-  if (_ab) _ab.classList.add("active-mode");
-  clearGhost();
-  placementMode = "wheel";
-  document.body.classList.add("placement-mode");
-  applySocketHighlights();
-  updateShortcutBar();
-  updateLegendHighlight();
-  showInstructionPanel("wheel");
-  if (!wheelTemplate) {
-    console.warn("Wheel template not loaded yet");
-    return;
-  }
-  ghost = wheelTemplate.clone(true);
-  makeGhost(ghost);
-  scene.add(ghost);
 }
 
 function placeWheel(socket) {
@@ -5262,7 +4569,6 @@ function placeWheel(socket) {
     mount.position.y += socketPos.y - connectorWorldPos.y;
     mount.position.z += socketPos.z - connectorWorldPos.z;
   } else {
-    console.warn("Wheel: MOTOR_CONNECTOR socket not found in wheel.glb");
     mount.position.copy(socketPos);
     mount.add(wheel);
     scene.add(mount);
@@ -5329,8 +4635,8 @@ function placeFrameOnSupport(socket, rotationSteps) {
     parentMount.updateMatrixWorld(true);
     let bestDist = -1;
     parentMount.traverse((o) => {
-      if (!o.name?.startsWith("SOCKET_FRAME_SUPPORT")) return;
-      if (o.uuid === socket.uuid) return;
+      if (!o.name?.startsWith("SOCKET_FRAME_SUPPORT") || o.uuid === socket.uuid)
+        return;
       const wp = new THREE.Vector3();
       o.getWorldPosition(wp);
       const d = wp.distanceTo(posSupA);
@@ -5350,8 +4656,7 @@ function placeFrameOnSupport(socket, rotationSteps) {
   const rectConnectors = [];
   frame.traverse((o) => {
     if (!o.name) return;
-    const n = o.name.toUpperCase();
-    if (n.startsWith("SOCKET_FRAME_SUPPORT")) {
+    if (o.name.toUpperCase().startsWith("SOCKET_FRAME_SUPPORT")) {
       const wp = new THREE.Vector3();
       o.getWorldPosition(wp);
       rectConnectors.push({ name: o.name, x: wp.x, y: wp.y, z: wp.z });
@@ -5392,8 +4697,8 @@ function placeFrameOnSupport(socket, rotationSteps) {
     for (const angle of candidateAngles) {
       const cos = Math.cos(angle),
         sin = Math.sin(angle);
-      const rsX = cos * snapConn.x + sin * snapConn.z;
-      const rsZ = -sin * snapConn.x + cos * snapConn.z;
+      const rsX = cos * snapConn.x + sin * snapConn.z,
+        rsZ = -sin * snapConn.x + cos * snapConn.z;
       const mX = posSupA.x - rsX,
         mZ = posSupA.z - rsZ;
       let error = 0;
@@ -5401,8 +4706,8 @@ function placeFrameOnSupport(socket, rotationSteps) {
         let minDist = Infinity;
         for (const c2 of rectConnectors) {
           if (c2 === snapConn) continue;
-          const c2wX = mX + cos * c2.x + sin * c2.z;
-          const c2wZ = mZ + (-sin * c2.x + cos * c2.z);
+          const c2wX = mX + cos * c2.x + sin * c2.z,
+            c2wZ = mZ + (-sin * c2.x + cos * c2.z);
           const d = Math.hypot(c2wX - posSupB.x, c2wZ - posSupB.z);
           if (d < minDist) minDist = d;
         }
@@ -5418,15 +4723,16 @@ function placeFrameOnSupport(socket, rotationSteps) {
   const finalAngle = bestAngle + rotationSteps * (Math.PI / 2);
   const cos = Math.cos(finalAngle),
     sin = Math.sin(finalAngle);
-  const rsX = cos * bestSnapConn.x + sin * bestSnapConn.z;
-  const rsZ = -sin * bestSnapConn.x + cos * bestSnapConn.z;
-  const finalMountX = posSupA.x - rsX;
-  const finalMountY = posSupA.y - bestSnapConn.y + FRAME_ON_SUPPORT_Y_OFFSET;
-  const finalMountZ = posSupA.z - rsZ;
+  const rsX = cos * bestSnapConn.x + sin * bestSnapConn.z,
+    rsZ = -sin * bestSnapConn.x + cos * bestSnapConn.z;
   const mount = new THREE.Group();
   mount.userData = { isMount: true, socket, type: "frame" };
   mount.rotation.set(0, finalAngle, 0);
-  mount.position.set(finalMountX, finalMountY, finalMountZ);
+  mount.position.set(
+    posSupA.x - rsX,
+    posSupA.y - bestSnapConn.y + FRAME_ON_SUPPORT_Y_OFFSET,
+    posSupA.z - rsZ,
+  );
   mount.add(frame);
   scene.add(mount);
   mount.updateMatrixWorld(true);
@@ -5437,33 +4743,6 @@ function placeFrameOnSupport(socket, rotationSteps) {
   if (siblingSocket) fosUuids.push(siblingSocket.uuid);
   pushUndo(mount, fosUuids, "frame");
   updateWeightDisplay();
-}
-
-function placeSupportBridge(socket, manualSteps = 0) {
-  const support = supportTemplate.clone(true);
-  makeSolid(support);
-  socket.updateMatrixWorld(true);
-  const posA = new THREE.Vector3();
-  socket.getWorldPosition(posA);
-  const opposite = findOppositeTriangleSocket(socket);
-  const posB = opposite?.pos ?? null;
-  const socketB = opposite?.socket ?? null;
-  const mount = new THREE.Group();
-  mount.userData = { isMount: true, socket, socketB, type: "support_frame" };
-  mount.position.set(0, 0, 0);
-  mount.rotation.set(0, 0, 0);
-  mount.add(support);
-  scene.add(mount);
-  mount.updateMatrixWorld(true);
-  applyTwoPointSupportSnap(mount, support, posA, posB, manualSteps, socket);
-  usedSockets.add(socket.uuid);
-  if (socketB) usedSockets.add(socketB.uuid);
-  addToInventory("support_frame");
-  pushUndo(
-    mount,
-    socketB ? [socket.uuid, socketB.uuid] : [socket.uuid],
-    "support_frame",
-  );
 }
 
 function placeSupportBridgeFromPair(
@@ -5578,8 +4857,7 @@ function performUndo() {
     showHudMessage("NOTHING TO UNDO");
     return;
   }
-  const entry = undoStack.pop();
-  const { mount, socketUuids, type } = entry;
+  const { mount, socketUuids, type } = undoStack.pop();
   if (selectedMount === mount) {
     restoreMeshEmissive(selectedMesh, selectedOrigEm);
     selectedMesh = null;
@@ -5591,11 +4869,11 @@ function performUndo() {
     hoveredMount = null;
   }
   socketUuids.forEach((uuid) => usedSockets.delete(uuid));
-  if (hoveredMotorMarker) hoveredMotorMarker = null;
-  if (hoveredTriangleMarker) hoveredTriangleMarker = null;
+  hoveredMotorMarker = null;
+  hoveredTriangleMarker = null;
   scene.remove(mount);
   removeFromInventory(type);
-  redoStack.push(entry);
+  redoStack.push({ mount, socketUuids: [...socketUuids], type });
   rebuildSocketMarkers();
   updateWheelButtonState();
   updateSupportButtonState();
@@ -5646,7 +4924,6 @@ function onKeyDown(e) {
     performRedo();
     return;
   }
-
   if (e.key === "Escape") {
     if (placementMode === "support" && supportFirstSocket) {
       supportFirstSocket = null;
@@ -5666,16 +4943,19 @@ function onKeyDown(e) {
     }
     return;
   }
-
-  if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-    if (!placementMode || placementMode === "motor") return;
+  if (
+    (e.key === "ArrowLeft" || e.key === "ArrowRight") &&
+    placementMode &&
+    placementMode !== "motor"
+  ) {
     e.preventDefault();
     const dir = e.key === "ArrowRight" ? 1 : -1;
     flashArrowKey(e.key === "ArrowRight" ? "right" : "left");
     if (placementMode === "triangle" && ghost) {
       triangleManualRotSteps = (triangleManualRotSteps + 1) % 2;
-      const totalDeg = triangleManualRotSteps * 180;
-      showHudMessage(`Triangle manual offset: +${totalDeg}°`);
+      showHudMessage(
+        `Triangle manual offset: +${triangleManualRotSteps * 180}°`,
+      );
       updateShortcutBar();
       updateRotationDisplay();
       ghost.rotation.set(
@@ -5693,7 +4973,6 @@ function onKeyDown(e) {
         ghost.rotation.set(0, frameOnSupportRotationSteps * (Math.PI / 2), 0);
     }
   }
-
   if (e.key === "Numpad1" || (e.key === "1" && e.altKey))
     applyCameraPreset("front");
   if (e.key === "Numpad3" || (e.key === "3" && e.altKey))
@@ -5704,15 +4983,10 @@ function onKeyDown(e) {
     applyCameraPreset("iso");
   if (e.key === "Numpad0" || (e.key === "0" && e.altKey))
     applyCameraPreset("perspective");
-
   if ((e.key === "Delete" || e.key === "Backspace") && selectedMount) {
-    const mountToDelete = selectedMount;
-    const result = checkDeletionAllowed(mountToDelete);
-    if (!result.ok) {
-      showDependencyBlockedPopup(mountToDelete, result);
-      return;
-    }
-    executeDelete(mountToDelete);
+    const result = checkDeletionAllowed(selectedMount);
+    if (!result.ok) showDependencyBlockedPopup(selectedMount, result);
+    else executeDelete(selectedMount);
   }
 }
 
@@ -5734,9 +5008,6 @@ function initColorLegend() {
   if (!legend) return;
   toggleBtn?.addEventListener("click", () => {
     legend.classList.toggle("collapsed");
-    toggleBtn.title = legend.classList.contains("collapsed")
-      ? "Expand"
-      : "Collapse";
   });
   legend.querySelectorAll(".legend-item").forEach((el, i) => {
     el.style.animationDelay = `${0.05 + i * 0.06}s`;
@@ -5776,64 +5047,18 @@ function updateLegendHighlight() {
    IDLE ARROWS
    ========================================================= */
 
-let idleTimer = null;
-let idleArrowsShown = false;
+let idleTimer = null,
+  idleArrowsShown = false;
 const IDLE_DELAY_MS = 3000;
 
-function initIdleArrows() {
-  // Idle arrows disabled — no prompt shown
-}
-
-function getNextActionTarget() {
-  if (motorMarkers.length > 0 && countPlaced("motor") === 0)
-    return { id: "addMotor", label: "Click to add a Motor" };
-  if (
-    countPlaced("motor") > 0 &&
-    wheelMarkers.length > 0 &&
-    countPlaced("wheel") === 0
-  )
-    return { id: "addWheelBtn", label: "Click to add Wheels" };
-  if (countPlaced("triangle_frame") < 2)
-    return { id: "addTriangle", label: "Add Tri. Frames for structure" };
-  if (countPlaced("triangle_frame") >= 2 && countPlaced("support_frame") === 0)
-    return { id: "addSupportFrame", label: "Now add a Support Frame" };
-  return { id: "addFrame", label: "Expand with more Frames" };
-}
-
-function showIdleArrows() {
-  if (placementMode || isFinalized) return;
-  hideIdleArrows();
-  const target = getNextActionTarget();
-  const btnEl = document.getElementById(target.id);
-  if (!btnEl) return;
-  const container = document.getElementById("idle-arrows");
-  if (!container) return;
-  const rect = btnEl.getBoundingClientRect();
-  const arrow = document.createElement("div");
-  arrow.className = "idle-arrow";
-  arrow.style.left = `${rect.right + 6}px`;
-  arrow.style.top = `${rect.top + rect.height / 2 - 14}px`;
-  arrow.innerHTML = `
-    <div class="idle-arrow-shaft">
-      <div class="idle-arrow-line"></div>
-      <div class="idle-arrow-head">▶</div>
-    </div>
-    <div class="idle-arrow-label">${target.label}</div>
-  `;
-  btnEl.style.transition = "box-shadow 0.4s ease";
-  btnEl.style.boxShadow =
-    "0 0 18px rgba(204,34,0,0.45), inset 0 0 12px rgba(204,34,0,0.08)";
-  container.appendChild(arrow);
-  idleArrowsShown = true;
-  arrow.dataset.btnId = target.id;
-}
+function initIdleArrows() {}
 
 function hideIdleArrows() {
   if (!idleArrowsShown) return;
   const container = document.getElementById("idle-arrows");
   if (container) {
-    container.querySelectorAll(".idle-arrow").forEach((arrow) => {
-      const btn = document.getElementById(arrow.dataset.btnId);
+    container.querySelectorAll(".idle-arrow").forEach((a) => {
+      const btn = document.getElementById(a.dataset.btnId);
       if (btn) btn.style.boxShadow = "";
     });
     container.innerHTML = "";
@@ -5842,7 +5067,7 @@ function hideIdleArrows() {
 }
 
 /* =========================================================
-   RIGHT-CLICK CONTEXT MENU
+   CONTEXT MENU
    ========================================================= */
 
 const PART_GLYPHS = {
@@ -5852,17 +5077,16 @@ const PART_GLYPHS = {
   support_frame: "╬",
   wheel: "◉",
 };
-
-let ctxMenuEl = null;
-let ctxTargetMount = null;
+let ctxMenuEl = null,
+  ctxTargetMount = null;
 
 function buildContextMenu(mount, screenX, screenY) {
   destroyContextMenu();
   ctxTargetMount = mount;
   const type = mount.userData.type ?? "frame";
-  const label = PART_LABELS[type] ?? type.replace(/_/g, " ");
+  const label = PART_LABELS()[type] ?? type.replace(/_/g, " ");
   const glyph = PART_GLYPHS[type] ?? "◈";
-  const cost = PART_COSTS[type] ?? 0;
+  const cost = getPrice(type);
   const delResult = checkDeletionAllowed(mount);
   const depCount = delResult.ok ? 0 : delResult.dependents.length;
 
@@ -5871,12 +5095,7 @@ function buildContextMenu(mount, screenX, screenY) {
 
   const header = document.createElement("div");
   header.className = "ctx-header";
-  header.innerHTML = `
-    <span class="ctx-header-glyph">${glyph}</span>
-    <div>
-      <div class="ctx-header-name">${label}</div>
-      <div class="ctx-header-type">₹${cost.toLocaleString()} · ${type.replace(/_/g, " ")}</div>
-    </div>`;
+  header.innerHTML = `<span class="ctx-header-glyph">${glyph}</span><div><div class="ctx-header-name">${label}</div><div class="ctx-header-type">₹${cost.toLocaleString()} · ${type.replace(/_/g, " ")}</div></div>`;
   menu.appendChild(header);
 
   const items = document.createElement("div");
@@ -5887,7 +5106,6 @@ function buildContextMenu(mount, screenX, screenY) {
       icon: "◎",
       label: "Focus Camera",
       hint: "Frame this part in view",
-      kbd: null,
       onClick: () => {
         destroyContextMenu();
         frameObject(mount);
@@ -5895,7 +5113,6 @@ function buildContextMenu(mount, screenX, screenY) {
       },
     }),
   );
-
   const isSelected = selectedMount === mount;
   items.appendChild(
     makeCtxItem({
@@ -5913,7 +5130,6 @@ function buildContextMenu(mount, screenX, screenY) {
       },
     }),
   );
-
   items.appendChild(makeSep());
 
   const deleteItem = makeCtxItem({
@@ -5922,7 +5138,7 @@ function buildContextMenu(mount, screenX, screenY) {
     hint:
       depCount > 0
         ? `Will also remove ${depCount} dependent part${depCount !== 1 ? "s" : ""}`
-        : "Remove from build",
+        : undefined,
     kbd: "Del",
     danger: true,
     onClick: () => {
@@ -5931,14 +5147,12 @@ function buildContextMenu(mount, screenX, screenY) {
       else executeDelete(mount);
     },
   });
-
   if (depCount > 0) {
     const badge = document.createElement("div");
     badge.className = "ctx-cascade-badge";
     badge.innerHTML = `⚠ ${depCount} dependent part${depCount !== 1 ? "s" : ""} will also be removed`;
     deleteItem.querySelector(".ctx-item-body").appendChild(badge);
   }
-
   items.appendChild(deleteItem);
   menu.appendChild(items);
   document.body.appendChild(menu);
@@ -5969,13 +5183,7 @@ function makeCtxItem({ icon, label, hint, kbd, danger, disabled, onClick }) {
     "ctx-item" +
     (danger ? " ctx-danger" : "") +
     (disabled ? " ctx-disabled" : "");
-  item.innerHTML = `
-    <span class="ctx-item-icon">${icon}</span>
-    <span class="ctx-item-body">
-      <span class="ctx-item-label">${label}</span>
-      ${hint ? `<span class="ctx-item-hint">${hint}</span>` : ""}
-    </span>
-    ${kbd ? `<span class="ctx-item-kbd">${kbd}</span>` : ""}`;
+  item.innerHTML = `<span class="ctx-item-icon">${icon}</span><span class="ctx-item-body"><span class="ctx-item-label">${label}</span>${hint ? `<span class="ctx-item-hint">${hint}</span>` : ""}</span>${kbd ? `<span class="ctx-item-kbd">${kbd}</span>` : ""}`;
   if (!disabled) item.addEventListener("click", onClick);
   return item;
 }
@@ -5985,7 +5193,6 @@ function makeSep() {
   sep.className = "ctx-sep";
   return sep;
 }
-
 function destroyContextMenu() {
   if (ctxMenuEl) {
     ctxMenuEl.remove();
@@ -5995,11 +5202,9 @@ function destroyContextMenu() {
   document.removeEventListener("mousedown", onCtxOutsideClick);
   document.removeEventListener("keydown", onCtxKeyDown, { capture: true });
 }
-
 function onCtxOutsideClick(e) {
   if (ctxMenuEl && !ctxMenuEl.contains(e.target)) destroyContextMenu();
 }
-
 function onCtxKeyDown(e) {
   if (e.key === "Escape") destroyContextMenu();
 }
@@ -6012,11 +5217,13 @@ function onContextMenu(e) {
   const hits = raycaster.intersectObjects(scene.children, true);
   for (const h of hits) {
     if (
-      frameMarkers.includes(h.object) ||
-      motorMarkers.includes(h.object) ||
-      triangleMarkers.includes(h.object) ||
-      frameOnSupportMarkers.includes(h.object) ||
-      wheelMarkers.includes(h.object)
+      [
+        ...frameMarkers,
+        ...motorMarkers,
+        ...triangleMarkers,
+        ...frameOnSupportMarkers,
+        ...wheelMarkers,
+      ].includes(h.object)
     )
       continue;
     const { mount } = resolveMeshAndMount(h.object);
@@ -6058,30 +5265,7 @@ function executeDelete(mount) {
   updateSupportButtonState();
   applySocketHighlights();
   updateWeightDisplay();
-  showHudMessage(`DELETED: ${(PART_LABELS[type] ?? type).toUpperCase()}`);
-}
-
-function duplicateFrame(sourceMount) {
-  const frame = frameTemplate.clone(true);
-  makeSolid(frame);
-  const mount = new THREE.Group();
-  mount.userData = { isMount: true, type: "frame" };
-  mount.position.set(
-    sourceMount.position.x + 1.2,
-    sourceMount.position.y,
-    sourceMount.position.z,
-  );
-  mount.rotation.copy(sourceMount.rotation);
-  mount.add(frame);
-  scene.add(mount);
-  addToInventory("frame");
-  pushUndo(mount, [], "frame");
-  rebuildSocketMarkers();
-  updateWheelButtonState();
-  updateSupportButtonState();
-  applySocketHighlights();
-  frameObject(mount);
-  showHudMessage("FRAME DUPLICATED ✓");
+  showHudMessage(`DELETED: ${(PART_LABELS()[type] ?? type).toUpperCase()}`);
 }
 
 /* =========================================================
@@ -6093,8 +5277,8 @@ function animate() {
   controls.update();
 
   if (placementMode) {
-    const t = Date.now() * 0.003;
-    const pulse = 1.3 + Math.sin(t) * 0.3;
+    const t = Date.now() * 0.003,
+      pulse = 1.3 + Math.sin(t) * 0.3;
     const activeList =
       placementMode === "motor"
         ? motorMarkers
@@ -6116,8 +5300,9 @@ function animate() {
   renderer.render(scene, camera);
   renderMinimap();
 }
+
 /* =========================================================
-   WEIGHT SECTION — live total + per-type breakdown
+   WEIGHT SECTION
    ========================================================= */
 
 function initWeightSection() {
@@ -6125,152 +5310,36 @@ function initWeightSection() {
     const s = document.createElement("style");
     s.id = "weight-section-styles";
     s.textContent = `
-      #weight-section {
-        border-top: 1px solid rgba(208,88,24,0.18);
-        flex-shrink: 0;
-      }
-      #weight-section-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 9px 14px 8px 16px;
-        cursor: pointer;
-        user-select: none;
-        transition: background 0.12s;
-      }
-      #weight-section-header:hover { background: rgba(208,88,24,0.05); }
-      #weight-section-title {
-        font-family: 'Orbitron', sans-serif;
-        font-size: 8px;
-        font-weight: 700;
-        letter-spacing: 0.22em;
-        text-transform: uppercase;
-        color: #d05818;
-        display: flex;
-        align-items: center;
-        gap: 7px;
-      }
-      #weight-total-badge {
-        font-family: 'Orbitron', sans-serif;
-        font-size: 11px;
-        font-weight: 700;
-        color: #d8e8f4;
-        letter-spacing: 0.06em;
-      }
-      #weight-chevron {
-        font-size: 9px;
-        color: #384858;
-        transition: transform 0.2s ease, color 0.12s;
-        font-family: 'Share Tech Mono', monospace;
-        margin-left: 8px;
-      }
-      #weight-section-header:hover #weight-chevron { color: #d05818; }
-      #weight-body {
-        overflow: hidden;
-        transition: max-height 0.25s ease, opacity 0.2s ease;
-        max-height: 300px;
-        opacity: 1;
-      }
-      #weight-body.collapsed { max-height: 0; opacity: 0; }
-      #weight-rows {
-        padding: 4px 12px 10px;
-        display: flex;
-        flex-direction: column;
-        gap: 3px;
-      }
-      .weight-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 5px 10px;
-        background: #1a2636;
-        border: 1px solid #263848;
-        border-left: 2px solid rgba(208,88,24,0.5);
-        clip-path: polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,0 100%);
-        font-family: 'Share Tech Mono', monospace;
-        font-size: 10px;
-        letter-spacing: 0.04em;
-      }
-      .weight-row-label {
-        color: #6a8098;
-        text-transform: uppercase;
-        font-size: 9px;
-        letter-spacing: 0.08em;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-      .weight-row-qty {
-        font-size: 8px;
-        color: #384858;
-        background: #111820;
-        border: 1px solid #2a3848;
-        padding: 1px 5px;
-        letter-spacing: 0.06em;
-      }
-      .weight-row-val {
-        color: #8aacbf;
-        font-size: 10px;
-        letter-spacing: 0.06em;
-      }
-      .weight-row-unit {
-        color: #384858;
-        font-size: 8px;
-        margin-left: 2px;
-      }
-      #weight-total-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 7px 10px;
-        margin: 0 12px 10px;
-        background: rgba(208,88,24,0.06);
-        border: 1px solid rgba(208,88,24,0.25);
-        border-left: 3px solid #d05818;
-      }
-      #weight-total-label {
-        font-family: 'Orbitron', sans-serif;
-        font-size: 8px;
-        font-weight: 700;
-        letter-spacing: 0.18em;
-        color: #6a8098;
-        text-transform: uppercase;
-      }
-      #weight-total-value {
-        font-family: 'Orbitron', sans-serif;
-        font-size: 14px;
-        font-weight: 700;
-        color: #d8e8f4;
-        letter-spacing: 0.06em;
-      }
-      #weight-total-value span {
-        font-size: 9px;
-        color: #384858;
-        margin-left: 3px;
-      }
-      @keyframes weightIn {
-        from { opacity:0; transform:translateY(4px); }
-        to   { opacity:1; transform:translateY(0); }
-      }
-      #weight-section { animation: weightIn 0.35s ease 0.3s both; }
+      #weight-section{border-top:1px solid rgba(208,88,24,0.18);flex-shrink:0}
+      #weight-section-header{display:flex;align-items:center;justify-content:space-between;padding:9px 14px 8px 16px;cursor:pointer;user-select:none;transition:background 0.12s}
+      #weight-section-header:hover{background:rgba(208,88,24,0.05)}
+      #weight-section-title{font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:#d05818;display:flex;align-items:center;gap:7px}
+      #weight-total-badge{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;color:#d8e8f4;letter-spacing:0.06em}
+      #weight-chevron{font-size:9px;color:#384858;transition:transform 0.2s ease,color 0.12s;font-family:'Share Tech Mono',monospace;margin-left:8px}
+      #weight-section-header:hover #weight-chevron{color:#d05818}
+      #weight-body{overflow:hidden;transition:max-height 0.25s ease,opacity 0.2s ease;max-height:300px;opacity:1}
+      #weight-body.collapsed{max-height:0;opacity:0}
+      #weight-rows{padding:4px 12px 10px;display:flex;flex-direction:column;gap:3px}
+      .weight-row{display:flex;align-items:center;justify-content:space-between;padding:5px 10px;background:#1a2636;border:1px solid #263848;border-left:2px solid rgba(208,88,24,0.5);clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,0 100%);font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:0.04em}
+      .weight-row-label{color:#6a8098;text-transform:uppercase;font-size:9px;letter-spacing:0.08em;display:flex;align-items:center;gap:6px}
+      .weight-row-qty{font-size:8px;color:#384858;background:#111820;border:1px solid #2a3848;padding:1px 5px;letter-spacing:0.06em}
+      .weight-row-val{color:#8aacbf;font-size:10px;letter-spacing:0.06em}
+      .weight-row-unit{color:#384858;font-size:8px;margin-left:2px}
+      #weight-total-row{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;margin:0 12px 10px;background:rgba(208,88,24,0.06);border:1px solid rgba(208,88,24,0.25);border-left:3px solid #d05818}
+      #weight-total-label{font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.18em;color:#6a8098;text-transform:uppercase}
+      #weight-total-value{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;color:#d8e8f4;letter-spacing:0.06em}
+      #weight-total-value span{font-size:9px;color:#384858;margin-left:3px}
+      @keyframes weightIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+      #weight-section{animation:weightIn 0.35s ease 0.3s both}
     `;
     document.head.appendChild(s);
   }
 
   const section = document.createElement("div");
   section.id = "weight-section";
-
   const header = document.createElement("div");
   header.id = "weight-section-header";
-  header.innerHTML = `
-    <div id="weight-section-title">
-      <span style="color:#384858;font-size:11px">⊕</span>
-      WEIGHT
-    </div>
-    <div style="display:flex;align-items:center;gap:0">
-      <div id="weight-total-badge">0 g</div>
-      <div id="weight-chevron">▾</div>
-    </div>`;
+  header.innerHTML = `<div id="weight-section-title"><span style="color:#384858;font-size:11px">⊕</span>WEIGHT</div><div style="display:flex;align-items:center;gap:0"><div id="weight-total-badge">0 g</div><div id="weight-chevron">▾</div></div>`;
   header.addEventListener("click", () => {
     const body = document.getElementById("weight-body");
     const chev = document.getElementById("weight-chevron");
@@ -6282,27 +5351,21 @@ function initWeightSection() {
 
   const body = document.createElement("div");
   body.id = "weight-body";
-
   const rows = document.createElement("div");
   rows.id = "weight-rows";
   body.appendChild(rows);
-
   const totalRow = document.createElement("div");
   totalRow.id = "weight-total-row";
-  totalRow.innerHTML = `
-    <div id="weight-total-label">TOTAL WEIGHT</div>
-    <div id="weight-total-value">0 <span>g</span></div>`;
+  totalRow.innerHTML = `<div id="weight-total-label">TOTAL WEIGHT</div><div id="weight-total-value">0 <span>g</span></div>`;
   body.appendChild(totalRow);
-
   section.appendChild(body);
 
-  // Insert into right panel — above the basket-footer
   const basketFooter = document.querySelector(".basket-footer");
-  if (basketFooter && basketFooter.parentElement) {
+  if (basketFooter?.parentElement)
     basketFooter.parentElement.insertBefore(section, basketFooter);
-  } else {
-    const rightPanel = document.querySelector(".panel-right");
-    if (rightPanel) rightPanel.appendChild(section);
+  else {
+    const rp = document.querySelector(".panel-right");
+    if (rp) rp.appendChild(section);
   }
 
   updateWeightDisplay();
@@ -6322,213 +5385,107 @@ function updateWeightDisplay() {
   const badge = document.getElementById("weight-total-badge");
   if (!rowsEl) return;
 
-  // Count parts by type
   const counts = {};
   scene.traverse((o) => {
     if (!o.userData?.isMount) return;
     const t = o.userData.type ?? "unknown";
     counts[t] = (counts[t] ?? 0) + 1;
   });
-
   rowsEl.innerHTML = "";
-
   let totalGrams = 0;
 
-  const typeOrder = [
+  for (const type of [
     "frame",
     "motor",
     "triangle_frame",
     "support_frame",
     "wheel",
-  ];
-  for (const type of typeOrder) {
+  ]) {
     const qty = counts[type] ?? 0;
     if (qty === 0) continue;
-    const unitG = PART_WEIGHTS[type] ?? 0;
-    const totalG = unitG * qty;
+    const unitG = PART_WEIGHTS[type] ?? 0,
+      totalG = unitG * qty;
     totalGrams += totalG;
-
-    const label = PART_LABELS[type] ?? type.replace(/_/g, " ");
+    const label = PART_LABELS()[type] ?? type.replace(/_/g, " ");
     const glyph = PART_GLYPHS_W[type] ?? "◈";
-
     const row = document.createElement("div");
     row.className = "weight-row";
-    row.innerHTML = `
-      <div class="weight-row-label">
-        <span>${glyph}</span>
-        ${label.toUpperCase()}
-        <span class="weight-row-qty">${qty}×</span>
-      </div>
-      <div class="weight-row-val">
-        ${
-          totalG >= 1000
-            ? (totalG / 1000).toFixed(2) +
-              ' <span class="weight-row-unit">kg</span>'
-            : totalG + ' <span class="weight-row-unit">g</span>'
-        }
-        <span class="weight-row-unit" style="color:#263848;font-size:7px;margin-left:3px">
-          @${unitG}g ea
-        </span>
-      </div>`;
+    row.innerHTML = `<div class="weight-row-label"><span>${glyph}</span>${label.toUpperCase()}<span class="weight-row-qty">${qty}×</span></div><div class="weight-row-val">${totalG >= 1000 ? (totalG / 1000).toFixed(2) + ' <span class="weight-row-unit">kg</span>' : totalG + ' <span class="weight-row-unit">g</span>'}<span class="weight-row-unit" style="color:#263848;font-size:7px;margin-left:3px">@${unitG}g ea</span></div>`;
     rowsEl.appendChild(row);
   }
 
-  if (Object.keys(counts).length === 0) {
+  if (Object.keys(counts).length === 0)
     rowsEl.innerHTML = `<div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#2a3848;text-align:center;padding:8px 0;letter-spacing:0.1em;text-transform:uppercase;">No parts placed</div>`;
-  }
 
   const displayG =
     totalGrams >= 1000
       ? (totalGrams / 1000).toFixed(2) + " kg"
       : totalGrams + " g";
-
   if (totalVal)
     totalVal.innerHTML =
       totalGrams >= 1000
         ? `${(totalGrams / 1000).toFixed(2)} <span>kg</span>`
         : `${totalGrams} <span>g</span>`;
-
   if (badge) badge.textContent = displayG;
 }
 
 /* =========================================================
-   HOVER HIGHLIGHT + TOOLTIP
+   TOOLTIP
    ========================================================= */
 
 function showTooltip(_m, _x, _y) {}
-
 function hideTooltip() {
   if (tooltipEl) tooltipEl.style.display = "none";
 }
 
 /* =========================================================
-   MINIMAP — Bird's-eye overview panel (lives in left sidebar)
-   =========================================================
-   - Injected below the undo/redo buttons in the left panel
-   - 220×220px orthographic top-down render
-   - Live camera frustum footprint overlay
-   - Selected part red highlight ring
-   - Compass arrow (camera direction)
-   - Click anywhere → smooth camera teleport to that XZ position
-   - Collapse/expand toggle
+   MINIMAP
    ========================================================= */
 
-let minimapEl = null;
-let minimapCanvas = null;
-let minimapCtx = null;
+let minimapEl = null,
+  minimapCanvas = null,
+  minimapCtx = null;
 const MINIMAP_SIZE = 220;
-
-let minimapOrthoCamera = null;
-let minimapRenderer = null;
-let minimapCollapsed = false;
-
-const PART_COLORS_MAP = {
-  frame: "#8aacbf",
-  motor: "#cc4400",
-  triangle_frame: "#607080",
-  support_frame: "#506070",
-  wheel: "#e87030",
-};
+let minimapOrthoCamera = null,
+  minimapRenderer = null,
+  minimapCollapsed = false;
 
 function initMinimap() {
-  // ── Styles ───────────────────────────────────────────────────────────────
   if (!document.getElementById("minimap-styles")) {
     const s = document.createElement("style");
     s.id = "minimap-styles";
     s.textContent = `
-      #minimap-section {
-        margin: 0;
-        border-top: 1px solid rgba(208,88,24,0.18);
-        background: transparent;
-        flex-shrink: 0;
-      }
-      #minimap-section-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 8px 14px 7px;
-        cursor: pointer;
-        user-select: none;
-        transition: background 0.12s;
-      }
-      #minimap-section-header:hover { background: rgba(208,88,24,0.06); }
-      #minimap-section-title {
-        font-family: 'Orbitron', sans-serif;
-        font-size: 8px;
-        font-weight: 700;
-        letter-spacing: 0.22em;
-        text-transform: uppercase;
-        color: #d05818;
-        display: flex;
-        align-items: center;
-        gap: 7px;
-      }
-      #minimap-section-title span { color: #384858; font-size: 11px; }
-      #minimap-chevron {
-        font-size: 9px;
-        color: #384858;
-        transition: transform 0.2s ease, color 0.12s;
-        font-family: 'Share Tech Mono', monospace;
-      }
-      #minimap-section-header:hover #minimap-chevron { color: #d05818; }
-      #minimap-body {
-        overflow: hidden;
-        transition: max-height 0.25s ease, opacity 0.2s ease;
-        max-height: 260px;
-        opacity: 1;
-      }
-      #minimap-body.collapsed {
-        max-height: 0;
-        opacity: 0;
-      }
-      #minimap-canvas-wrap {
-        position: relative;
-        width: ${MINIMAP_SIZE}px;
-        height: ${MINIMAP_SIZE}px;
-        margin: 0 auto 10px;
-        cursor: crosshair;
-        border: 1px solid rgba(208,88,24,0.3);
-        overflow: hidden;
-        background: #070d14;
-        display: block;
-      }
-      #minimap-canvas-wrap canvas { display: block; position: absolute; top:0; left:0; }
-      #minimap-hint {
-        text-align: center;
-        font-family: 'Share Tech Mono', monospace;
-        font-size: 8px;
-        letter-spacing: 0.12em;
-        color: #2a3848;
-        padding: 0 14px 10px;
-        text-transform: uppercase;
-      }
-      @keyframes minimapIn {
-        from { opacity:0; transform:translateY(6px); }
-        to   { opacity:1; transform:translateY(0); }
-      }
-      #minimap-section { animation: minimapIn 0.35s ease 0.5s both; }
+      #minimap-section{margin:0;border-top:1px solid rgba(208,88,24,0.18);background:transparent;flex-shrink:0}
+      #minimap-section-header{display:flex;align-items:center;justify-content:space-between;padding:8px 14px 7px;cursor:pointer;user-select:none;transition:background 0.12s}
+      #minimap-section-header:hover{background:rgba(208,88,24,0.06)}
+      #minimap-section-title{font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:#d05818;display:flex;align-items:center;gap:7px}
+      #minimap-section-title span{color:#384858;font-size:11px}
+      #minimap-chevron{font-size:9px;color:#384858;transition:transform 0.2s ease,color 0.12s;font-family:'Share Tech Mono',monospace}
+      #minimap-section-header:hover #minimap-chevron{color:#d05818}
+      #minimap-body{overflow:hidden;transition:max-height 0.25s ease,opacity 0.2s ease;max-height:260px;opacity:1}
+      #minimap-body.collapsed{max-height:0;opacity:0}
+      #minimap-canvas-wrap{position:relative;width:${MINIMAP_SIZE}px;height:${MINIMAP_SIZE}px;margin:0 auto 10px;cursor:crosshair;border:1px solid rgba(208,88,24,0.3);overflow:hidden;background:#070d14;display:block}
+      #minimap-canvas-wrap canvas{display:block;position:absolute;top:0;left:0}
+      #minimap-hint{text-align:center;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:0.12em;color:#2a3848;padding:0 14px 10px;text-transform:uppercase}
+      @keyframes minimapIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+      #minimap-section{animation:minimapIn 0.35s ease 0.5s both}
     `;
     document.head.appendChild(s);
   }
 
-  // ── Three.js ortho camera ─────────────────────────────────────────────────
   minimapOrthoCamera = new THREE.OrthographicCamera(-5, 5, 5, -5, 0.1, 100);
   minimapOrthoCamera.position.set(0, 30, 0);
   minimapOrthoCamera.lookAt(0, 0, 0);
   minimapOrthoCamera.up.set(0, 0, -1);
 
-  // ── Offscreen renderer ────────────────────────────────────────────────────
   minimapRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
   minimapRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   minimapRenderer.setSize(MINIMAP_SIZE, MINIMAP_SIZE);
   minimapRenderer.setClearColor(0x070d14, 1);
 
-  // ── Find insertion point: below undo/redo row in the left panel ───────────
-  // Look for the undo/redo buttons container or the left panel itself
   const undoBtn = document.getElementById("undoBtn");
   let insertAfter = null;
   if (undoBtn) {
-    // Walk up to find the row/group containing undo
     let el = undoBtn.parentElement;
     while (
       el &&
@@ -6538,61 +5495,43 @@ function initMinimap() {
       !el.parentElement.id?.includes("sidebar") &&
       el.parentElement.tagName !== "ASIDE" &&
       el !== document.body
-    ) {
+    )
       el = el.parentElement;
-    }
     insertAfter = el;
   }
 
-  // ── Build the minimap section DOM ─────────────────────────────────────────
   const section = document.createElement("div");
   section.id = "minimap-section";
-
-  // Header / toggle
   const sectionHeader = document.createElement("div");
   sectionHeader.id = "minimap-section-header";
-  sectionHeader.innerHTML = `
-    <div id="minimap-section-title">
-      <span>◈</span> OVERVIEW
-    </div>
-    <div id="minimap-chevron">▾</div>`;
+  sectionHeader.innerHTML = `<div id="minimap-section-title"><span>◈</span> OVERVIEW</div><div id="minimap-chevron">▾</div>`;
   sectionHeader.addEventListener("click", toggleMinimap);
   section.appendChild(sectionHeader);
 
-  // Collapsible body
   const body = document.createElement("div");
   body.id = "minimap-body";
-
-  // Canvas wrap (THREE render target + 2D overlay)
   const canvasWrap = document.createElement("div");
   canvasWrap.id = "minimap-canvas-wrap";
-
   minimapRenderer.domElement.style.width = MINIMAP_SIZE + "px";
   minimapRenderer.domElement.style.height = MINIMAP_SIZE + "px";
   canvasWrap.appendChild(minimapRenderer.domElement);
-
   minimapCanvas = document.createElement("canvas");
   minimapCanvas.width = MINIMAP_SIZE;
   minimapCanvas.height = MINIMAP_SIZE;
   minimapCanvas.style.pointerEvents = "none";
   minimapCtx = minimapCanvas.getContext("2d");
   canvasWrap.appendChild(minimapCanvas);
-
   canvasWrap.addEventListener("click", onMinimapClick);
   body.appendChild(canvasWrap);
-
   const hint = document.createElement("div");
   hint.id = "minimap-hint";
   hint.textContent = "Click to snap camera";
   body.appendChild(hint);
-
   section.appendChild(body);
 
-  // Insert after undo/redo row, or append to left panel
-  if (insertAfter && insertAfter.parentElement) {
+  if (insertAfter?.parentElement)
     insertAfter.parentElement.insertBefore(section, insertAfter.nextSibling);
-  } else {
-    // Fallback: try common left panel selectors
+  else {
     const leftPanel =
       document.querySelector(".left-panel") ||
       document.querySelector(".sidebar-left") ||
@@ -6607,8 +5546,8 @@ function initMinimap() {
 
 function toggleMinimap() {
   minimapCollapsed = !minimapCollapsed;
-  const body = document.getElementById("minimap-body");
-  const chevron = document.getElementById("minimap-chevron");
+  const body = document.getElementById("minimap-body"),
+    chevron = document.getElementById("minimap-chevron");
   if (body) body.classList.toggle("collapsed", minimapCollapsed);
   if (chevron) {
     chevron.style.transform = minimapCollapsed
@@ -6618,40 +5557,30 @@ function toggleMinimap() {
   }
 }
 
-// positionMinimap is a no-op now (panel layout handles position)
-function positionMinimap() {}
-
 function onMinimapClick(e) {
   if (!minimapRenderer || !minimapOrthoCamera) return;
   const rect = e.currentTarget.getBoundingClientRect();
-  const nx = (e.clientX - rect.left) / MINIMAP_SIZE; // 0..1
-  const ny = (e.clientY - rect.top) / MINIMAP_SIZE; // 0..1
-
-  // Map from minimap UV to world XZ using the ortho camera frustum
-  const left = minimapOrthoCamera.left;
-  const right = minimapOrthoCamera.right;
-  const top = minimapOrthoCamera.top;
-  const bot = minimapOrthoCamera.bottom;
-
-  const worldX = left + nx * (right - left);
-  const worldZ = top + ny * (bot - top);
-
-  // Snap main camera to this XZ position, keep current height & orbit radius
+  const nx = (e.clientX - rect.left) / MINIMAP_SIZE,
+    ny = (e.clientY - rect.top) / MINIMAP_SIZE;
+  const left = minimapOrthoCamera.left,
+    right = minimapOrthoCamera.right,
+    top = minimapOrthoCamera.top,
+    bot = minimapOrthoCamera.bottom;
+  const worldX = left + nx * (right - left),
+    worldZ = top + ny * (bot - top);
   const camToTarget = new THREE.Vector3().subVectors(
     camera.position,
     controls.target,
   );
   const newTarget = new THREE.Vector3(worldX, controls.target.y, worldZ);
   const newPos = new THREE.Vector3().addVectors(newTarget, camToTarget);
-
-  const startPos = camera.position.clone();
-  const startTarget = controls.target.clone();
-  const duration = 450;
-  const startTime = performance.now();
-
+  const startPos = camera.position.clone(),
+    startTarget = controls.target.clone();
+  const duration = 450,
+    startTime = performance.now();
   function anim(now) {
-    const t = Math.min((now - startTime) / duration, 1);
-    const ease = 1 - Math.pow(1 - t, 3);
+    const t = Math.min((now - startTime) / duration, 1),
+      ease = 1 - Math.pow(1 - t, 3);
     camera.position.lerpVectors(startPos, newPos, ease);
     controls.target.lerpVectors(startTarget, newTarget, ease);
     controls.update();
@@ -6661,21 +5590,17 @@ function onMinimapClick(e) {
 }
 
 function updateMinimapCamera() {
-  // Gather all mount bounding boxes to auto-fit ortho frustum
   const box = new THREE.Box3();
   scene.traverse((o) => {
-    if (o.userData?.isMount) {
-      box.union(new THREE.Box3().setFromObject(o));
-    }
+    if (o.userData?.isMount) box.union(new THREE.Box3().setFromObject(o));
   });
-
   let cx = 0,
     cz = 0,
     halfW = 4,
     halfH = 4;
   if (!box.isEmpty()) {
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3()),
+      size = box.getSize(new THREE.Vector3());
     cx = center.x;
     cz = center.z;
     const padding = 1.5;
@@ -6684,7 +5609,6 @@ function updateMinimapCamera() {
     const half = Math.max(halfW, halfH);
     halfW = halfH = half;
   }
-
   minimapOrthoCamera.left = cx - halfW;
   minimapOrthoCamera.right = cx + halfW;
   minimapOrthoCamera.top = cz - halfH;
@@ -6696,19 +5620,14 @@ function updateMinimapCamera() {
 
 function drawMinimapOverlay() {
   if (!minimapCtx) return;
-  const ctx = minimapCtx;
-  const SIZE = MINIMAP_SIZE;
+  const ctx = minimapCtx,
+    SIZE = MINIMAP_SIZE,
+    cam = minimapOrthoCamera;
   ctx.clearRect(0, 0, SIZE, SIZE);
-
-  // Helper: world XZ → minimap pixel
-  const cam = minimapOrthoCamera;
-  const toUV = (wx, wz) => {
-    const u = (wx - cam.left) / (cam.right - cam.left);
-    const v = (wz - cam.top) / (cam.bottom - cam.top);
-    return [u * SIZE, v * SIZE];
-  };
-
-  // ── Grid overlay ─────────────────────────────────────────────────────────
+  const toUV = (wx, wz) => [
+    ((wx - cam.left) / (cam.right - cam.left)) * SIZE,
+    ((wz - cam.top) / (cam.bottom - cam.top)) * SIZE,
+  ];
   ctx.save();
   ctx.strokeStyle = "rgba(100,140,180,0.12)";
   ctx.lineWidth = 0.5;
@@ -6728,17 +5647,12 @@ function drawMinimapOverlay() {
     ctx.stroke();
   }
   ctx.restore();
-
-  // ── Part dot highlights (selected = bright red ring) ─────────────────────
   scene.traverse((mount) => {
     if (!mount.userData?.isMount) return;
-    const type = mount.userData.type ?? "frame";
     const isSelected = mount === selectedMount;
     const [px, py] = toUV(mount.position.x, mount.position.z);
-    const dotR = type === "wheel" ? 4 : type === "motor" ? 5 : 6;
-
+    const dotR = 6;
     if (isSelected) {
-      // Outer pulse ring
       ctx.save();
       ctx.strokeStyle = "rgba(220,50,0,0.85)";
       ctx.lineWidth = 1.5;
@@ -6748,9 +5662,6 @@ function drawMinimapOverlay() {
       ctx.restore();
     }
   });
-
-  // ── Camera frustum footprint ──────────────────────────────────────────────
-  // Project the 4 corners of the main camera's view frustum onto the floor (y=0)
   const frustumCorners = getFrustumFootprint();
   if (frustumCorners.length === 4) {
     ctx.save();
@@ -6769,13 +5680,10 @@ function drawMinimapOverlay() {
     ctx.setLineDash([]);
     ctx.restore();
   }
-
-  // ── Compass rose (camera look direction) ─────────────────────────────────
   drawCompass(ctx, SIZE);
 }
 
 function getFrustumFootprint() {
-  // Cast rays from the 4 screen corners through the main camera onto y=0
   const corners2D = [
     [-1, -1],
     [1, -1],
@@ -6783,35 +5691,28 @@ function getFrustumFootprint() {
     [-1, 1],
   ];
   const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-  const result = [];
-  const ray = new THREE.Ray();
-
+  const result = [],
+    ray = new THREE.Ray();
   for (const [nx, ny] of corners2D) {
     const ndc = new THREE.Vector3(nx, ny, 0.5);
     ndc.unproject(camera);
     ray.origin.copy(camera.position);
     ray.direction.subVectors(ndc, camera.position).normalize();
     const hit = new THREE.Vector3();
-    if (ray.intersectPlane(groundPlane, hit)) {
-      result.push([hit.x, hit.z]);
-    }
+    if (ray.intersectPlane(groundPlane, hit)) result.push([hit.x, hit.z]);
   }
   return result.length === 4 ? result : [];
 }
 
 function drawCompass(ctx, SIZE) {
-  // Camera look direction projected onto XZ
   const dir = new THREE.Vector3();
   camera.getWorldDirection(dir);
   dir.y = 0;
   if (dir.lengthSq() < 0.001) return;
   dir.normalize();
-
   const cx = SIZE - 22,
     cy = 22,
     r = 14;
-
-  // Background circle
   ctx.save();
   ctx.fillStyle = "rgba(10,16,26,0.75)";
   ctx.strokeStyle = "rgba(208,88,24,0.5)";
@@ -6820,17 +5721,12 @@ function drawCompass(ctx, SIZE) {
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
-
-  // N label
   ctx.fillStyle = "rgba(140,170,200,0.6)";
   ctx.font = "bold 7px 'Orbitron', sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText("N", cx, cy - r + 5);
-
-  // Arrow pointing in camera look direction
-  // dir.x = world X → minimap right, dir.z = world Z → minimap down
-  const angle = Math.atan2(dir.x, dir.z); // angle from north (Z-)
+  const angle = Math.atan2(dir.x, dir.z);
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(angle);
@@ -6842,7 +5738,6 @@ function drawCompass(ctx, SIZE) {
   ctx.lineTo(-3.5, 3);
   ctx.closePath();
   ctx.fill();
-  // Tail
   ctx.fillStyle = "rgba(140,170,200,0.45)";
   ctx.beginPath();
   ctx.moveTo(0, r - 3);
@@ -6855,24 +5750,22 @@ function drawCompass(ctx, SIZE) {
   ctx.restore();
 }
 
-// Frame counter to throttle minimap updates (every 2nd frame)
 let _minimapFrameSkip = 0;
 
 function renderMinimap() {
   if (!minimapRenderer || !minimapOrthoCamera || minimapCollapsed) return;
   _minimapFrameSkip++;
-  if (_minimapFrameSkip % 2 !== 0) return; // render every other frame
-
-  // Hide ghost, socket markers and grid for clean top-down render
+  if (_minimapFrameSkip % 2 !== 0) return;
   const hiddenObjects = [];
   scene.traverse((o) => {
     if (!o.visible) return;
-    const isMarker =
-      frameMarkers.includes(o) ||
-      motorMarkers.includes(o) ||
-      triangleMarkers.includes(o) ||
-      frameOnSupportMarkers.includes(o) ||
-      wheelMarkers.includes(o);
+    const isMarker = [
+      ...frameMarkers,
+      ...motorMarkers,
+      ...triangleMarkers,
+      ...frameOnSupportMarkers,
+      ...wheelMarkers,
+    ].includes(o);
     if (
       isMarker ||
       (ghost && isDescendantOf(o, ghost)) ||
@@ -6884,21 +5777,16 @@ function renderMinimap() {
       hiddenObjects.push(o);
     }
   });
-
   updateMinimapCamera();
-
-  const savedBg = scene.background ? scene.background.clone() : null;
-  const savedFog = scene.fog;
+  const savedBg = scene.background ? scene.background.clone() : null,
+    savedFog = scene.fog;
   scene.background = new THREE.Color(0x070d14);
   scene.fog = null;
-
   minimapRenderer.render(scene, minimapOrthoCamera);
-
   scene.background = savedBg ?? new THREE.Color(0x8aaec8);
   scene.fog = savedFog;
   hiddenObjects.forEach((o) => {
     o.visible = true;
   });
-
   drawMinimapOverlay();
 }

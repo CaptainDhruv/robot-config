@@ -1,0 +1,1407 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Robot Configurator — Component Config</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap");
+
+      :root {
+        --accent: #d05818;
+        --accent2: #b84010;
+        --accent-soft: rgba(208, 88, 24, 0.1);
+        --accent-softer: rgba(208, 88, 24, 0.05);
+        --bg: #f5f5f3;
+        --bg2: #ffffff;
+        --bg3: #fafaf8;
+        --border: rgba(0, 0, 0, 0.08);
+        --text: #1a1a1a;
+        --text-secondary: #555555;
+        --muted: #999999;
+        --green: #1a8a3a;
+        --green-bg: rgba(26, 138, 58, 0.08);
+        --green-border: rgba(26, 138, 58, 0.25);
+        --red: #cc2200;
+        --red-bg: rgba(204, 34, 0, 0.08);
+        --shadow: 0 1px 4px rgba(0, 0, 0, 0.07), 0 4px 16px rgba(0, 0, 0, 0.05);
+        --shadow-lg: 0 4px 24px rgba(0, 0, 0, 0.1);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Montserrat", sans-serif;
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ── LOGIN ── */
+      #login-screen {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background:
+          radial-gradient(
+            ellipse at 30% 20%,
+            rgba(208, 88, 24, 0.06) 0%,
+            transparent 60%
+          ),
+          radial-gradient(
+            ellipse at 70% 80%,
+            rgba(208, 88, 24, 0.04) 0%,
+            transparent 60%
+          ),
+          #f5f5f3;
+      }
+      .login-card {
+        width: min(420px, 92vw);
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-top: 3px solid var(--accent);
+        box-shadow: var(--shadow-lg);
+        padding: 48px 44px 40px;
+        border-radius: 2px;
+      }
+      .login-badge {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.28em;
+        color: var(--accent);
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+      .login-title {
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+        color: var(--text);
+        margin-bottom: 32px;
+        line-height: 1.25;
+      }
+      .login-title span {
+        color: var(--accent);
+      }
+      .field-group {
+        margin-bottom: 20px;
+      }
+      .field-label {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--muted);
+        display: block;
+        margin-bottom: 7px;
+      }
+      .field-input {
+        width: 100%;
+        background: var(--bg3);
+        border: 1.5px solid var(--border);
+        color: var(--text);
+        font-family: "Montserrat", sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 11px 14px;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+        outline: none;
+        border-radius: 2px;
+      }
+      .field-input::placeholder {
+        color: var(--muted);
+      }
+      .field-input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(208, 88, 24, 0.12);
+        background: var(--bg2);
+      }
+      .login-btn {
+        width: 100%;
+        background: var(--accent);
+        border: none;
+        color: #fff;
+        font-family: "Montserrat", sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        padding: 14px;
+        cursor: pointer;
+        text-transform: uppercase;
+        margin-top: 8px;
+        transition: all 0.15s;
+        border-radius: 2px;
+      }
+      .login-btn:hover {
+        background: var(--accent2);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 16px rgba(208, 88, 24, 0.28);
+      }
+      .login-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      .login-error {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--red);
+        margin-top: 12px;
+        display: none;
+        padding: 9px 12px;
+        background: var(--red-bg);
+        border-left: 3px solid var(--red);
+      }
+
+      /* ── APP SHELL ── */
+      #app {
+        display: none;
+        min-height: 100vh;
+        flex-direction: column;
+      }
+
+      /* ── TOPBAR ── */
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 32px;
+        height: 60px;
+        background: var(--bg2);
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
+      }
+      .topbar-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .topbar-logo {
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 0.12em;
+        color: var(--text);
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .topbar-logo::before {
+        content: "";
+        display: block;
+        width: 4px;
+        height: 20px;
+        background: var(--accent);
+        border-radius: 2px;
+      }
+      .topbar-logo-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .topbar-logo-sub {
+        font-size: 8px;
+        font-weight: 600;
+        letter-spacing: 0.22em;
+        color: var(--muted);
+        text-transform: uppercase;
+      }
+      .nav-pills {
+        display: flex;
+        gap: 4px;
+        margin-left: 24px;
+      }
+      .nav-pill {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        padding: 6px 14px;
+        border-radius: 2px;
+        cursor: pointer;
+        border: 1.5px solid var(--border);
+        background: transparent;
+        color: var(--muted);
+        transition: all 0.15s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .nav-pill:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-softer);
+      }
+      .nav-pill.active {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-soft);
+      }
+      .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--muted);
+      }
+      .logout-btn {
+        background: transparent;
+        border: 1.5px solid var(--border);
+        color: var(--text-secondary);
+        font-family: "Montserrat", sans-serif;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        padding: 6px 16px;
+        cursor: pointer;
+        text-transform: uppercase;
+        transition: all 0.15s;
+        border-radius: 2px;
+      }
+      .logout-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-softer);
+      }
+
+      /* ── MAIN BODY ── */
+      .main {
+        padding: 32px;
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+
+      /* ── PAGE HEADER ── */
+      .page-header {
+        margin-bottom: 28px;
+      }
+      .page-title {
+        font-size: 20px;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+        color: var(--text);
+        margin-bottom: 6px;
+      }
+      .page-subtitle {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--muted);
+        letter-spacing: 0.02em;
+      }
+
+      /* ── SQL NOTICE ── */
+      .sql-notice {
+        background: #fffbf5;
+        border: 1px solid rgba(208, 88, 24, 0.2);
+        border-left: 3px solid var(--accent);
+        border-radius: 2px;
+        padding: 16px 20px;
+        margin-bottom: 28px;
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+      }
+      .sql-notice-icon {
+        font-size: 18px;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .sql-notice-body {
+        flex: 1;
+      }
+      .sql-notice-title {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        color: var(--accent);
+        text-transform: uppercase;
+        margin-bottom: 6px;
+      }
+      .sql-notice-text {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        line-height: 1.6;
+      }
+      .sql-code {
+        display: block;
+        margin-top: 10px;
+        background: #1a1a2e;
+        color: #c8e6c9;
+        font-family: "Courier New", monospace;
+        font-size: 10px;
+        line-height: 1.7;
+        padding: 14px 16px;
+        border-radius: 2px;
+        white-space: pre;
+        overflow-x: auto;
+      }
+      .sql-toggle {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        color: var(--accent);
+        cursor: pointer;
+        text-transform: uppercase;
+        background: none;
+        border: none;
+        margin-top: 8px;
+        padding: 0;
+        font-family: "Montserrat", sans-serif;
+      }
+      .sql-toggle:hover {
+        text-decoration: underline;
+      }
+
+      /* ── COMPONENT CARDS ── */
+      .components-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .component-card {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 2px;
+        box-shadow: var(--shadow);
+        transition: box-shadow 0.15s;
+        overflow: hidden;
+      }
+      .component-card:hover {
+        box-shadow: var(--shadow-lg);
+      }
+      .component-card.is-dirty {
+        border-color: rgba(208, 88, 24, 0.3);
+      }
+      .component-card.is-saved {
+        border-color: var(--green-border);
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg3);
+      }
+      .card-glyph {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+        background: var(--accent-softer);
+        border: 1px solid rgba(208, 88, 24, 0.15);
+        border-radius: 2px;
+      }
+      .card-type-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .card-type-key {
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        color: var(--muted);
+        text-transform: uppercase;
+        margin-bottom: 2px;
+      }
+      .card-type-name {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: -0.01em;
+      }
+      .card-status {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--muted);
+      }
+      .status-dot.dirty {
+        background: var(--accent);
+      }
+      .status-dot.saved {
+        background: var(--green);
+      }
+      .status-text {
+        color: var(--muted);
+      }
+      .status-text.dirty {
+        color: var(--accent);
+      }
+      .status-text.saved {
+        color: var(--green);
+      }
+
+      .card-body {
+        padding: 20px;
+        display: grid;
+        grid-template-columns: 1fr 1fr 200px;
+        gap: 20px;
+        align-items: start;
+      }
+      @media (max-width: 768px) {
+        .card-body {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .field-lbl {
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .input,
+      .textarea {
+        background: var(--bg3);
+        border: 1.5px solid var(--border);
+        color: var(--text);
+        font-family: "Montserrat", sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 10px 13px;
+        outline: none;
+        border-radius: 2px;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+        width: 100%;
+      }
+      .input::placeholder,
+      .textarea::placeholder {
+        color: var(--muted);
+      }
+      .input:focus,
+      .textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(208, 88, 24, 0.1);
+        background: var(--bg2);
+      }
+      .input.changed,
+      .textarea.changed {
+        border-color: rgba(208, 88, 24, 0.4);
+        background: #fffbf5;
+      }
+      .textarea {
+        resize: vertical;
+        min-height: 80px;
+        line-height: 1.5;
+      }
+
+      .price-input-wrap {
+        position: relative;
+      }
+      .price-prefix {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--muted);
+        pointer-events: none;
+      }
+      .price-input {
+        padding-left: 28px !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+      }
+
+      .card-footer {
+        padding: 14px 20px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        background: var(--bg3);
+      }
+      .footer-hint {
+        font-size: 10px;
+        font-weight: 500;
+        color: var(--muted);
+        letter-spacing: 0.02em;
+      }
+      .footer-hint span {
+        color: var(--text-secondary);
+        font-weight: 600;
+      }
+
+      .save-btn {
+        background: var(--accent);
+        border: none;
+        color: #fff;
+        font-family: "Montserrat", sans-serif;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        padding: 9px 22px;
+        cursor: pointer;
+        text-transform: uppercase;
+        transition: all 0.15s;
+        border-radius: 2px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .save-btn:hover {
+        background: var(--accent2);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(208, 88, 24, 0.25);
+      }
+      .save-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      .save-btn.saving {
+        background: var(--muted);
+      }
+      .save-btn.saved-ok {
+        background: var(--green);
+      }
+
+      .reset-btn {
+        background: transparent;
+        border: 1.5px solid var(--border);
+        color: var(--muted);
+        font-family: "Montserrat", sans-serif;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        padding: 8px 16px;
+        cursor: pointer;
+        text-transform: uppercase;
+        transition: all 0.15s;
+        border-radius: 2px;
+      }
+      .reset-btn:hover {
+        border-color: var(--text-secondary);
+        color: var(--text-secondary);
+      }
+      .reset-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      /* ── SAVE ALL BAR ── */
+      .save-all-bar {
+        position: sticky;
+        bottom: 0;
+        background: var(--bg2);
+        border-top: 1px solid var(--border);
+        padding: 14px 32px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.06);
+        transform: translateY(100%);
+        transition: transform 0.25s ease;
+        z-index: 50;
+      }
+      .save-all-bar.visible {
+        transform: translateY(0);
+      }
+      .save-all-hint {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        letter-spacing: 0.02em;
+      }
+      .save-all-hint span {
+        color: var(--accent);
+        font-weight: 700;
+      }
+      .save-all-btn {
+        background: var(--accent);
+        border: none;
+        color: #fff;
+        font-family: "Montserrat", sans-serif;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        padding: 11px 28px;
+        cursor: pointer;
+        text-transform: uppercase;
+        transition: all 0.15s;
+        border-radius: 2px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .save-all-btn:hover {
+        background: var(--accent2);
+        box-shadow: 0 4px 16px rgba(208, 88, 24, 0.28);
+        transform: translateY(-1px);
+      }
+      .save-all-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      /* ── TOAST ── */
+      #toast {
+        position: fixed;
+        bottom: 28px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255, 255, 255, 0.97);
+        font-family: "Montserrat", sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        padding: 11px 24px;
+        z-index: 99999;
+        white-space: nowrap;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+        border-radius: 2px;
+        display: none;
+        border: 1px solid;
+        border-left: 3px solid;
+      }
+
+      /* ── LOADING SKELETON ── */
+      .skeleton {
+        animation: shimmer 1.5s ease-in-out infinite;
+      }
+      @keyframes shimmer {
+        0%,
+        100% {
+          opacity: 0.5;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+
+      /* ── LIVE PREVIEW BADGE ── */
+      .live-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--green);
+        background: var(--green-bg);
+        border: 1px solid var(--green-border);
+        padding: 3px 8px;
+        border-radius: 2px;
+      }
+      .live-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--green);
+        animation: blink 2s ease-in-out infinite;
+      }
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.3;
+        }
+      }
+
+      .realtime-dot {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--green);
+        animation: blink 2s infinite;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ── LOGIN ──────────────────────────────────────────────── -->
+    <div id="login-screen">
+      <div class="login-card">
+        <div class="login-badge">◈ Robot Configurator</div>
+        <div class="login-title">Admin <span>Config</span></div>
+        <div class="field-group">
+          <label class="field-label">Email Address</label>
+          <input
+            class="field-input"
+            id="login-email"
+            type="email"
+            placeholder="admin@yourcompany.com"
+            autocomplete="email"
+          />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Password</label>
+          <input
+            class="field-input"
+            id="login-password"
+            type="password"
+            placeholder="••••••••"
+            autocomplete="current-password"
+          />
+        </div>
+        <button class="login-btn" id="login-btn">▶ &nbsp; SIGN IN</button>
+        <div class="login-error" id="login-error"></div>
+      </div>
+    </div>
+
+    <!-- ── APP ──────────────────────────────────────────────────── -->
+    <div id="app" style="display: none; flex-direction: column">
+      <!-- Topbar -->
+      <div class="topbar">
+        <div class="topbar-left">
+          <div class="topbar-logo">
+            <div class="topbar-logo-wrap">
+              <span>Robot Configurator</span>
+              <span class="topbar-logo-sub">◈ Admin Config</span>
+            </div>
+          </div>
+          <nav class="nav-pills">
+            <a href="dashboard.html" class="nav-pill">📋 Orders</a>
+            <span class="nav-pill active">⚙ Component Config</span>
+          </nav>
+        </div>
+        <div class="topbar-right">
+          <span class="realtime-dot"></span>
+          <span id="user-email"></span>
+          <button class="logout-btn" id="logout-btn">Sign Out</button>
+        </div>
+      </div>
+
+      <!-- Main -->
+      <div class="main">
+        <!-- Page header -->
+        <div class="page-header">
+          <div class="page-title">Component Configuration</div>
+          <div class="page-subtitle">
+            Edit part labels, tooltip descriptions, and prices. Changes save to
+            the database and reflect live in the configurator.
+          </div>
+        </div>
+
+        <!-- SQL setup notice -->
+        <div class="sql-notice">
+          <div class="sql-notice-icon">🗄️</div>
+          <div class="sql-notice-body">
+            <div class="sql-notice-title">
+              First-time setup — Run this SQL in Supabase
+            </div>
+            <div class="sql-notice-text">
+              Create the <code>part_config</code> table once in your Supabase
+              SQL editor, then reload this page.
+            </div>
+            <button class="sql-toggle" id="sql-toggle" onclick="toggleSQL()">
+              ▶ Show SQL
+            </button>
+            <code class="sql-code" id="sql-block" style="display: none"
+              >-- Create table CREATE TABLE IF NOT EXISTS part_config (
+              part_type TEXT PRIMARY KEY, label TEXT NOT NULL, description TEXT,
+              price INTEGER NOT NULL DEFAULT 0, updated_at TIMESTAMPTZ DEFAULT
+              now() ); -- Enable Row Level Security + allow anon reads, auth
+              writes ALTER TABLE part_config ENABLE ROW LEVEL SECURITY; CREATE
+              POLICY "public read" ON part_config FOR SELECT USING (true);
+              CREATE POLICY "auth write" ON part_config FOR ALL USING
+              (auth.role() = 'authenticated'); -- Seed default values INSERT
+              INTO part_config (part_type, label, description, price) VALUES
+              ('frame', 'Rectangular Frame', 'Structural base for the robot.
+              Connects to other frames via corner sockets. Each motor exposes
+              one wheel shaft.', 1200), ('motor', 'Motor Housing', 'Drive unit
+              for wheels. Mounts on motor sockets around the frame perimeter.
+              Each motor exposes one wheel shaft.', 2500), ('triangle_frame',
+              'Triangular Frame', 'Angular brace for added structural rigidity.
+              Required before placing Stress Bridges.', 650), ('support_frame',
+              'Stress Bridge', 'Cross-bridge connecting two triangular frames
+              for load distribution. Needs: 2 Triangular Frames.', 900),
+              ('wheel', 'Wheel', 'Motor-driven wheel assembly. Attaches to motor
+              housing output shaft. Needs: free motor socket on a frame.', 1100)
+              ON CONFLICT (part_type) DO NOTHING;</code
+            >
+          </div>
+        </div>
+
+        <!-- Component cards -->
+        <div class="components-grid" id="components-grid">
+          <div
+            style="
+              padding: 48px;
+              text-align: center;
+              color: var(--muted);
+              font-size: 12px;
+              font-weight: 500;
+            "
+            class="skeleton"
+          >
+            Loading component config…
+          </div>
+        </div>
+      </div>
+
+      <!-- Save all sticky bar -->
+      <div class="save-all-bar" id="save-all-bar">
+        <div class="save-all-hint">
+          You have <span id="dirty-count">0</span> unsaved change(s)
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center">
+          <div class="live-badge">
+            <div class="live-dot"></div>
+            Live sync to configurator
+          </div>
+          <button class="save-all-btn" id="save-all-btn">
+            ⬆ Save All Changes
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast"></div>
+
+    <script type="module">
+      import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+      /* ── CONFIG ─────────────────────────────────────────────── */
+      const SUPABASE_URL = "https://paxeivuabqbfodnjxfpw.supabase.co";
+      const SUPABASE_ANON_KEY =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBheGVpdnVhYnFiZm9kbmp4ZnB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNDQwMTAsImV4cCI6MjA4OTgyMDAxMH0.iit20CxI6S04wEJgsPRmEyf3oziSD4e9T2SjJGlHiVQ";
+
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      /* ── PART META (glyphs, fallback values) ─────────────────── */
+      const PART_GLYPHS = {
+        frame: "▬",
+        motor: "⬡",
+        triangle_frame: "▲",
+        support_frame: "╬",
+        wheel: "◉",
+      };
+
+      const PART_ORDER = [
+        "frame",
+        "motor",
+        "triangle_frame",
+        "support_frame",
+        "wheel",
+      ];
+
+      const FALLBACK_CONFIGS = {
+        frame: {
+          label: "Rectangular Frame",
+          description:
+            "Structural base for the robot. Connects to other frames via corner sockets.",
+          price: 1200,
+        },
+        motor: {
+          label: "Motor Housing",
+          description:
+            "Drive unit for wheels. Mounts on motor sockets around the frame perimeter. Each motor exposes one wheel shaft.",
+          price: 2500,
+        },
+        triangle_frame: {
+          label: "Triangular Frame",
+          description:
+            "Angular brace for added structural rigidity. Required before placing Stress Bridges.",
+          price: 650,
+        },
+        support_frame: {
+          label: "Stress Bridge",
+          description:
+            "Cross-bridge connecting two triangular frames for load distribution. Needs: 2 Triangular Frames.",
+          price: 900,
+        },
+        wheel: {
+          label: "Wheel",
+          description:
+            "Motor-driven wheel assembly. Attaches to motor housing output shaft. Needs: free motor socket on a frame.",
+          price: 1100,
+        },
+      };
+
+      /* ── STATE ───────────────────────────────────────────────── */
+      // dbValues[part_type] = { label, description, price }  — what's in DB
+      // editValues[part_type] = { label, description, price } — what's in inputs
+      let dbValues = {};
+      let editValues = {};
+
+      /* ── SESSION ─────────────────────────────────────────────── */
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session) enterApp(session.user);
+
+      document
+        .getElementById("login-btn")
+        .addEventListener("click", handleLogin);
+      document
+        .getElementById("login-password")
+        .addEventListener("keydown", (e) => {
+          if (e.key === "Enter") handleLogin();
+        });
+      document
+        .getElementById("login-email")
+        .addEventListener("keydown", (e) => {
+          if (e.key === "Enter")
+            document.getElementById("login-password").focus();
+        });
+      document
+        .getElementById("logout-btn")
+        .addEventListener("click", handleLogout);
+
+      async function handleLogin() {
+        const email = document.getElementById("login-email").value.trim();
+        const password = document.getElementById("login-password").value;
+        const errEl = document.getElementById("login-error");
+        const btn = document.getElementById("login-btn");
+        errEl.style.display = "none";
+        btn.disabled = true;
+        btn.textContent = "SIGNING IN...";
+
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) {
+          errEl.textContent = "⚠ " + error.message;
+          errEl.style.display = "block";
+          btn.disabled = false;
+          btn.textContent = "▶  SIGN IN";
+          return;
+        }
+        enterApp(data.user);
+      }
+
+      async function handleLogout() {
+        await supabase.auth.signOut();
+        document.getElementById("app").style.display = "none";
+        document.getElementById("login-screen").style.display = "flex";
+        document.getElementById("login-password").value = "";
+      }
+
+      function enterApp(user) {
+        document.getElementById("login-screen").style.display = "none";
+        const appEl = document.getElementById("app");
+        appEl.style.display = "flex";
+        document.getElementById("user-email").textContent = user.email;
+        loadConfig();
+      }
+
+      /* ── LOAD CONFIG ─────────────────────────────────────────── */
+      async function loadConfig() {
+        const grid = document.getElementById("components-grid");
+
+        const { data, error } = await supabase.from("part_config").select("*");
+
+        if (error || !data || data.length === 0) {
+          // Table may not exist yet — show fallback notice
+          if (error?.code === "42P01" || !data || data.length === 0) {
+            renderCards(null); // render with fallback defaults
+            return;
+          }
+          grid.innerHTML = `<div style="padding:48px;text-align:center;color:var(--red);font-size:12px;">Error loading config: ${error?.message}</div>`;
+          return;
+        }
+
+        // Map db rows into dbValues
+        data.forEach((row) => {
+          dbValues[row.part_type] = {
+            label: row.label,
+            description: row.description || "",
+            price: row.price,
+            gst_percent: row.gst_percent ?? 18,
+          };
+        });
+
+        renderCards(dbValues);
+      }
+
+      /* ── RENDER CARDS ────────────────────────────────────────── */
+      function renderCards(values) {
+        const grid = document.getElementById("components-grid");
+        grid.innerHTML = "";
+
+        editValues = {};
+
+        for (const pt of PART_ORDER) {
+          const fallback = FALLBACK_CONFIGS[pt];
+          const db = values?.[pt] ?? {};
+          const current = {
+            label: db.label ?? fallback.label,
+            description: db.description ?? fallback.description,
+            price: db.price ?? fallback.price,
+            gst_percent: db.gst_percent ?? 18,
+          };
+
+          editValues[pt] = { ...current };
+
+          const card = buildCard(pt, current);
+          grid.appendChild(card);
+        }
+      }
+
+      /* ── BUILD SINGLE CARD ───────────────────────────────────── */
+      function buildCard(pt, current) {
+        const card = document.createElement("div");
+        card.className = "component-card";
+        card.id = `card-${pt}`;
+
+        card.innerHTML = `
+          <div class="card-header">
+            <div class="card-glyph">${PART_GLYPHS[pt] ?? "◈"}</div>
+            <div class="card-type-info">
+              <div class="card-type-key">${pt.replace(/_/g, "_")}</div>
+              <div class="card-type-name" id="card-name-${pt}">${current.label}</div>
+            </div>
+            <div class="card-status" id="status-${pt}">
+              <div class="status-dot" id="status-dot-${pt}"></div>
+              <div class="status-text" id="status-text-${pt}">Unchanged</div>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <!-- Label -->
+            <div class="field">
+              <label class="field-lbl">Display Label</label>
+              <input class="input" id="label-${pt}" type="text" value="${esc(current.label)}" placeholder="Part name shown in UI" />
+              <div style="font-size:9px;color:var(--muted);margin-top:2px;">Shown in sidebar buttons &amp; inventory</div>
+            </div>
+
+            <!-- Description -->
+            <div class="field">
+              <label class="field-lbl">Tooltip Description</label>
+              <textarea class="textarea" id="desc-${pt}" placeholder="Hover tooltip shown when user hovers the button…">${esc(current.description)}</textarea>
+              <div style="font-size:9px;color:var(--muted);margin-top:2px;">Shown on hover in the 3D configurator</div>
+            </div>
+
+            <!-- Price + GST row -->
+            <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+              <div class="field" style="flex:2;min-width:160px;">
+                <label class="field-lbl">Unit Price (₹)</label>
+                <div class="price-input-wrap">
+                  <span class="price-prefix">₹</span>
+                  <input class="input price-input" id="price-${pt}" type="number" min="0" step="50" value="${current.price}" placeholder="0" />
+                </div>
+                <div style="font-size:9px;color:var(--muted);margin-top:2px;">Base price before GST</div>
+              </div>
+              <div class="field" style="flex:1;min-width:100px;">
+                <label class="field-lbl">GST (%)</label>
+                <input class="input" id="gst-${pt}" type="number" min="0" max="100" step="1" value="${current.gst_percent}" placeholder="18" style="width:100%;" />
+                <div style="font-size:9px;color:var(--muted);margin-top:2px;">Tax rate</div>
+              </div>
+              <div style="flex:2;min-width:160px;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:2px;">
+                <label class="field-lbl">Price incl. GST</label>
+                <div id="price-gst-display-${pt}" style="font-size:22px;font-weight:800;color:var(--accent);font-family:'Montserrat',sans-serif;line-height:1.2;padding:8px 0 2px;">
+                  ₹${Math.round(current.price * (1 + current.gst_percent / 100)).toLocaleString("en-IN")}
+                </div>
+                <div style="font-size:9px;color:var(--muted);">Shown in configurator &amp; orders</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <div class="footer-hint" id="footer-hint-${pt}">No unsaved changes</div>
+            <div style="display:flex;gap:8px;">
+              <button class="reset-btn" id="reset-${pt}" disabled>Reset</button>
+              <button class="save-btn" id="save-${pt}" disabled>Save</button>
+            </div>
+          </div>
+        `;
+
+        // Wire input listeners
+        const labelEl = card.querySelector(`#label-${pt}`);
+        const descEl = card.querySelector(`#desc-${pt}`);
+        const priceEl = card.querySelector(`#price-${pt}`);
+        const gstEl = card.querySelector(`#gst-${pt}`);
+        const resetBtn = card.querySelector(`#reset-${pt}`);
+        const saveBtn = card.querySelector(`#save-${pt}`);
+
+        const updateGSTDisplay = () => {
+          const base = parseInt(priceEl.value) || 0;
+          const gst = parseFloat(gstEl.value) || 0;
+          const incl = Math.round(base * (1 + gst / 100));
+          const el = card.querySelector(`#price-gst-display-${pt}`);
+          if (el) el.textContent = "₹" + incl.toLocaleString("en-IN");
+        };
+
+        const onChange = () => {
+          editValues[pt] = {
+            label: labelEl.value.trim(),
+            description: descEl.value.trim(),
+            price: parseInt(priceEl.value) || 0,
+            gst_percent: parseFloat(gstEl.value) || 0,
+          };
+          updateGSTDisplay();
+          updateCardState(pt);
+          updateSaveAllBar();
+        };
+
+        labelEl.addEventListener("input", onChange);
+        descEl.addEventListener("input", onChange);
+        priceEl.addEventListener("input", onChange);
+        gstEl.addEventListener("input", onChange);
+
+        resetBtn.addEventListener("click", () => {
+          const orig = dbValues[pt] ?? FALLBACK_CONFIGS[pt];
+          labelEl.value = orig.label;
+          descEl.value = orig.description;
+          priceEl.value = orig.price;
+          gstEl.value = orig.gst_percent ?? 18;
+          editValues[pt] = { ...orig };
+          updateGSTDisplay();
+          updateCardState(pt);
+          updateSaveAllBar();
+        });
+
+        saveBtn.addEventListener("click", () => savePart(pt));
+
+        return card;
+      }
+
+      /* ── CARD STATE ──────────────────────────────────────────── */
+      function isDirty(pt) {
+        const orig = dbValues[pt] ?? FALLBACK_CONFIGS[pt];
+        const edit = editValues[pt];
+        if (!edit) return false;
+        return (
+          edit.label !== orig.label ||
+          edit.description !== (orig.description ?? "") ||
+          edit.price !== orig.price ||
+          (edit.gst_percent ?? 18) !== (orig.gst_percent ?? 18)
+        );
+      }
+
+      function updateCardState(pt) {
+        const dirty = isDirty(pt);
+        const card = document.getElementById(`card-${pt}`);
+        const dot = document.getElementById(`status-dot-${pt}`);
+        const text = document.getElementById(`status-text-${pt}`);
+        const hint = document.getElementById(`footer-hint-${pt}`);
+        const nameEl = document.getElementById(`card-name-${pt}`);
+        const saveBtn = document.getElementById(`save-${pt}`);
+        const resetBtn = document.getElementById(`reset-${pt}`);
+        const labelEl = document.getElementById(`label-${pt}`);
+
+        card.classList.toggle("is-dirty", dirty);
+        card.classList.remove("is-saved");
+
+        dot.className = "status-dot" + (dirty ? " dirty" : "");
+        text.className = "status-text" + (dirty ? " dirty" : "");
+        text.textContent = dirty ? "Unsaved changes" : "Unchanged";
+
+        hint.innerHTML = dirty
+          ? `<span style="color:var(--accent);font-weight:700">⚠</span> You have unsaved changes`
+          : "No unsaved changes";
+
+        saveBtn.disabled = !dirty;
+        resetBtn.disabled = !dirty;
+
+        // Live update card name
+        if (labelEl)
+          nameEl.textContent = labelEl.value || editValues[pt]?.label || "";
+      }
+
+      function updateSaveAllBar() {
+        const dirtyParts = PART_ORDER.filter((pt) => isDirty(pt));
+        const bar = document.getElementById("save-all-bar");
+        const count = document.getElementById("dirty-count");
+        const saveAllBtn = document.getElementById("save-all-btn");
+
+        count.textContent = dirtyParts.length;
+        saveAllBtn.disabled = dirtyParts.length === 0;
+        bar.classList.toggle("visible", dirtyParts.length > 0);
+      }
+
+      /* ── SAVE SINGLE PART ────────────────────────────────────── */
+      async function savePart(pt) {
+        const saveBtn = document.getElementById(`save-${pt}`);
+        const card = document.getElementById(`card-${pt}`);
+        const dot = document.getElementById(`status-dot-${pt}`);
+        const text = document.getElementById(`status-text-${pt}`);
+        const hint = document.getElementById(`footer-hint-${pt}`);
+
+        const vals = editValues[pt];
+        if (!vals) return;
+
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving…";
+        saveBtn.className = "save-btn saving";
+
+        const { error } = await supabase.from("part_config").upsert(
+          {
+            part_type: pt,
+            label: vals.label,
+            description: vals.description,
+            price: vals.price,
+            gst_percent: vals.gst_percent ?? 18,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "part_type" },
+        );
+
+        if (error) {
+          showToast(`⚠ Save failed: ${error.message}`, "error");
+          saveBtn.disabled = false;
+          saveBtn.textContent = "Save";
+          saveBtn.className = "save-btn";
+          return;
+        }
+
+        // Update dbValues so dirty check resets
+        dbValues[pt] = { ...vals };
+
+        saveBtn.textContent = "✓ Saved";
+        saveBtn.className = "save-btn saved-ok";
+        saveBtn.disabled = true;
+
+        card.classList.remove("is-dirty");
+        card.classList.add("is-saved");
+        dot.className = "status-dot saved";
+        text.className = "status-text saved";
+        text.textContent = "Saved";
+        hint.innerHTML = `<span style="color:var(--green);font-weight:700">✓</span> Saved to database`;
+
+        document.getElementById(`reset-${pt}`).disabled = true;
+
+        setTimeout(() => {
+          saveBtn.textContent = "Save";
+          saveBtn.className = "save-btn";
+          card.classList.remove("is-saved");
+          dot.className = "status-dot";
+          text.className = "status-text";
+          text.textContent = "Unchanged";
+          hint.innerHTML = "No unsaved changes";
+        }, 3000);
+
+        showToast(`✓ ${vals.label} saved`, "success");
+        updateSaveAllBar();
+      }
+
+      /* ── SAVE ALL ────────────────────────────────────────────── */
+      document
+        .getElementById("save-all-btn")
+        .addEventListener("click", async () => {
+          const btn = document.getElementById("save-all-btn");
+          btn.disabled = true;
+          btn.textContent = "Saving…";
+
+          const dirtyParts = PART_ORDER.filter((pt) => isDirty(pt));
+          const upsertRows = dirtyParts.map((pt) => ({
+            part_type: pt,
+            label: editValues[pt].label,
+            description: editValues[pt].description,
+            price: editValues[pt].price,
+            gst_percent: editValues[pt].gst_percent ?? 18,
+            updated_at: new Date().toISOString(),
+          }));
+
+          const { error } = await supabase
+            .from("part_config")
+            .upsert(upsertRows, { onConflict: "part_type" });
+
+          if (error) {
+            showToast(`⚠ Save all failed: ${error.message}`, "error");
+            btn.disabled = false;
+            btn.textContent = "⬆ Save All Changes";
+            return;
+          }
+
+          dirtyParts.forEach((pt) => {
+            dbValues[pt] = { ...editValues[pt] };
+            updateCardState(pt);
+          });
+
+          btn.textContent = "⬆ Save All Changes";
+          showToast(
+            `✓ All changes saved (${dirtyParts.length} component${dirtyParts.length !== 1 ? "s" : ""})`,
+            "success",
+          );
+          updateSaveAllBar();
+        });
+
+      /* ── SQL TOGGLE ──────────────────────────────────────────── */
+      window.toggleSQL = function () {
+        const block = document.getElementById("sql-block");
+        const btn = document.getElementById("sql-toggle");
+        const visible = block.style.display !== "none";
+        block.style.display = visible ? "none" : "block";
+        btn.textContent = visible ? "▶ Show SQL" : "▼ Hide SQL";
+      };
+
+      /* ── TOAST ───────────────────────────────────────────────── */
+      function showToast(msg, type = "info") {
+        const el = document.getElementById("toast");
+        const colors = {
+          success: "#1a8a3a",
+          error: "#cc2200",
+          info: "#999999",
+        };
+        const c = colors[type] || colors.info;
+        el.style.borderColor = c;
+        el.style.borderLeftColor = c;
+        el.style.color = c;
+        el.textContent = msg;
+        el.style.display = "block";
+        el.style.opacity = "1";
+
+        clearTimeout(el._t);
+        el._t = setTimeout(() => {
+          el.style.transition = "opacity 0.4s";
+          el.style.opacity = "0";
+          setTimeout(() => {
+            el.style.display = "none";
+            el.style.transition = "";
+          }, 400);
+        }, 3000);
+      }
+
+      /* ── HELPER ──────────────────────────────────────────────── */
+      function esc(str) {
+        return String(str ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+    </script>
+  </body>
+</html>
