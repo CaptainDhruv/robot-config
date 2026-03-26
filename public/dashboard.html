@@ -1300,15 +1300,14 @@
           partsBody.innerHTML = `<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">No parts data</td></tr>`;
         }
         const reportSection = document.getElementById("detail-report-section");
-        if (order.report_url) {
-          reportSection.innerHTML = `
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-              <button class="report-btn" onclick="printBill('${order.id}')">🖨 &nbsp; Print Bill</button>
-              <button class="report-btn" style="background:transparent;border:1.5px solid var(--accent);color:var(--accent);" onclick="openReport('${order.report_url}', '${order.order_ref}')">⬇ &nbsp; Open Design Report</button>
-            </div>`;
-        } else {
-          reportSection.innerHTML = `<button class="report-btn" onclick="printBill('${order.id}')">🖨 &nbsp; Print Bill</button>`;
-        }
+        const designReportBtn = order.report_url
+          ? `<button class="report-btn" style="background:transparent;border:1.5px solid var(--accent);color:var(--accent);" onclick="openReport('${order.report_url}', '${order.order_ref}')">⬇ &nbsp; Open Design Report</button>`
+          : `<button class="report-btn disabled" title="Report not yet generated for this order" style="opacity:0.4;cursor:not-allowed;">⬇ &nbsp; Report Not Available</button>`;
+        reportSection.innerHTML = `
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="report-btn" onclick="printBill('${order.id}')">🖨 &nbsp; Print Bill</button>
+            ${designReportBtn}
+          </div>`;
         document
           .getElementById("order-detail")
           .scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1502,24 +1501,12 @@
   <tfoot>
     <tr style="background:#f8f4f0;border-top:2px solid #d05818;">
       <td style="padding:10px 10px;font-size:9px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:#d05818;">TOTALS</td>
-      <td style="padding:10px 10px;text-align:center;">
-        <div style="font-weight:800;font-size:14px;">${order.parts_count}</div>
-        <div style="font-size:8px;font-weight:700;letter-spacing:0.13em;color:#999;text-transform:uppercase;margin-top:2px;">Total Parts</div>
-      </td>
-      <td style="padding:10px 10px;text-align:right;">
-        <div style="font-weight:800;font-size:14px;">₹${grandBase.toLocaleString("en-IN")}</div>
-        <div style="font-size:8px;font-weight:700;letter-spacing:0.13em;color:#999;text-transform:uppercase;margin-top:2px;">Total Base</div>
-      </td>
+      <td style="padding:10px 10px;text-align:center;font-weight:800;font-size:14px;">${order.parts_count}</td>
+      <td style="padding:10px 10px;text-align:right;font-weight:800;font-size:14px;">₹${grandBase.toLocaleString("en-IN")}</td>
       <td style="padding:10px 10px;text-align:center;color:#bbb;">—</td>
-      <td style="padding:10px 10px;text-align:right;">
-        <div style="font-weight:800;font-size:14px;">₹${grandGst.toLocaleString("en-IN")}</div>
-        <div style="font-size:8px;font-weight:700;letter-spacing:0.13em;color:#999;text-transform:uppercase;margin-top:2px;">Total GST</div>
-      </td>
+      <td style="padding:10px 10px;text-align:right;font-weight:800;font-size:14px;">₹${grandGst.toLocaleString("en-IN")}</td>
       <td style="padding:10px 10px;text-align:right;color:#bbb;">—</td>
-      <td style="padding:10px 10px;text-align:right;">
-        <div style="font-weight:800;font-size:16px;color:#d05818;">₹${Number(order.total_amount).toLocaleString("en-IN")}</div>
-        <div style="font-size:8px;font-weight:700;letter-spacing:0.13em;color:#999;text-transform:uppercase;margin-top:2px;">Total Cost</div>
-      </td>
+      <td style="padding:10px 10px;text-align:right;font-weight:800;font-size:16px;color:#d05818;">₹${Number(order.total_amount).toLocaleString("en-IN")}</td>
     </tr>
   </tfoot>
 </table>
