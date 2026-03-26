@@ -1941,7 +1941,10 @@ function showAddressOverlay() {
       uploadPrintReport(savedOrder.id, orderRef);
     } catch (err) {
       console.error("[ORDER SAVE ERROR]", err);
-      showHudMessage("⚠ Could not save order. Please try again.");
+      const msg = err?.message ?? String(err);
+      showHudMessage("⚠ " + msg.slice(0, 80));
+      // Also show in a visible alert so user can read full error
+      alert("Order save failed:\n\n" + msg);
       submitBtn.disabled = false;
       submitBtn.innerHTML = `<span>▶</span> CONFIRM ORDER`;
     }
@@ -2171,7 +2174,12 @@ async function saveOrderToSupabase({
     .select()
     .single();
 
-  if (orderErr) throw new Error(`Order insert failed: ${orderErr.message}`);
+  if (orderErr) {
+    console.error("[SUPABASE ORDER ERROR]", orderErr);
+    throw new Error(
+      `Order insert failed: ${orderErr.message} (code: ${orderErr.code ?? "unknown"}, hint: ${orderErr.hint ?? "none"})`,
+    );
+  }
 
   // ── Use live prices from DB (via partConfig.js) ───────────────────────────
   const partRows = [];
