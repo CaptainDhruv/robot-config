@@ -5,20 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Robot Configurator — Company Dashboard</title>
     <style>
-      @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap");
+      @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap");
 
       :root {
         --accent: #d05818;
-        --accent2: #cc2200;
-        --bg: #080e18;
-        --bg2: #0e1820;
-        --bg3: #18202e;
-        --border: rgba(208, 88, 24, 0.25);
-        --text: #c8d8e4;
-        --muted: #384858;
-        --green: #22aa44;
+        --accent2: #b84010;
+        --accent-soft: rgba(208, 88, 24, 0.1);
+        --accent-softer: rgba(208, 88, 24, 0.05);
+        --bg: #f5f5f3;
+        --bg2: #ffffff;
+        --bg3: #fafaf8;
+        --border: rgba(0, 0, 0, 0.08);
+        --border-accent: rgba(208, 88, 24, 0.25);
+        --text: #1a1a1a;
+        --text-secondary: #555555;
+        --muted: #999999;
+        --green: #1a8a3a;
+        --green-bg: rgba(26, 138, 58, 0.08);
         --red: #cc2200;
-        --yellow: #e8a020;
+        --red-bg: rgba(204, 34, 0, 0.08);
+        --blue: #1a6abf;
+        --blue-bg: rgba(26, 106, 191, 0.08);
+        --yellow: #b07800;
+        --yellow-bg: rgba(176, 120, 0, 0.08);
+        --shadow: 0 1px 4px rgba(0, 0, 0, 0.07), 0 4px 16px rgba(0, 0, 0, 0.05);
+        --shadow-lg: 0 4px 24px rgba(0, 0, 0, 0.1);
       }
 
       * {
@@ -30,8 +41,9 @@
       body {
         background: var(--bg);
         color: var(--text);
-        font-family: "Rajdhani", sans-serif;
+        font-family: "Montserrat", sans-serif;
         min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
       }
 
       /* ── LOGIN ────────────────────────────────────────────── */
@@ -40,57 +52,60 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: radial-gradient(
-          ellipse at 60% 40%,
-          rgba(208, 88, 24, 0.06) 0%,
-          transparent 70%
-        );
+        background:
+          radial-gradient(
+            ellipse at 30% 20%,
+            rgba(208, 88, 24, 0.06) 0%,
+            transparent 60%
+          ),
+          radial-gradient(
+            ellipse at 70% 80%,
+            rgba(208, 88, 24, 0.04) 0%,
+            transparent 60%
+          ),
+          #f5f5f3;
       }
 
       .login-card {
-        width: min(400px, 92vw);
-        background: var(--bg3);
-        border: 1.5px solid var(--border);
-        border-left: 3px solid var(--accent);
-        clip-path: polygon(
-          0 0,
-          calc(100% - 16px) 0,
-          100% 16px,
-          100% 100%,
-          0 100%
-        );
-        padding: 44px 40px 36px;
+        width: min(420px, 92vw);
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-top: 3px solid var(--accent);
+        box-shadow: var(--shadow-lg);
+        padding: 48px 44px 40px;
+        border-radius: 2px;
       }
 
       .login-badge {
-        font-family: "Orbitron", sans-serif;
-        font-size: 8px;
+        font-size: 9px;
         font-weight: 700;
-        letter-spacing: 0.3em;
+        letter-spacing: 0.28em;
         color: var(--accent);
         text-transform: uppercase;
-        margin-bottom: 6px;
+        margin-bottom: 8px;
       }
 
       .login-title {
-        font-family: "Orbitron", sans-serif;
-        font-size: 18px;
-        font-weight: 900;
-        letter-spacing: 0.12em;
-        color: #d8e8f4;
-        margin-bottom: 28px;
-        line-height: 1.2;
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+        color: var(--text);
+        margin-bottom: 32px;
+        line-height: 1.25;
+      }
+
+      .login-title span {
+        color: var(--accent);
       }
 
       .field-group {
-        margin-bottom: 18px;
+        margin-bottom: 20px;
       }
 
       .field-label {
-        font-family: "Orbitron", sans-serif;
-        font-size: 7.5px;
+        font-size: 9px;
         font-weight: 700;
-        letter-spacing: 0.22em;
+        letter-spacing: 0.18em;
         text-transform: uppercase;
         color: var(--muted);
         display: block;
@@ -99,58 +114,71 @@
 
       .field-input {
         width: 100%;
-        background: #111820;
-        border: 1.5px solid #2a3848;
+        background: var(--bg3);
+        border: 1.5px solid var(--border);
         color: var(--text);
-        font-family: "Share Tech Mono", monospace;
+        font-family: "Montserrat", sans-serif;
         font-size: 13px;
-        letter-spacing: 0.04em;
-        padding: 10px 14px;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+        padding: 11px 14px;
         transition:
           border-color 0.15s,
           box-shadow 0.15s;
         outline: none;
+        border-radius: 2px;
+      }
+
+      .field-input::placeholder {
+        color: var(--muted);
       }
 
       .field-input:focus {
         border-color: var(--accent);
-        box-shadow: 0 0 0 2px rgba(208, 88, 24, 0.18);
+        box-shadow: 0 0 0 3px rgba(208, 88, 24, 0.12);
+        background: var(--bg2);
       }
 
       .login-btn {
         width: 100%;
         background: var(--accent);
         border: none;
-        color: #0e1018;
-        font-family: "Orbitron", sans-serif;
-        font-size: 10px;
+        color: #ffffff;
+        font-family: "Montserrat", sans-serif;
+        font-size: 11px;
         font-weight: 700;
-        letter-spacing: 0.2em;
-        padding: 13px;
+        letter-spacing: 0.18em;
+        padding: 14px;
         cursor: pointer;
         text-transform: uppercase;
         margin-top: 8px;
-        box-shadow: 4px 4px 0 #5a2008;
-        transition: all 0.12s;
+        transition: all 0.15s;
+        border-radius: 2px;
       }
 
       .login-btn:hover {
-        transform: translate(-2px, -2px);
-        box-shadow: 6px 6px 0 #5a2008;
+        background: var(--accent2);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 16px rgba(208, 88, 24, 0.28);
       }
+
       .login-btn:disabled {
         opacity: 0.5;
         cursor: not-allowed;
         transform: none;
+        box-shadow: none;
       }
 
       .login-error {
-        font-family: "Share Tech Mono", monospace;
         font-size: 11px;
+        font-weight: 500;
         color: var(--red);
-        letter-spacing: 0.08em;
+        letter-spacing: 0.04em;
         margin-top: 12px;
         display: none;
+        padding: 9px 12px;
+        background: var(--red-bg);
+        border-left: 3px solid var(--red);
       }
 
       /* ── DASHBOARD ────────────────────────────────────────── */
@@ -163,59 +191,85 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 12px 28px;
+        padding: 0 32px;
+        height: 60px;
         background: var(--bg2);
         border-bottom: 1px solid var(--border);
         position: sticky;
         top: 0;
         z-index: 100;
+        box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
       }
 
       .dash-logo {
-        font-family: "Orbitron", sans-serif;
         font-size: 13px;
         font-weight: 900;
-        letter-spacing: 0.15em;
-        color: var(--accent);
+        letter-spacing: 0.12em;
+        color: var(--text);
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 10px;
       }
 
-      .dash-logo span {
-        color: var(--muted);
-        font-size: 9px;
-        letter-spacing: 0.2em;
+      .dash-logo::before {
+        content: "";
         display: block;
-        margin-top: 2px;
+        width: 4px;
+        height: 20px;
+        background: var(--accent);
+        border-radius: 2px;
+      }
+
+      .dash-logo-sub {
+        font-size: 8px;
+        font-weight: 600;
+        letter-spacing: 0.22em;
+        color: var(--muted);
+        text-transform: uppercase;
+        margin-left: 2px;
+      }
+
+      .dash-logo-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
       }
 
       .dash-user {
         display: flex;
         align-items: center;
         gap: 14px;
-        font-family: "Share Tech Mono", monospace;
         font-size: 11px;
+        font-weight: 500;
         color: var(--muted);
+        letter-spacing: 0.04em;
       }
 
       .logout-btn {
         background: transparent;
-        border: 1px solid var(--muted);
-        color: var(--muted);
-        font-family: "Share Tech Mono", monospace;
-        font-size: 10px;
-        letter-spacing: 0.12em;
-        padding: 5px 14px;
+        border: 1.5px solid var(--border);
+        color: var(--text-secondary);
+        font-family: "Montserrat", sans-serif;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        padding: 6px 16px;
         cursor: pointer;
-        transition: all 0.12s;
+        text-transform: uppercase;
+        transition: all 0.15s;
+        border-radius: 2px;
       }
 
       .logout-btn:hover {
         border-color: var(--accent);
         color: var(--accent);
+        background: var(--accent-softer);
       }
 
       .dash-body {
-        padding: 28px;
-        max-width: 1300px;
+        padding: 32px;
+        max-width: 1380px;
         margin: 0 auto;
       }
 
@@ -224,32 +278,42 @@
         display: grid;
         grid-template-columns: repeat(4, 1fr);
         gap: 16px;
-        margin-bottom: 28px;
+        margin-bottom: 32px;
       }
 
       .stat-card {
-        background: var(--bg3);
+        background: var(--bg2);
         border: 1px solid var(--border);
-        border-left: 3px solid var(--accent);
-        padding: 16px 20px;
+        border-top: 3px solid var(--accent);
+        padding: 20px 24px;
+        box-shadow: var(--shadow);
+        border-radius: 2px;
+        transition: box-shadow 0.15s;
+      }
+
+      .stat-card:hover {
+        box-shadow: var(--shadow-lg);
       }
 
       .stat-value {
-        font-family: "Orbitron", sans-serif;
-        font-size: 24px;
-        font-weight: 900;
-        color: var(--accent);
-        letter-spacing: 0.06em;
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--text);
+        letter-spacing: -0.02em;
         line-height: 1;
       }
 
       .stat-label {
-        font-family: "Share Tech Mono", monospace;
         font-size: 8px;
+        font-weight: 700;
         letter-spacing: 0.2em;
         color: var(--muted);
         text-transform: uppercase;
-        margin-top: 6px;
+        margin-top: 8px;
+      }
+
+      .stat-accent {
+        color: var(--accent);
       }
 
       /* Section header */
@@ -261,15 +325,14 @@
       }
 
       .section-title {
-        font-family: "Orbitron", sans-serif;
-        font-size: 10px;
-        font-weight: 700;
+        font-size: 9px;
+        font-weight: 800;
         letter-spacing: 0.22em;
-        color: var(--accent);
+        color: var(--text);
         text-transform: uppercase;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
       }
 
       .section-title::before {
@@ -278,23 +341,28 @@
         width: 3px;
         height: 14px;
         background: var(--accent);
+        border-radius: 2px;
       }
 
       .refresh-btn {
         background: transparent;
-        border: 1px solid var(--border);
-        color: var(--muted);
-        font-family: "Share Tech Mono", monospace;
+        border: 1.5px solid var(--border);
+        color: var(--text-secondary);
+        font-family: "Montserrat", sans-serif;
         font-size: 9px;
+        font-weight: 700;
         letter-spacing: 0.12em;
-        padding: 5px 14px;
+        padding: 6px 16px;
         cursor: pointer;
-        transition: all 0.12s;
+        text-transform: uppercase;
+        transition: all 0.15s;
+        border-radius: 2px;
       }
 
       .refresh-btn:hover {
         border-color: var(--accent);
         color: var(--accent);
+        background: var(--accent-softer);
       }
 
       /* Orders table */
@@ -302,6 +370,8 @@
         background: var(--bg2);
         border: 1px solid var(--border);
         overflow-x: auto;
+        box-shadow: var(--shadow);
+        border-radius: 2px;
       }
 
       table {
@@ -310,169 +380,182 @@
       }
 
       thead th {
-        background: #111820;
-        font-family: "Orbitron", sans-serif;
-        font-size: 7.5px;
+        background: var(--bg3);
+        font-size: 8px;
         font-weight: 700;
-        letter-spacing: 0.2em;
+        letter-spacing: 0.18em;
         color: var(--muted);
         text-transform: uppercase;
-        padding: 10px 16px;
+        padding: 12px 16px;
         text-align: left;
         border-bottom: 1px solid var(--border);
         white-space: nowrap;
       }
 
       tbody tr {
-        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        border-bottom: 1px solid var(--border);
         cursor: pointer;
         transition: background 0.1s;
       }
 
-      tbody tr:hover {
-        background: rgba(208, 88, 24, 0.06);
+      tbody tr:last-child {
+        border-bottom: none;
       }
+
+      tbody tr:hover {
+        background: var(--accent-softer);
+      }
+
       tbody tr.selected-row {
-        background: rgba(208, 88, 24, 0.1);
+        background: var(--accent-soft);
         border-left: 3px solid var(--accent);
       }
 
       tbody td {
-        padding: 12px 16px;
-        font-family: "Share Tech Mono", monospace;
+        padding: 13px 16px;
         font-size: 12px;
+        font-weight: 500;
         color: var(--text);
-        letter-spacing: 0.03em;
         white-space: nowrap;
       }
 
       .badge {
         display: inline-block;
-        padding: 2px 10px;
-        font-family: "Orbitron", sans-serif;
-        font-size: 7.5px;
+        padding: 3px 10px;
+        font-size: 8px;
         font-weight: 700;
-        letter-spacing: 0.14em;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
         border: 1px solid;
+        border-radius: 2px;
       }
 
       .badge-confirmed {
-        color: #3090e0;
-        border-color: #3090e0;
-        background: rgba(48, 144, 224, 0.08);
+        color: var(--blue);
+        border-color: var(--blue);
+        background: var(--blue-bg);
       }
       .badge-paid {
         color: var(--green);
         border-color: var(--green);
-        background: rgba(34, 170, 68, 0.08);
+        background: var(--green-bg);
       }
       .badge-pending {
         color: var(--yellow);
         border-color: var(--yellow);
-        background: rgba(232, 160, 32, 0.08);
+        background: var(--yellow-bg);
       }
       .badge-failed {
         color: var(--red);
         border-color: var(--red);
-        background: rgba(204, 34, 0, 0.08);
+        background: var(--red-bg);
       }
       .badge-cancelled {
         color: var(--muted);
-        border-color: var(--muted);
+        border-color: var(--border);
         background: transparent;
       }
 
       .pay-badge-captured {
         color: var(--green);
         border-color: var(--green);
-        background: rgba(34, 170, 68, 0.08);
+        background: var(--green-bg);
       }
       .pay-badge-pending {
         color: var(--yellow);
         border-color: var(--yellow);
-        background: rgba(232, 160, 32, 0.08);
+        background: var(--yellow-bg);
       }
       .pay-badge-failed {
         color: var(--red);
         border-color: var(--red);
-        background: rgba(204, 34, 0, 0.08);
+        background: var(--red-bg);
       }
       .pay-badge-none {
         color: var(--muted);
-        border-color: var(--muted);
+        border-color: var(--border);
         background: transparent;
       }
 
       /* Order detail panel */
       #order-detail {
         display: none;
-        margin-top: 28px;
+        margin-top: 24px;
         background: var(--bg2);
         border: 1px solid var(--border);
-        border-left: 3px solid var(--accent);
+        border-top: 3px solid var(--accent);
+        box-shadow: var(--shadow);
+        border-radius: 2px;
       }
 
       .detail-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 14px 20px;
-        background: #111820;
+        padding: 16px 24px;
+        background: var(--bg3);
         border-bottom: 1px solid var(--border);
       }
 
       .detail-title {
-        font-family: "Orbitron", sans-serif;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.18em;
-        color: var(--accent);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.2em;
+        color: var(--text);
+        text-transform: uppercase;
       }
 
       .detail-close {
         background: none;
         border: none;
         color: var(--muted);
-        font-size: 16px;
+        font-size: 18px;
         cursor: pointer;
         padding: 2px 8px;
         transition: color 0.12s;
+        line-height: 1;
       }
 
       .detail-close:hover {
-        color: var(--accent);
+        color: var(--red);
       }
 
       .detail-body {
-        padding: 20px;
+        padding: 24px;
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 20px;
+        gap: 24px;
       }
 
       @media (max-width: 768px) {
         .detail-body {
           grid-template-columns: 1fr;
         }
+        .stats-row {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .dash-body {
+          padding: 16px;
+        }
       }
 
       .detail-section-title {
-        font-family: "Orbitron", sans-serif;
         font-size: 8px;
-        font-weight: 700;
+        font-weight: 800;
         letter-spacing: 0.22em;
-        color: var(--muted);
+        color: var(--accent);
         text-transform: uppercase;
-        margin-bottom: 12px;
+        margin-bottom: 14px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border);
       }
 
       .detail-row {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        padding: 6px 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        padding: 7px 0;
+        border-bottom: 1px solid var(--border);
         gap: 12px;
       }
 
@@ -481,18 +564,18 @@
       }
 
       .detail-key {
-        font-family: "Share Tech Mono", monospace;
         font-size: 10px;
+        font-weight: 600;
         color: var(--muted);
-        letter-spacing: 0.1em;
+        letter-spacing: 0.04em;
         flex-shrink: 0;
       }
 
       .detail-val {
-        font-family: "Share Tech Mono", monospace;
         font-size: 11px;
+        font-weight: 600;
         color: var(--text);
-        letter-spacing: 0.04em;
+        letter-spacing: 0.01em;
         text-align: right;
         word-break: break-all;
       }
@@ -501,17 +584,22 @@
         width: 100%;
         border-collapse: collapse;
       }
+
       .parts-mini-table td {
-        padding: 5px 10px;
+        padding: 7px 10px;
         font-size: 11px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        font-weight: 500;
+        border-bottom: 1px solid var(--border);
+        color: var(--text);
       }
+
       .parts-mini-table thead td {
-        font-family: "Orbitron", sans-serif;
-        font-size: 7.5px;
-        letter-spacing: 0.15em;
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
         color: var(--muted);
         text-transform: uppercase;
+        background: var(--bg3);
       }
 
       .report-btn {
@@ -519,51 +607,104 @@
         align-items: center;
         gap: 8px;
         margin-top: 16px;
-        background: transparent;
-        border: 1.5px solid var(--accent);
-        color: var(--accent);
-        font-family: "Orbitron", sans-serif;
+        background: var(--accent);
+        border: none;
+        color: #ffffff;
+        font-family: "Montserrat", sans-serif;
         font-size: 9px;
         font-weight: 700;
-        letter-spacing: 0.18em;
-        padding: 9px 20px;
+        letter-spacing: 0.16em;
+        padding: 10px 22px;
         cursor: pointer;
         text-transform: uppercase;
         text-decoration: none;
-        transition: all 0.12s;
-        box-shadow: 3px 3px 0 #5a2008;
+        transition: all 0.15s;
+        border-radius: 2px;
       }
 
       .report-btn:hover {
-        background: var(--accent);
-        color: #0e1018;
-        box-shadow: 5px 5px 0 #5a2008;
-        transform: translate(-2px, -2px);
+        background: var(--accent2);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(208, 88, 24, 0.25);
       }
 
       .report-btn.disabled {
-        border-color: var(--muted);
+        background: var(--bg3);
+        border: 1px solid var(--border);
         color: var(--muted);
         cursor: not-allowed;
         box-shadow: none;
+        transform: none;
       }
 
-      .empty-state {
+      .loading-row td {
         text-align: center;
-        padding: 60px 20px;
-        font-family: "Share Tech Mono", monospace;
-        font-size: 12px;
+        padding: 48px;
         color: var(--muted);
-        letter-spacing: 0.12em;
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0.06em;
       }
 
+      /* Delivered */
+      .delivered-check {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--green);
+        cursor: pointer;
+      }
+
+      .delivered-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+      }
+
+      .delivered-label.is-delivered {
+        color: var(--green);
+      }
+      .delivered-label.not-delivered {
+        color: var(--muted);
+      }
+
+      /* Action buttons */
+      .action-btn {
+        background: transparent;
+        border: 1px solid;
+        font-family: "Montserrat", sans-serif;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        padding: 4px 10px;
+        cursor: pointer;
+        transition: all 0.12s;
+        white-space: nowrap;
+        border-radius: 2px;
+        text-transform: uppercase;
+      }
+
+      .action-btn-delete {
+        border-color: rgba(204, 34, 0, 0.25);
+        color: rgba(204, 34, 0, 0.6);
+      }
+
+      .action-btn-delete:hover {
+        border-color: var(--red);
+        color: var(--red);
+        background: var(--red-bg);
+      }
+
+      /* Realtime dot */
       .realtime-dot {
         display: inline-block;
         width: 7px;
         height: 7px;
         border-radius: 50%;
         background: var(--green);
-        margin-right: 6px;
         animation: pulse 2s infinite;
       }
 
@@ -577,72 +718,13 @@
         }
       }
 
-      .loading-row td {
-        text-align: center;
-        padding: 40px;
-        color: var(--muted);
-        font-family: "Share Tech Mono", monospace;
-        font-size: 11px;
-        letter-spacing: 0.12em;
-      }
-
-      /* ── DELIVERED CHECKBOX ───────────────────────────────── */
-      .delivered-check {
-        width: 18px;
-        height: 18px;
-        accent-color: var(--green);
-        cursor: pointer;
-        position: relative;
-        z-index: 10;
-      }
-
-      .delivered-label {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        cursor: pointer;
-        font-family: "Share Tech Mono", monospace;
-        font-size: 10px;
-        letter-spacing: 0.1em;
-      }
-
-      .delivered-label.is-delivered {
-        color: var(--green);
-      }
-      .delivered-label.not-delivered {
-        color: var(--muted);
-      }
-
-      /* ── ACTION BUTTONS ───────────────────────────────────── */
-      .action-btn {
-        background: transparent;
-        border: 1px solid;
-        font-family: "Share Tech Mono", monospace;
-        font-size: 9px;
-        letter-spacing: 0.1em;
-        padding: 3px 10px;
-        cursor: pointer;
-        transition: all 0.12s;
-        white-space: nowrap;
-      }
-
-      .action-btn-delete {
-        border-color: rgba(204, 34, 0, 0.35);
-        color: rgba(204, 34, 0, 0.6);
-      }
-
-      .action-btn-delete:hover {
-        border-color: var(--red);
-        color: var(--red);
-        background: rgba(204, 34, 0, 0.08);
-      }
-
-      /* ── CONFIRM DIALOG ───────────────────────────────────── */
+      /* Confirm dialog */
       #confirm-dialog {
         display: none;
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.82);
+        background: rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(3px);
         z-index: 9999;
         align-items: center;
         justify-content: center;
@@ -654,50 +736,48 @@
 
       .confirm-card {
         width: min(420px, 90vw);
-        background: var(--bg3);
-        border: 2px solid var(--red);
-        border-left: 4px solid var(--red);
-        clip-path: polygon(
-          0 0,
-          calc(100% - 14px) 0,
-          100% 14px,
-          100% 100%,
-          0 100%
-        );
-        padding: 32px 36px;
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-top: 3px solid var(--red);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        border-radius: 2px;
+        padding: 36px 40px;
         text-align: center;
       }
 
       .confirm-icon {
-        font-size: 28px;
+        font-size: 32px;
         color: var(--red);
-        margin-bottom: 12px;
+        margin-bottom: 14px;
       }
 
       .confirm-title {
-        font-family: "Orbitron", sans-serif;
-        font-size: 13px;
-        font-weight: 700;
-        letter-spacing: 0.15em;
-        color: #d8e8f4;
-        margin-bottom: 8px;
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        color: var(--text);
+        text-transform: uppercase;
+        margin-bottom: 10px;
       }
 
       .confirm-msg {
-        font-family: "Share Tech Mono", monospace;
-        font-size: 11px;
-        color: var(--muted);
-        letter-spacing: 0.06em;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        letter-spacing: 0.02em;
         line-height: 1.7;
-        margin-bottom: 24px;
+        margin-bottom: 20px;
       }
 
       .confirm-ref {
-        font-family: "Orbitron", sans-serif;
-        font-size: 11px;
+        font-size: 12px;
+        font-weight: 700;
         color: var(--red);
         letter-spacing: 0.12em;
         margin-bottom: 24px;
+        padding: 8px 16px;
+        background: var(--red-bg);
+        display: inline-block;
       }
 
       .confirm-btns {
@@ -707,49 +787,47 @@
       }
 
       .confirm-btn {
-        font-family: "Orbitron", sans-serif;
+        font-family: "Montserrat", sans-serif;
         font-size: 9px;
         font-weight: 700;
-        letter-spacing: 0.18em;
-        padding: 10px 24px;
+        letter-spacing: 0.16em;
+        padding: 11px 26px;
         cursor: pointer;
         text-transform: uppercase;
-        transition: all 0.12s;
-        border: 1.5px solid;
+        transition: all 0.15s;
+        border-radius: 2px;
       }
 
       .confirm-btn-cancel {
         background: transparent;
-        border-color: var(--muted);
-        color: var(--muted);
+        border: 1.5px solid var(--border);
+        color: var(--text-secondary);
       }
 
       .confirm-btn-cancel:hover {
-        border-color: var(--text);
-        color: var(--text);
+        border-color: var(--text-secondary);
+        background: var(--bg3);
       }
 
       .confirm-btn-delete {
         background: var(--red);
-        border-color: var(--red);
-        color: #111;
-        box-shadow: 3px 3px 0 #5a0a00;
+        border: 1.5px solid var(--red);
+        color: #ffffff;
       }
 
       .confirm-btn-delete:hover {
-        transform: translate(-2px, -2px);
-        box-shadow: 5px 5px 0 #5a0a00;
+        background: #aa1a00;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(204, 34, 0, 0.25);
       }
     </style>
   </head>
   <body>
-    <!-- ══════════════════════════════════════════════════════════
-     LOGIN SCREEN
-════════════════════════════════════════════════════════════ -->
+    <!-- ── LOGIN ──────────────────────────────────────────────── -->
     <div id="login-screen">
       <div class="login-card">
         <div class="login-badge">◈ Robot Configurator</div>
-        <div class="login-title">Company<br />Dashboard</div>
+        <div class="login-title">Company <span>Dashboard</span></div>
 
         <div class="field-group">
           <label class="field-label">Email Address</label>
@@ -781,19 +859,19 @@
       </div>
     </div>
 
-    <!-- ══════════════════════════════════════════════════════════
-     DASHBOARD
-════════════════════════════════════════════════════════════ -->
+    <!-- ── DASHBOARD ──────────────────────────────────────────── -->
     <div id="dashboard">
       <div class="dash-topbar">
         <div class="dash-logo">
-          ROBOT CONFIGURATOR
-          <span>◈ COMPANY DASHBOARD</span>
+          <div class="dash-logo-wrap">
+            <span>Robot Configurator</span>
+            <span class="dash-logo-sub">◈ Company Dashboard</span>
+          </div>
         </div>
         <div class="dash-user">
           <span class="realtime-dot"></span>
           <span id="user-email-display">—</span>
-          <button class="logout-btn" onclick="handleLogout()">SIGN OUT</button>
+          <button class="logout-btn" onclick="handleLogout()">Sign Out</button>
         </div>
       </div>
 
@@ -813,7 +891,7 @@
             <div class="stat-label">Paid</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value" id="stat-revenue">—</div>
+            <div class="stat-value stat-accent" id="stat-revenue">—</div>
             <div class="stat-label">Total Revenue</div>
           </div>
         </div>
@@ -821,7 +899,7 @@
         <!-- Orders table -->
         <div class="section-header">
           <div class="section-title">All Orders</div>
-          <button class="refresh-btn" onclick="loadOrders()">⟳ REFRESH</button>
+          <button class="refresh-btn" onclick="loadOrders()">⟳ Refresh</button>
         </div>
 
         <div class="orders-table-wrap">
@@ -850,25 +928,21 @@
           </table>
         </div>
 
-        <!-- Order detail panel (shown on row click) -->
+        <!-- Order detail panel -->
         <div id="order-detail">
           <div class="detail-header">
             <div class="detail-title" id="detail-title">ORDER DETAILS</div>
             <button class="detail-close" onclick="closeDetail()">✕</button>
           </div>
           <div class="detail-body">
-            <!-- Left: customer + address + payment -->
             <div>
               <div class="detail-section-title">Customer & Address</div>
               <div id="detail-customer"></div>
-
-              <div class="detail-section-title" style="margin-top: 20px">
+              <div class="detail-section-title" style="margin-top: 24px">
                 Payment
               </div>
               <div id="detail-payment"></div>
             </div>
-
-            <!-- Right: parts breakdown + report button -->
             <div>
               <div class="detail-section-title">Parts Breakdown</div>
               <table class="parts-mini-table">
@@ -882,7 +956,6 @@
                 </thead>
                 <tbody id="detail-parts"></tbody>
               </table>
-
               <div id="detail-report-section" style="margin-top: 16px"></div>
             </div>
           </div>
@@ -894,7 +967,7 @@
     <div id="confirm-dialog">
       <div class="confirm-card">
         <div class="confirm-icon">⚠</div>
-        <div class="confirm-title">DELETE ORDER</div>
+        <div class="confirm-title">Delete Order</div>
         <div class="confirm-msg">
           This will permanently delete the order and all associated data
           including parts breakdown and payment records. This cannot be undone.
@@ -905,26 +978,24 @@
             class="confirm-btn confirm-btn-cancel"
             id="confirm-cancel-btn"
           >
-            CANCEL
+            Cancel
           </button>
           <button
             class="confirm-btn confirm-btn-delete"
             id="confirm-delete-btn"
           >
-            DELETE ORDER
+            Delete Order
           </button>
         </div>
       </div>
     </div>
-    ════════════════════════════════════════════════════════════ -->
+
     <script type="module">
       import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-      // ── CONFIG — replace with your actual values ──────────────
       const SUPABASE_URL = "https://paxeivuabqbfodnjxfpw.supabase.co";
       const SUPABASE_ANON_KEY =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBheGVpdnVhYnFiZm9kbmp4ZnB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNDQwMTAsImV4cCI6MjA4OTgyMDAxMH0.iit20CxI6S04wEJgsPRmEyf3oziSD4e9T2SjJGlHiVQ";
-      // ─────────────────────────────────────────────────────────
 
       const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -932,19 +1003,16 @@
       let selectedOrderId = null;
       let realtimeChannel = null;
 
-      // ── Expose functions needed by inline onclick attrs ───────
       window.handleLogin = handleLogin;
       window.handleLogout = handleLogout;
       window.loadOrders = loadOrders;
       window.closeDetail = closeDetail;
 
-      // ── Check session on load ─────────────────────────────────
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (session) enterDashboard(session.user);
 
-      // ── LOGIN ─────────────────────────────────────────────────
       async function handleLogin() {
         const email = document.getElementById("login-email").value.trim();
         const password = document.getElementById("login-password").value;
@@ -967,11 +1035,9 @@
           btn.textContent = "▶  SIGN IN";
           return;
         }
-
         enterDashboard(data.user);
       }
 
-      // Allow Enter key on password field
       document
         .getElementById("login-password")
         .addEventListener("keydown", (e) => {
@@ -984,7 +1050,6 @@
             document.getElementById("login-password").focus();
         });
 
-      // ── LOGOUT ────────────────────────────────────────────────
       async function handleLogout() {
         if (realtimeChannel) supabase.removeChannel(realtimeChannel);
         await supabase.auth.signOut();
@@ -993,7 +1058,6 @@
         document.getElementById("login-password").value = "";
       }
 
-      // ── ENTER DASHBOARD ───────────────────────────────────────
       function enterDashboard(user) {
         document.getElementById("login-screen").style.display = "none";
         document.getElementById("dashboard").style.display = "block";
@@ -1002,10 +1066,9 @@
         subscribeRealtime();
       }
 
-      // ── LOAD ORDERS ───────────────────────────────────────────
       async function loadOrders() {
         document.getElementById("orders-tbody").innerHTML =
-          '<tr class="loading-row"><td colspan="10">Loading...</td></tr>';
+          '<tr class="loading-row"><td colspan="12">Loading...</td></tr>';
 
         const { data, error } = await supabase
           .from("orders_with_payment")
@@ -1014,7 +1077,7 @@
 
         if (error) {
           document.getElementById("orders-tbody").innerHTML =
-            `<tr class="loading-row"><td colspan="10">Error: ${error.message}</td></tr>`;
+            `<tr class="loading-row"><td colspan="12">Error: ${error.message}</td></tr>`;
           return;
         }
 
@@ -1023,7 +1086,6 @@
         updateStats(allOrders);
       }
 
-      // ── RENDER TABLE ──────────────────────────────────────────
       function renderTable(orders) {
         const tbody = document.getElementById("orders-tbody");
 
@@ -1042,52 +1104,46 @@
             const orderBadge = badgeHTML(o.order_status, "order");
             const payBadge = badgeHTML(o.payment_status || "none", "pay");
             const payId = o.razorpay_payment_id
-              ? `<span title="${o.razorpay_payment_id}">${o.razorpay_payment_id.slice(0, 18)}…</span>`
+              ? `<span title="${o.razorpay_payment_id}" style="color:var(--text-secondary)">${o.razorpay_payment_id.slice(0, 18)}…</span>`
               : '<span style="color:var(--muted)">—</span>';
             const selected = o.id === selectedOrderId ? "selected-row" : "";
             const isDelivered = o.delivered === true;
 
-            // Delivered checkbox cell — stopPropagation so row click doesn't fire
             const deliveredCell = `
-        <td onclick="event.stopPropagation()">
-          <label class="delivered-label ${isDelivered ? "is-delivered" : "not-delivered"}">
-            <input
-              type="checkbox"
-              class="delivered-check"
-              ${isDelivered ? "checked" : ""}
-              onchange="event.stopPropagation(); markDelivered('${o.id}', this.checked)"
-            />
-            ${isDelivered ? "✓ Done" : "Pending"}
-          </label>
-        </td>`;
+            <td onclick="event.stopPropagation()">
+              <label class="delivered-label ${isDelivered ? "is-delivered" : "not-delivered"}">
+                <input type="checkbox" class="delivered-check"
+                  ${isDelivered ? "checked" : ""}
+                  onchange="event.stopPropagation(); markDelivered('${o.id}', this.checked)" />
+                ${isDelivered ? "✓ Done" : "Pending"}
+              </label>
+            </td>`;
 
-            // Action buttons cell
             const actionsCell = `
-        <td onclick="event.stopPropagation()" style="white-space:nowrap">
-          <button class="action-btn action-btn-delete"
-            onclick="event.stopPropagation(); confirmDelete('${o.id}', '${o.order_ref}')">
-            ✕ DELETE
-          </button>
-        </td>`;
+            <td onclick="event.stopPropagation()" style="white-space:nowrap">
+              <button class="action-btn action-btn-delete"
+                onclick="event.stopPropagation(); confirmDelete('${o.id}', '${o.order_ref}')">
+                ✕ Delete
+              </button>
+            </td>`;
 
-            return `<tr class="${selected}" data-id="${o.id}" style="cursor:pointer">
-        <td style="font-weight:700;color:var(--accent)">${o.order_ref}</td>
-        <td>${o.customer_name || "—"}</td>
-        <td>${o.customer_phone || "—"}</td>
-        <td>${o.city || "—"}</td>
-        <td style="text-align:center">${o.parts_count}</td>
-        <td style="font-weight:700">₹${Number(o.total_amount).toLocaleString("en-IN")}</td>
-        <td>${orderBadge}</td>
-        <td>${payBadge}</td>
-        <td style="font-family:'Share Tech Mono',monospace;font-size:10px">${payId}</td>
-        <td style="color:var(--muted);font-size:10px">${date}</td>
-        ${deliveredCell}
-        ${actionsCell}
-      </tr>`;
+            return `<tr class="${selected}" data-id="${o.id}">
+            <td style="font-weight:800;color:var(--accent)">${o.order_ref}</td>
+            <td style="font-weight:600">${o.customer_name || "—"}</td>
+            <td style="color:var(--text-secondary)">${o.customer_phone || "—"}</td>
+            <td style="color:var(--text-secondary)">${o.city || "—"}</td>
+            <td style="text-align:center;font-weight:700">${o.parts_count}</td>
+            <td style="font-weight:700">₹${Number(o.total_amount).toLocaleString("en-IN")}</td>
+            <td>${orderBadge}</td>
+            <td>${payBadge}</td>
+            <td style="font-size:10px;color:var(--text-secondary)">${payId}</td>
+            <td style="color:var(--muted);font-size:10px">${date}</td>
+            ${deliveredCell}
+            ${actionsCell}
+          </tr>`;
           })
           .join("");
 
-        // Bind row click (not on checkbox/button cells)
         tbody.querySelectorAll("tr[data-id]").forEach((row) => {
           row.addEventListener("click", () => selectOrder(row.dataset.id));
         });
@@ -1097,7 +1153,6 @@
       window.markDelivered = markDelivered;
       window.confirmDelete = confirmDelete;
 
-      // ── MARK DELIVERED ────────────────────────────────────────
       async function markDelivered(id, delivered) {
         const { error } = await supabase
           .from("orders")
@@ -1109,13 +1164,11 @@
           .eq("id", id);
 
         if (error) {
-          console.error("[MARK DELIVERED]", error.message);
           showToast("⚠ Could not update delivery status", "error");
-          await loadOrders(); // revert visual state
+          await loadOrders();
           return;
         }
 
-        // Update local state immediately so re-render is instant
         const order = allOrders.find((o) => o.id === id);
         if (order) {
           order.delivered = delivered;
@@ -1130,7 +1183,6 @@
         );
       }
 
-      // ── DELETE ORDER — confirm dialog ─────────────────────────
       let pendingDeleteId = null;
 
       function confirmDelete(id, orderRef) {
@@ -1156,7 +1208,6 @@
           await deleteOrder(id);
         });
 
-      // Close on backdrop click
       document
         .getElementById("confirm-dialog")
         .addEventListener("click", (e) => {
@@ -1169,25 +1220,18 @@
         });
 
       async function deleteOrder(id) {
-        // Close detail panel if this order is selected
         if (selectedOrderId === id) closeDetail();
-
         const { error } = await supabase.from("orders").delete().eq("id", id);
-
         if (error) {
-          console.error("[DELETE ORDER]", error.message);
           showToast("⚠ Could not delete order: " + error.message, "error");
           return;
         }
-
-        // Remove from local state
         allOrders = allOrders.filter((o) => o.id !== id);
         renderTable(allOrders);
         updateStats(allOrders);
         showToast("Order deleted", "info");
       }
 
-      // ── TOAST NOTIFICATION ────────────────────────────────────
       function showToast(msg, type = "info") {
         const existing = document.getElementById("dash-toast");
         if (existing) existing.remove();
@@ -1205,27 +1249,22 @@
           bottom: "28px",
           left: "50%",
           transform: "translateX(-50%)",
-          background: "rgba(10,16,26,0.97)",
+          background: "rgba(255,255,255,0.97)",
           border: `1px solid ${colors[type] || colors.info}`,
+          borderLeft: `3px solid ${colors[type] || colors.info}`,
           color: colors[type] || colors.info,
-          fontFamily: "'Share Tech Mono', monospace",
+          fontFamily: "'Montserrat', sans-serif",
           fontSize: "11px",
-          letterSpacing: "0.12em",
-          padding: "10px 24px",
+          fontWeight: "600",
+          letterSpacing: "0.06em",
+          padding: "11px 24px",
           zIndex: "99999",
           whiteSpace: "nowrap",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
-          animation: "toastIn 0.2s ease both",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.12)",
+          borderRadius: "2px",
         });
         el.textContent = msg;
         document.body.appendChild(el);
-
-        if (!document.getElementById("toast-kf")) {
-          const s = document.createElement("style");
-          s.id = "toast-kf";
-          s.textContent = `@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}`;
-          document.head.appendChild(s);
-        }
 
         setTimeout(() => {
           el.style.transition = "opacity 0.4s";
@@ -1234,19 +1273,17 @@
         }, 2800);
       }
 
-      // ── SELECT ORDER → show detail panel ─────────────────────
       async function selectOrder(id) {
         selectedOrderId = id;
-        renderTable(allOrders); // re-render to show selection highlight
+        renderTable(allOrders);
 
         const order = allOrders.find((o) => o.id === id);
         if (!order) return;
 
         document.getElementById("order-detail").style.display = "block";
         document.getElementById("detail-title").textContent =
-          `ORDER — ${order.order_ref}`;
+          `Order — ${order.order_ref}`;
 
-        // Customer + address
         const addr = [
           order.address_line1,
           order.address_line2,
@@ -1262,14 +1299,13 @@
         ]
           .map(
             ([k, v]) => `
-      <div class="detail-row">
-        <span class="detail-key">${k}</span>
-        <span class="detail-val">${v}</span>
-      </div>`,
+          <div class="detail-row">
+            <span class="detail-key">${k}</span>
+            <span class="detail-val">${v}</span>
+          </div>`,
           )
           .join("");
 
-        // Payment info
         const pm = order.payment_method
           ? {
               card: "💳 Card",
@@ -1293,14 +1329,13 @@
         ]
           .map(
             ([k, v]) => `
-      <div class="detail-row">
-        <span class="detail-key">${k}</span>
-        <span class="detail-val">${v}</span>
-      </div>`,
+          <div class="detail-row">
+            <span class="detail-key">${k}</span>
+            <span class="detail-val">${v}</span>
+          </div>`,
           )
           .join("");
 
-        // Parts breakdown
         const { data: parts } = await supabase
           .from("order_parts")
           .select("*")
@@ -1313,37 +1348,33 @@
             parts
               .map(
                 (p) => `
-        <tr>
-          <td>${p.part_label}</td>
-          <td style="text-align:center">${p.quantity}</td>
-          <td>₹${Number(p.unit_cost).toLocaleString("en-IN")}</td>
-          <td style="font-weight:700">₹${Number(p.total_cost).toLocaleString("en-IN")}</td>
-        </tr>`,
+            <tr>
+              <td>${p.part_label}</td>
+              <td style="text-align:center;font-weight:700">${p.quantity}</td>
+              <td>₹${Number(p.unit_cost).toLocaleString("en-IN")}</td>
+              <td style="font-weight:700">₹${Number(p.total_cost).toLocaleString("en-IN")}</td>
+            </tr>`,
               )
               .join("") +
-            `<tr style="border-top:2px solid var(--accent)">
-          <td colspan="3" style="font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:0.15em;color:var(--muted)">TOTAL</td>
-          <td style="font-weight:700;color:var(--accent)">₹${Number(order.total_amount).toLocaleString("en-IN")}</td>
-        </tr>`;
+            `<tr style="border-top:2px solid var(--accent);background:var(--accent-softer)">
+              <td colspan="3" style="font-size:8px;font-weight:800;letter-spacing:0.16em;color:var(--muted);text-transform:uppercase">Total</td>
+              <td style="font-weight:800;color:var(--accent)">₹${Number(order.total_amount).toLocaleString("en-IN")}</td>
+            </tr>`;
         } else {
-          partsBody.innerHTML = `<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:16px">No parts data</td></tr>`;
+          partsBody.innerHTML = `<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:20px">No parts data</td></tr>`;
         }
 
-        // Report button
         const reportSection = document.getElementById("detail-report-section");
         if (order.report_url) {
           reportSection.innerHTML = `
-        <button class="report-btn" onclick="openReport('${order.report_url}', '${order.order_ref}')">
-          ⬇ &nbsp; OPEN PRINT REPORT
-        </button>`;
+            <button class="report-btn" onclick="openReport('${order.report_url}', '${order.order_ref}')">
+              ⬇ &nbsp; Open Print Report
+            </button>`;
         } else {
           reportSection.innerHTML = `
-        <span class="report-btn disabled">
-          ⬇ &nbsp; REPORT NOT YET GENERATED
-        </span>`;
+            <span class="report-btn disabled">⬇ &nbsp; Report Not Yet Generated</span>`;
         }
 
-        // Scroll into view
         document
           .getElementById("order-detail")
           .scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1355,7 +1386,6 @@
         renderTable(allOrders);
       }
 
-      // ── STATS ─────────────────────────────────────────────────
       function updateStats(orders) {
         document.getElementById("stat-total").textContent = orders.length;
         document.getElementById("stat-confirmed").textContent = orders.filter(
@@ -1371,26 +1401,17 @@
           revenue > 0 ? `₹${revenue.toLocaleString("en-IN")}` : "₹0";
       }
 
-      // ── REALTIME subscription ─────────────────────────────────
       function subscribeRealtime() {
         realtimeChannel = supabase
           .channel("orders-changes")
           .on(
             "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "orders",
-            },
-            (payload) => {
-              console.log("[REALTIME] orders change:", payload.eventType);
-              loadOrders(); // reload full list on any change
-            },
+            { event: "*", schema: "public", table: "orders" },
+            () => loadOrders(),
           )
           .subscribe();
       }
 
-      // ── OPEN REPORT — fetch HTML blob and render in new window ──
       window.openReport = async function openReport(signedUrl, orderRef) {
         showToast("Loading report...", "info");
         try {
@@ -1399,21 +1420,16 @@
           const html = await res.text();
           const win = window.open("", "_blank", "width=1100,height=900");
           if (!win) {
-            showToast(
-              "⚠ Pop-up blocked — allow pop-ups for this page",
-              "error",
-            );
+            showToast("⚠ Pop-up blocked", "error");
             return;
           }
           win.document.write(html);
           win.document.close();
         } catch (err) {
-          console.error("[OPEN REPORT]", err);
           showToast("⚠ Could not load report: " + err.message, "error");
         }
       };
 
-      // ── HELPERS ───────────────────────────────────────────────
       function badgeHTML(status, kind) {
         const orderClasses = {
           confirmed: "badge-confirmed",

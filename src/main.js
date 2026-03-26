@@ -196,7 +196,7 @@ const PART_LABELS = {
   frame: "Rectangular Frame",
   motor: "Motor Housing",
   triangle_frame: "Triangular Frame",
-  support_frame: "Support Frame",
+  support_frame: "Stress Bridge",
   wheel: "Wheel",
 };
 /* ── Part weights in grams ── */
@@ -2403,7 +2403,7 @@ const PART_LABELS_DB = {
   frame: "Rectangular Frame",
   motor: "Motor Housing",
   triangle_frame: "Triangular Frame",
-  support_frame: "Support Frame",
+  support_frame: "Stress Bridge",
   wheel: "Wheel",
 };
 
