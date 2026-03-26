@@ -2218,6 +2218,7 @@ async function saveOrderToSupabase({
 async function uploadPrintReport(orderId, orderRef) {
   try {
     showHudMessage("GENERATING REPORT...");
+    console.log("[REPORT] Starting for order:", orderId);
 
     const angleKeys = [
       "perspective",
@@ -2255,38 +2256,58 @@ async function uploadPrintReport(orderId, orderRef) {
       const raw = captureFromAngle(key);
       screenshots[key] = await addTechnicalOverlay(raw, overlayLabels[key]);
     }
+    console.log("[REPORT] Screenshots done");
 
     const reportHTML = buildFullReportHTML(screenshots, angleLabels, orderRef);
     const blob = new Blob([reportHTML], { type: "text/html" });
     const filePath = `orders/${orderId}/${orderRef}_report.html`;
+    console.log("[REPORT] Uploading to storage:", filePath);
 
     const { error: uploadErr } = await supabase.storage
       .from("reports")
       .upload(filePath, blob, { contentType: "text/html", upsert: true });
 
     if (uploadErr) {
-      console.error("[SUPABASE] Report upload error:", uploadErr.message);
+      console.error(
+        "[REPORT] Storage upload FAILED:",
+        uploadErr.message,
+        uploadErr,
+      );
+      showHudMessage("⚠ Report storage failed: " + uploadErr.message);
       return;
     }
+    console.log("[REPORT] Storage upload OK");
 
-    const { data: urlData } = await supabase.storage
+    const { data: urlData, error: urlErr } = await supabase.storage
       .from("reports")
       .createSignedUrl(filePath, 60 * 60 * 24 * 365);
 
+    if (urlErr) console.error("[REPORT] Signed URL FAILED:", urlErr.message);
     const publicUrl = urlData?.signedUrl ?? null;
+    console.log("[REPORT] Signed URL:", publicUrl ? "OK" : "null");
 
-    await supabase
+    const { error: upsertErr } = await supabase
       .from("print_reports")
       .upsert(
         { order_id: orderId, storage_path: filePath, public_url: publicUrl },
         { onConflict: "order_id" },
       );
 
-    console.log(`[SUPABASE] Report uploaded: ${filePath}`);
+    if (upsertErr) {
+      console.error(
+        "[REPORT] print_reports upsert FAILED:",
+        upsertErr.message,
+        upsertErr,
+      );
+      showHudMessage("⚠ Report DB save failed: " + upsertErr.message);
+      return;
+    }
+
+    console.log("[SUPABASE] Report uploaded:", filePath);
     showHudMessage("REPORT SAVED ✓");
   } catch (err) {
     console.error("[REPORT UPLOAD ERROR]", err);
-    showHudMessage("⚠ Report upload failed");
+    showHudMessage("⚠ Report upload failed: " + err.message);
   }
 }
 
