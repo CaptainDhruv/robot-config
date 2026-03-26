@@ -1,8 +1,7 @@
 /* ═══════════════════════════════════════════════════
    ROBOT CONFIGURATOR — SLATE / AMBER / TEAL THEME
+   Font: Montserrat (primary UI), Orbitron (HUD/headings), Share Tech Mono (mono)
    ═══════════════════════════════════════════════════ */
-
-@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Exo+2:wght@300;400;500;600;700;800&display=swap");
 
 *,
 *::before,
@@ -17,7 +16,7 @@ body {
   height: 100%;
   width: 100%;
   overflow: hidden;
-  font-family: "Rajdhani", sans-serif;
+  font-family: "Montserrat", "Rajdhani", sans-serif;
   background: #1e2d42;
   color: #90a8bc;
   cursor: crosshair;
@@ -89,8 +88,8 @@ body::after {
   --panel-w: clamp(180px, 18vw, 300px);
   --font-hud: "Orbitron", sans-serif;
   --font-mono: "Share Tech Mono", monospace;
-  --font-ui: "Rajdhani", sans-serif;
-  --font-display: "Exo 2", sans-serif;
+  --font-ui: "Montserrat", "Rajdhani", sans-serif;
+  --font-display: "Montserrat", "Exo 2", sans-serif;
 }
 
 @keyframes scan {
@@ -317,8 +316,9 @@ body::after {
   align-items: center;
   gap: 8px;
   color: var(--text-mid);
-  font-family: var(--font-mono);
+  font-family: "Montserrat", var(--font-mono);
   font-size: clamp(9px, 0.8vw, 11.5px);
+  font-weight: 700;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   transition:
@@ -387,7 +387,6 @@ body::after {
   animation-delay: 0.23s;
 }
 
-/* ── BTN-TIP-WRAP — ensures pointer events even on disabled buttons ── */
 .btn-tip-wrap {
   display: block;
   width: 100%;
@@ -443,10 +442,10 @@ body::after {
   z-index: 1;
 }
 .btn-label {
-  font-family: var(--font-hud);
+  font-family: "Montserrat", var(--font-hud);
   font-size: clamp(10px, 0.9vw, 13px);
   font-weight: 800;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   line-height: 1;
   white-space: nowrap;
@@ -454,8 +453,9 @@ body::after {
   text-overflow: ellipsis;
 }
 .btn-desc {
-  font-family: var(--font-mono);
+  font-family: "Montserrat", var(--font-mono);
   font-size: clamp(8px, 0.68vw, 10px);
+  font-weight: 500;
   letter-spacing: 0.06em;
   opacity: 0.6;
   line-height: 1;
@@ -727,10 +727,10 @@ body::after {
   flex-shrink: 0;
 }
 .btn-action-label {
-  font-family: var(--font-hud);
+  font-family: "Montserrat", var(--font-hud);
   font-size: clamp(9px, 0.82vw, 12px);
   font-weight: 800;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
@@ -824,7 +824,7 @@ canvas#app {
   background: #1a2436;
   border: 2px solid #2a3848;
   color: #6a8098;
-  font-family: var(--font-mono);
+  font-family: "Montserrat", var(--font-mono);
   cursor: pointer;
   transition:
     transform 0.08s ease,
@@ -868,7 +868,7 @@ canvas#app {
   color: inherit;
 }
 .sidebar-cam-label {
-  font-family: var(--font-hud);
+  font-family: "Montserrat", var(--font-hud);
   font-size: clamp(8px, 0.72vw, 10px);
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -876,7 +876,7 @@ canvas#app {
   color: inherit;
 }
 .cam-hint {
-  font-family: var(--font-mono);
+  font-family: "Montserrat", var(--font-mono);
   font-size: clamp(7px, 0.6vw, 8.5px);
   color: var(--text-lo);
   letter-spacing: 0.1em;
@@ -914,16 +914,17 @@ canvas#app {
   opacity: 0.4;
 }
 .basket-title {
-  font-family: var(--font-hud);
+  font-family: "Montserrat", var(--font-hud);
   font-size: clamp(11px, 1vw, 15px);
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.14em;
   color: #e8f0f8;
   text-shadow: 0 0 16px rgba(200, 216, 228, 0.22);
 }
 .basket-count {
-  font-family: var(--font-mono);
+  font-family: "Montserrat", var(--font-mono);
   font-size: clamp(8px, 0.72vw, 10px);
+  font-weight: 600;
   color: #8aacbf;
   background: var(--bg-row);
   padding: 3px clamp(6px, 0.7vw, 10px);
@@ -943,7 +944,7 @@ canvas#app {
   gap: clamp(2px, 0.3vh, 4px);
 }
 .basket-items > * {
-  font-family: var(--font-display);
+  font-family: "Montserrat", var(--font-display);
   font-size: clamp(10px, 0.88vw, 12px);
   font-weight: 600;
   color: #d8eaf8;
@@ -965,56 +966,24 @@ canvas#app {
   border-color: #3a5068;
 }
 
-.basket-divider {
-  height: 1px;
-  background: var(--border-amb);
-  margin: 4px 0;
-  position: relative;
-}
-.basket-divider::before {
-  content: "SUBTOTAL";
-  position: absolute;
-  right: 0;
-  top: -9px;
-  font-family: var(--font-mono);
-  font-size: 8.5px;
-  color: var(--text-amb);
-  letter-spacing: 0.15em;
-  background: var(--bg-panel-r);
-  padding: 0 4px;
-}
-
-.basket-summary-row,
-.basket-items .basket-summary {
-  font-family: var(--font-mono) !important;
-  font-size: clamp(9px, 0.8vw, 11px) !important;
-  font-weight: 400 !important;
-  color: #8aacbf !important;
-  background: #111c2a !important;
-  border: 1px solid #1e3048 !important;
-  border-left: 2px solid rgba(208, 88, 24, 0.3) !important;
-  padding: clamp(3px, 0.38vh, 5px) clamp(8px, 0.9vw, 12px) !important;
-  letter-spacing: 0.1em !important;
-  text-transform: uppercase !important;
-  justify-content: space-between !important;
-}
-
 .basket-footer {
   padding: clamp(8px, 1.1vh, 14px) clamp(10px, 1.2vw, 18px);
   border-top: 1px solid var(--border-amb);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-family: var(--font-mono);
+  font-family: "Montserrat", var(--font-mono);
   font-size: clamp(9px, 0.78vw, 11px);
-  letter-spacing: 0.14em;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #7a9ab8;
   flex-shrink: 0;
 }
 .price {
-  font-family: var(--font-hud);
+  font-family: "Montserrat", var(--font-hud);
   font-size: clamp(16px, 1.6vw, 24px);
+  font-weight: 800;
   color: #e8f0f8;
   text-shadow: 0 0 20px rgba(200, 216, 228, 0.28);
   letter-spacing: 0.06em;
@@ -1075,7 +1044,7 @@ canvas#app {
 }
 .btn-finalize-large .btn-action-label {
   font-size: clamp(11px, 1vw, 14px) !important;
-  letter-spacing: 0.22em !important;
+  letter-spacing: 0.18em !important;
 }
 .btn-finalize-large .btn-icon {
   font-size: clamp(14px, 1.4vw, 19px) !important;
@@ -1100,7 +1069,7 @@ canvas#app {
 #part-tooltip {
   animation: tooltip-in 0.15s ease both;
   pointer-events: none;
-  font-family: var(--font-mono) !important;
+  font-family: "Montserrat", var(--font-mono) !important;
 }
 
 @keyframes hudMsgIn {
@@ -1155,7 +1124,6 @@ canvas#app {
   border-left: 2px solid rgba(208, 88, 24, 0.5);
   clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
   backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   padding: clamp(6px, 0.8vh, 10px) clamp(8px, 0.8vw, 12px);
   min-width: clamp(160px, 16vw, 240px);
   animation: legendIn 0.4s ease both;
@@ -1165,9 +1133,7 @@ canvas#app {
   min-width: unset;
   padding: 10px 12px;
 }
-.color-legend.collapsed #legendItems {
-  display: none;
-}
+.color-legend.collapsed #legendItems,
 .color-legend.collapsed .legend-title {
   display: none;
 }
@@ -1175,8 +1141,9 @@ canvas#app {
   transform: rotate(180deg);
 }
 .legend-title {
-  font-family: var(--font-mono);
+  font-family: "Montserrat", var(--font-mono);
   font-size: clamp(7px, 0.65vw, 8.5px);
+  font-weight: 700;
   letter-spacing: 0.24em;
   color: var(--amb);
   text-transform: uppercase;
@@ -1207,9 +1174,6 @@ canvas#app {
 .legend-item:last-child {
   border-bottom: none;
 }
-.legend-item:hover {
-  background: rgba(255, 255, 255, 0.02);
-}
 .legend-dot {
   width: clamp(6px, 0.6vw, 9px);
   height: clamp(6px, 0.6vw, 9px);
@@ -1218,8 +1182,9 @@ canvas#app {
   animation: legendPulse 2.5s ease-in-out infinite;
 }
 .legend-text {
-  font-family: var(--font-mono);
+  font-family: "Montserrat", var(--font-mono);
   font-size: clamp(7px, 0.6vw, 9px);
+  font-weight: 500;
   color: var(--text-mid);
   letter-spacing: 0.03em;
   line-height: 1.35;
@@ -1317,8 +1282,9 @@ canvas#app {
   line-height: 1;
 }
 .idle-arrow-label {
-  font-family: var(--font-mono);
+  font-family: "Montserrat", var(--font-mono);
   font-size: clamp(7px, 0.65vw, 8.5px);
+  font-weight: 600;
   letter-spacing: 0.14em;
   color: var(--amb);
   text-transform: uppercase;
@@ -1367,7 +1333,6 @@ canvas#app {
     0 8px 32px rgba(0, 0, 0, 0.65),
     0 0 24px rgba(208, 88, 24, 0.1);
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   animation: ctxMenuIn 0.14s cubic-bezier(0.2, 0, 0, 1) both;
   overflow: hidden;
   user-select: none;
@@ -1387,10 +1352,10 @@ canvas#app {
   line-height: 1;
 }
 .ctx-header-name {
-  font-family: var(--font-hud);
+  font-family: "Montserrat", var(--font-hud);
   font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
+  font-weight: 800;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--steel-bright);
   white-space: nowrap;
@@ -1398,8 +1363,9 @@ canvas#app {
   text-overflow: ellipsis;
 }
 .ctx-header-type {
-  font-family: var(--font-mono);
+  font-family: "Montserrat", var(--font-mono);
   font-size: 8px;
+  font-weight: 500;
   color: var(--text-lo);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1470,24 +1436,25 @@ canvas#app {
   min-width: 0;
 }
 .ctx-item-label {
-  font-family: var(--font-display);
+  font-family: "Montserrat", var(--font-display);
   font-size: 12.5px;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   color: var(--text-hi);
   line-height: 1;
   display: block;
 }
 .ctx-item-hint {
-  font-family: var(--font-mono);
+  font-family: "Montserrat", var(--font-mono);
   font-size: 8.5px;
+  font-weight: 500;
   color: var(--text-lo);
   letter-spacing: 0.06em;
   margin-top: 2px;
   display: block;
 }
 .ctx-item-kbd {
-  font-family: var(--font-mono);
+  font-family: "Montserrat", var(--font-mono);
   font-size: 8px;
   color: var(--text-lo);
   background: rgba(255, 255, 255, 0.04);
@@ -1505,8 +1472,9 @@ canvas#app {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-family: var(--font-mono);
+  font-family: "Montserrat", var(--font-mono);
   font-size: 7.5px;
+  font-weight: 600;
   letter-spacing: 0.08em;
   color: var(--amb);
   background: rgba(208, 88, 24, 0.1);
@@ -1515,10 +1483,7 @@ canvas#app {
   margin-top: 3px;
 }
 
-/* ═══════════════════════════════════════════════════
-   ARROW KEY CLUSTER — fixed uniform layout
-   ═══════════════════════════════════════════════════ */
-
+/* ── ARROW KEY CLUSTER ── */
 #viewport-rot-controls {
   position: fixed;
   bottom: 80px;
@@ -1531,15 +1496,12 @@ canvas#app {
   z-index: 9001;
   animation: fadedown 0.2s ease both;
 }
-
 .arrow-key-row {
   display: flex;
   gap: 4px;
   align-items: center;
   justify-content: center;
 }
-
-/* ── Base key cap shared by all keys ── */
 .arrow-key {
   height: 44px;
   display: flex;
@@ -1560,14 +1522,10 @@ canvas#app {
     2px 5px 8px rgba(0, 0, 0, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
-
-/* ── Small square keys: ↑ ↓ ── */
 .arrow-key-center {
   width: 44px;
   flex-shrink: 0;
 }
-
-/* ── Labeled keys: same fixed width so cluster is symmetric ── */
 .arrow-key.arrow-key-labeled {
   width: 110px;
   flex-shrink: 0;
@@ -1575,18 +1533,15 @@ canvas#app {
   gap: 6px;
   padding: 0 12px;
 }
-
 .arrow-key-inactive {
   pointer-events: none;
 }
-
 .arrow-key-active {
   cursor: pointer;
   transition:
     transform 0.07s ease,
     box-shadow 0.07s ease;
 }
-
 .arrow-key-active:hover {
   transform: translate(-1px, -1px);
   box-shadow:
@@ -1595,7 +1550,6 @@ canvas#app {
     3px 6px 10px rgba(0, 0, 0, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 1);
 }
-
 .arrow-key-active:active,
 .arrow-key-active.arrow-key-pressed {
   transform: translate(3px, 3px) !important;
@@ -1612,7 +1566,6 @@ canvas#app {
     inset 0 2px 4px rgba(0, 0, 0, 0.1) !important;
   transition: none !important;
 }
-
 .arrow-key-glyph {
   font-size: 18px;
   line-height: 1;
@@ -1622,15 +1575,12 @@ canvas#app {
   flex-shrink: 0;
   -webkit-text-stroke: 0.5px #111111;
 }
-
-/* Hidden on non-labeled keys, shown on labeled ones */
 .arrow-key-label {
   display: none;
 }
-
 .arrow-key-labeled .arrow-key-label {
   display: block;
-  font-family: "Orbitron", Arial, sans-serif;
+  font-family: "Montserrat", "Orbitron", Arial, sans-serif;
   font-size: 7.5px;
   font-weight: 800;
   letter-spacing: 0.11em;
@@ -1642,7 +1592,6 @@ canvas#app {
   user-select: none;
 }
 
-/* ── Wheel / support button disabled states ── */
 #addWheelBtn[disabled],
 #addWheelBtn[disabled] * {
   cursor: not-allowed !important;
@@ -1671,7 +1620,7 @@ canvas#app {
   color: #6a8098;
   cursor: pointer;
   border-radius: 4px;
-  font-family: var(--font-hud);
+  font-family: "Montserrat", var(--font-hud);
   transition:
     background 0.1s,
     color 0.1s,
@@ -1714,7 +1663,7 @@ canvas#app {
   line-height: 1;
 }
 .ur-kbd {
-  font-family: var(--font-mono);
+  font-family: "Montserrat", var(--font-mono);
   font-size: 7px;
   letter-spacing: 0.06em;
   opacity: 0.45;
@@ -1748,10 +1697,10 @@ canvas#app {
   transform: translateX(0);
 }
 .comp-tooltip-title {
-  font-family: "Orbitron", sans-serif;
+  font-family: "Montserrat", "Orbitron", sans-serif;
   font-size: 8.5px;
-  font-weight: 700;
-  letter-spacing: 0.22em;
+  font-weight: 800;
+  letter-spacing: 0.2em;
   color: var(--amb-bright);
   text-transform: uppercase;
   margin-bottom: 8px;
@@ -1765,8 +1714,9 @@ canvas#app {
   opacity: 0.6;
 }
 .comp-tooltip-desc {
-  font-family: "Share Tech Mono", monospace;
+  font-family: "Montserrat", "Share Tech Mono", monospace;
   font-size: 10px;
+  font-weight: 500;
   color: #7a9ab8;
   letter-spacing: 0.03em;
   line-height: 1.65;
@@ -1781,15 +1731,16 @@ canvas#app {
   padding-top: 8px;
 }
 .comp-tooltip-cost {
-  font-family: "Orbitron", sans-serif;
+  font-family: "Montserrat", "Orbitron", sans-serif;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 800;
   color: #d8e8f4;
   letter-spacing: 0.06em;
 }
 .comp-tooltip-req {
-  font-family: "Share Tech Mono", monospace;
+  font-family: "Montserrat", "Share Tech Mono", monospace;
   font-size: 8px;
+  font-weight: 600;
   color: #cc4422;
   letter-spacing: 0.05em;
   line-height: 1.5;
@@ -1799,7 +1750,6 @@ canvas#app {
   display: none;
 }
 
-/* ── WEIGHT SECTION (injected by JS) ── */
 #weight-section-styles {
   display: none;
 }

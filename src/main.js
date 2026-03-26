@@ -1628,6 +1628,7 @@ function showAddressOverlay() {
     document.head.appendChild(s);
   }
 
+  // Wrap in a form element so browser autofill works
   const backdrop = document.createElement("div");
   backdrop.id = "addr-overlay";
   Object.assign(backdrop.style, {
@@ -1737,6 +1738,9 @@ function showAddressOverlay() {
   strip.appendChild(stripStats);
   card.appendChild(strip);
 
+  const form = document.createElement("form");
+  form.autocomplete = "on";
+  form.onsubmit = (e) => e.preventDefault();
   const body = document.createElement("div");
   body.style.padding = "22px 26px 26px";
 
@@ -1767,7 +1771,6 @@ function showAddressOverlay() {
     inp.type = type;
     inp.placeholder = placeholder;
     inp.className = "addr-input";
-    inp.autocomplete = "off";
     inp.addEventListener("input", () => inp.classList.remove("addr-err"));
     wrap.appendChild(lbl);
     wrap.appendChild(inp);
@@ -1812,13 +1815,21 @@ function showAddressOverlay() {
   };
 
   const fName = mkField("Full Name", "e.g. Rahul Sharma");
+  fName.inp.autocomplete = "name";
   const fLine1 = mkField("Address Line 1", "House / Flat No., Building Name");
+  fLine1.inp.autocomplete = "address-line1";
   const fLine2 = mkField("Address Line 2", "Street, Area, Landmark", false);
+  fLine2.inp.autocomplete = "address-line2";
   const fLine3 = mkField("Address Line 3", "Locality / Neighbourhood", false);
+  fLine3.inp.autocomplete = "address-line3";
   const fCity = mkField("City", "e.g. Bengaluru");
+  fCity.inp.autocomplete = "address-level2";
   const fState = mkSelect("State", INDIAN_STATES);
+  fState.inp.autocomplete = "address-level1";
   const fPin = mkField("PIN Code", "560001");
+  fPin.inp.autocomplete = "postal-code";
   const fPhone = mkField("Phone Number", "+91 98765 43210", true, "tel");
+  fPhone.inp.autocomplete = "tel";
 
   body.appendChild(mkRow("addr-row-1", fName));
   body.appendChild(mkRow("addr-row-1", fLine1));
@@ -1940,7 +1951,8 @@ function showAddressOverlay() {
   btnRow.appendChild(btnGroup);
   body.appendChild(btnRow);
 
-  card.appendChild(body);
+  form.appendChild(body);
+  card.appendChild(form);
   backdrop.appendChild(card);
   document.body.appendChild(backdrop);
 

@@ -7,6 +7,12 @@
       content="width=device-width, initial-scale=1.0, minimum-scale=1.0"
     />
     <title>Robot Configurator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Exo+2:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <div class="app-shell">
@@ -26,7 +32,6 @@
             <span class="chevron">▼</span>
           </button>
           <div class="section-body" id="sec-components">
-            <!-- Each button is wrapped in .btn-tip-wrap so hover works even when disabled -->
             <div class="btn-tip-wrap" data-tip="addFrame">
               <button id="addFrame" class="btn btn-frame">
                 <div class="btn-inner">
@@ -185,13 +190,9 @@
       <!-- ═══════ VIEWPORT ═══════ -->
       <main class="viewport">
         <canvas id="app"></canvas>
-
-        <!-- IDLE ARROWS container -->
         <div id="idle-arrows"></div>
 
-        <!-- ARROW KEY CLUSTER — centered in viewport -->
         <div id="viewport-rot-controls" style="display: none">
-          <!-- top row: ↑ key (inactive/decorative) -->
           <div class="arrow-key-row arrow-key-row-top">
             <div
               class="arrow-key arrow-key-inactive arrow-key-center"
@@ -200,9 +201,7 @@
               <span class="arrow-key-glyph">↑</span>
             </div>
           </div>
-          <!-- bottom row: Rotate L ← · ↓ · → Rotate R -->
           <div class="arrow-key-row arrow-key-row-bottom">
-            <!-- Rotate L ← -->
             <button
               class="arrow-key arrow-key-active arrow-key-labeled"
               id="arrowKeyLeft"
@@ -211,16 +210,12 @@
               <span class="arrow-key-label">Rotate L</span>
               <span class="arrow-key-glyph">←</span>
             </button>
-
-            <!-- ↓ inactive -->
             <div
               class="arrow-key arrow-key-inactive arrow-key-center"
               id="arrowKeyDown"
             >
               <span class="arrow-key-glyph">↓</span>
             </div>
-
-            <!-- → Rotate R -->
             <button
               class="arrow-key arrow-key-active arrow-key-labeled"
               id="arrowKeyRight"
@@ -245,7 +240,19 @@
         </div>
 
         <div class="basket-footer">
-          <span>Total Cost</span>
+          <div style="display: flex; flex-direction: column; gap: 2px">
+            <span>Total Cost</span>
+            <span
+              style="
+                font-family: &quot;Share Tech Mono&quot;, monospace;
+                font-size: 8px;
+                color: #6a8098;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+              "
+              >Incl. GST</span
+            >
+          </div>
           <span class="price">&#8377;<span id="totalPrice">0</span></span>
         </div>
 
