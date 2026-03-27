@@ -192,7 +192,6 @@
         <canvas id="app"></canvas>
         <div id="idle-arrows"></div>
 
-        <!-- ↑ and ↓ keys removed — only Rotate L / Rotate R remain -->
         <div id="viewport-rot-controls" style="display: none">
           <div class="arrow-key-row">
             <button
@@ -298,92 +297,6 @@
           countEl.textContent = n + (n === 1 ? " ITEM" : " ITEMS");
         }).observe(basketEl, { childList: true });
       }
-
-      // ── COMPONENT BUTTON TOOLTIPS ─────────────────────────────────
-      (function () {
-        const TIPS = {
-          addFrame: {
-            title: "RECTANGULAR FRAME",
-            desc: "Primary structural base. Extends chassis via edge sockets. Place freely or snap to existing frame joints.",
-            cost: "₹1,200",
-            req: "",
-          },
-          addMotor: {
-            title: "MOTOR HOUSING",
-            desc: "Drive unit for wheels. Mounts on motor sockets around the frame perimeter. Each motor exposes one wheel shaft.",
-            cost: "₹2,500",
-            req: "Needs: free motor socket on a frame",
-          },
-          addWheelBtn: {
-            title: "WHEEL",
-            desc: "Motorised wheel assembly. Snaps directly onto motor output shafts. Stays locked until a motor is placed.",
-            cost: "₹1,100",
-            req: "Needs: 1× Motor placed first",
-          },
-          addTriangle: {
-            title: "TRIANGULAR FRAME",
-            desc: "Corner brace with stress-connector sockets. Two tri. frames are required before a Support Bridge can be placed.",
-            cost: "₹650",
-            req: "",
-          },
-          addSupportFrame: {
-            title: "STRESS BRIDGE",
-            desc: "Cross-span connector that locks two triangular frames together. Bridges must run along a straight X or Z axis.",
-            cost: "₹900",
-            req: "Needs: 2× Triangular Frames",
-          },
-        };
-
-        const tip = document.createElement("div");
-        tip.className = "comp-tooltip";
-        tip.innerHTML = `
-          <div class="comp-tooltip-title"></div>
-          <div class="comp-tooltip-desc"></div>
-          <div class="comp-tooltip-row">
-            <div class="comp-tooltip-cost"></div>
-            <div class="comp-tooltip-req"></div>
-          </div>`;
-        document.body.appendChild(tip);
-
-        const titleEl = tip.querySelector(".comp-tooltip-title");
-        const descEl = tip.querySelector(".comp-tooltip-desc");
-        const costEl = tip.querySelector(".comp-tooltip-cost");
-        const reqEl = tip.querySelector(".comp-tooltip-req");
-
-        let hideTimer = null;
-
-        document.querySelectorAll(".btn-tip-wrap").forEach(function (wrap) {
-          const id = wrap.dataset.tip;
-          const data = TIPS[id];
-          if (!data) return;
-
-          wrap.addEventListener("mouseenter", function () {
-            clearTimeout(hideTimer);
-            titleEl.textContent = data.title;
-            descEl.textContent = data.desc;
-            costEl.textContent = data.cost;
-            reqEl.textContent = data.req;
-
-            const rect = wrap.getBoundingClientRect();
-            tip.style.left = rect.right + 12 + "px";
-            tip.style.top =
-              Math.max(
-                8,
-                Math.min(
-                  rect.top + rect.height / 2 - 55,
-                  window.innerHeight - 160,
-                ),
-              ) + "px";
-            tip.classList.add("visible");
-          });
-
-          wrap.addEventListener("mouseleave", function () {
-            hideTimer = setTimeout(function () {
-              tip.classList.remove("visible");
-            }, 80);
-          });
-        });
-      })();
     </script>
 
     <script type="module" src="/src/main.js"></script>

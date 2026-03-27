@@ -19,8 +19,10 @@ import {
   subscribePartConfig,
   getPrice,
   getLabel,
+  getPartMeta,
   getAllPrices,
   getAllLabels,
+  buildTooltipHTML,
 } from "./partConfig.js";
 
 // Dynamic getters — replace all PART_COSTS[x] with PART_COSTS()[x]
@@ -1023,6 +1025,81 @@ async function init() {
 
   // ── Load part config from Supabase BEFORE any UI renders ─────────────────
   await getPartConfig(supabase);
+
+  // ── COMPONENT BUTTON TOOLTIPS (reads live from partConfig) ────────
+  const BTN_TO_TYPE = {
+    addFrame: "frame",
+    addMotor: "motor",
+    addWheelBtn: "wheel",
+    addTriangle: "triangle_frame",
+    addSupportFrame: "support_frame",
+  };
+  const SIDEBAR_REQUIRES = {
+    motor: "Needs: free motor socket on a frame",
+    wheel: "Needs: 1× Motor placed first",
+    support_frame: "Needs: 2× Triangular Frames",
+  };
+  const sideTip = document.createElement("div");
+  Object.assign(sideTip.style, {
+    position: "fixed",
+    pointerEvents: "none",
+    display: "none",
+    background: "rgba(12,16,26,0.97)",
+    border: "1px solid rgba(208,88,24,0.5)",
+    borderLeft: "3px solid #d05818",
+    color: "#e8eef4",
+    fontFamily: "'Share Tech Mono', monospace",
+    fontSize: "11px",
+    letterSpacing: "0.06em",
+    padding: "10px 14px",
+    zIndex: "99990",
+    lineHeight: "1.7",
+    minWidth: "200px",
+    maxWidth: "280px",
+    boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
+    clipPath: "polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)",
+  });
+  sideTip.innerHTML = `
+    <div id="stip-title" style="font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.18em;color:#d05818;margin-bottom:5px"></div>
+    <div id="stip-desc" style="font-size:10px;color:#8aacbf;margin-bottom:6px;white-space:normal;line-height:1.5"></div>
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <div id="stip-cost" style="color:#d8e8f4;font-size:11px;font-weight:700"></div>
+      <div id="stip-req" style="font-size:9px;color:#6a8098;letter-spacing:0.06em"></div>
+    </div>`;
+  document.body.appendChild(sideTip);
+  let _sideTipTimer = null;
+  document.querySelectorAll(".btn-tip-wrap").forEach((wrap) => {
+    const type = BTN_TO_TYPE[wrap.dataset.tip];
+    if (!type) return;
+    wrap.addEventListener("mouseenter", () => {
+      clearTimeout(_sideTipTimer);
+      const meta = getPartMeta(type);
+      const finalPrice = getPrice(type);
+      sideTip.querySelector("#stip-title").textContent =
+        meta.label.toUpperCase();
+      sideTip.querySelector("#stip-desc").textContent = meta.description;
+      sideTip.querySelector("#stip-cost").textContent =
+        `₹${meta.price.toLocaleString("en-IN")} + ${meta.gst_percent}% GST = ₹${finalPrice.toLocaleString("en-IN")}`;
+      sideTip.querySelector("#stip-req").textContent =
+        SIDEBAR_REQUIRES[type] ?? "";
+      const rect = wrap.getBoundingClientRect();
+      sideTip.style.left = rect.right + 12 + "px";
+      sideTip.style.top =
+        Math.max(
+          8,
+          Math.min(rect.top + rect.height / 2 - 55, window.innerHeight - 160),
+        ) + "px";
+      sideTip.style.display = "block";
+    });
+    wrap.addEventListener("mouseleave", () => {
+      _sideTipTimer = setTimeout(() => {
+        sideTip.style.display = "none";
+      }, 80);
+    });
+  });
+  // ─────────────────────────────────────────────────────────────────
+
+  // Subscribe to live admin changes — updates basket/weight/tooltips instantly
 
   // Subscribe to live admin changes — updates basket/weight/tooltips instantly
   subscribePartConfig(supabase, () => {
@@ -5683,7 +5760,24 @@ function updateWeightDisplay() {
    TOOLTIP
    ========================================================= */
 
-function showTooltip(_m, _x, _y) {}
+function showTooltip(mount, x, y) {
+  if (!tooltipEl || !mount) return;
+  const type = mount.userData?.type ?? "frame";
+  const REQUIRES = {
+    motor: "Requires: Rectangular Frame socket",
+    wheel: "Requires: Motor Housing socket",
+    triangle_frame: "Requires: Frame triangle socket",
+    support_frame: "Requires: 2× Triangle Frames",
+  };
+  tooltipEl.innerHTML = buildTooltipHTML(type, REQUIRES[type] ?? null);
+  tooltipEl.style.display = "block";
+  const TW = tooltipEl.offsetWidth || 200;
+  const TH = tooltipEl.offsetHeight || 80;
+  const px = x + 16 + TW > window.innerWidth ? x - TW - 10 : x + 16;
+  const py = y + 16 + TH > window.innerHeight ? y - TH - 10 : y + 16;
+  tooltipEl.style.left = `${px}px`;
+  tooltipEl.style.top = `${py}px`;
+}
 function hideTooltip() {
   if (tooltipEl) tooltipEl.style.display = "none";
 }
