@@ -198,6 +198,85 @@ const PART_WEIGHTS = {
 };
 
 /* =========================================================
+   BASKET TYPE COLOURS — mirror component button accents
+   ========================================================= */
+
+const BASKET_BTN_COLORS = {
+  frame: "#797979", // btn-frame border (grey)
+  motor: "#f9b100", // btn-motor border (yellow)
+  triangle_frame: "#ada7ab", // btn-triangle border (silver)
+  support_frame: "#ff770e", // btn-support border (orange)
+  wheel: "#36454f", // btn-wheel border (dark steel)
+};
+
+// Keyword groups used to recognise a basket row's type from its text.
+const BASKET_TYPE_KEYWORDS = [
+  { type: "motor", kw: ["motor housing", "motor"] },
+  {
+    type: "triangle_frame",
+    kw: ["triangular frame", "tri. frame", "triangle"],
+  },
+  {
+    type: "support_frame",
+    kw: ["stress bridge", "support frame", "stress", "bridge"],
+  },
+  { type: "wheel", kw: ["wheel"] },
+  { type: "frame", kw: ["rectangular frame", "rect. frame", "frame"] },
+];
+
+/**
+ * Colours each basket row to match its component-button accent,
+ * and hides any non-part rows (the inventory.js summary/total bar).
+ * Idempotent — safe to call repeatedly.
+ */
+function applyBasketTypeColors() {
+  const basketEl = document.getElementById("basketItems");
+  if (!basketEl) return;
+
+  // Build lowercased DB-label → type map (refreshed each call for live config)
+  const dbLabels = getAllLabels();
+  const labelToType = {};
+  for (const [type, label] of Object.entries(dbLabels)) {
+    labelToType[label.toLowerCase()] = type;
+  }
+
+  Array.from(basketEl.children).forEach((child) => {
+    const text = child.textContent.toLowerCase().trim();
+    let matched = null;
+
+    // 1. Exact DB-label match (most reliable)
+    for (const [lbl, type] of Object.entries(labelToType)) {
+      if (text.includes(lbl)) {
+        matched = type;
+        break;
+      }
+    }
+
+    // 2. Keyword fallback
+    if (!matched) {
+      for (const { type, kw } of BASKET_TYPE_KEYWORDS) {
+        if (kw.some((k) => text.includes(k))) {
+          matched = type;
+          break;
+        }
+      }
+    }
+
+    if (matched) {
+      const color = BASKET_BTN_COLORS[matched] ?? "rgba(208,88,24,0.65)";
+      child.style.setProperty("border-left-color", color, "important");
+      child.style.setProperty("border-left-width", "3px", "important");
+      child.dataset.partType = matched;
+      child.style.display = ""; // ensure visible
+    } else {
+      // Unmatched = inventory.js injected summary/total bar — hide it.
+      // The basket-footer already shows the grand total.
+      child.style.display = "none";
+    }
+  });
+}
+
+/* =========================================================
    CAMERA ANGLE PRESETS
    ========================================================= */
 
@@ -998,11 +1077,23 @@ async function init() {
   initIdleArrows();
   initMinimap();
   initWeightSection();
+  initComponentPreview();
   rebuildSocketMarkers();
   updateWheelButtonState();
   updateSupportButtonState();
   updateUndoRedoButtons();
   applySocketHighlights();
+
+  // ── Basket colour-matching + green-bar removal ────────────────────────────
+  const _bEl = document.getElementById("basketItems");
+  if (_bEl) {
+    applyBasketTypeColors();
+    new MutationObserver(() => applyBasketTypeColors()).observe(_bEl, {
+      childList: true,
+      subtree: false,
+    });
+  }
+  // ─────────────────────────────────────────────────────────────────────────
 
   canvas.addEventListener("mousemove", onMouseMove);
   canvas.addEventListener("mousedown", (e) => {
@@ -1039,7 +1130,6 @@ async function init() {
 
 /* ── Helper to refresh basket totals when config updates live ── */
 function updateBasketTotals() {
-  // Re-render the inventory/basket with new prices
   const counts = {};
   scene.traverse((o) => {
     if (!o.userData?.isMount) return;
@@ -1056,7 +1146,13 @@ function updateBasketTotals() {
       const label = getLabel(type);
       const subtotal = price * qty;
       total += subtotal;
+
       const row = document.createElement("div");
+      // ── colour-match the left bar to the component button ──
+      row.dataset.partType = type;
+      const color = BASKET_BTN_COLORS[type] ?? "rgba(208,88,24,0.65)";
+      row.style.setProperty("border-left-color", color, "important");
+      row.style.setProperty("border-left-width", "3px", "important");
       row.innerHTML = `<span>${qty}× ${label}</span><span>₹${subtotal.toLocaleString("en-IN")}</span>`;
       basketEl.appendChild(row);
     }
@@ -1390,9 +1486,9 @@ function onProceedToPayment() {
   msg.textContent =
     "Are you sure your design is final? Once you proceed, you will be taken to payment and the build cannot be modified.";
   Object.assign(msg.style, {
-    fontSize: "12px",
-    lineHeight: "1.7",
-    color: "#6a8098",
+    fontSize: "13px",
+    lineHeight: "1.8",
+    color: "#a8c4d8",
     marginBottom: "28px",
     letterSpacing: "0.04em",
   });
@@ -1433,9 +1529,9 @@ function onProceedToPayment() {
     const lblEl = document.createElement("div");
     lblEl.textContent = label;
     Object.assign(lblEl.style, {
-      fontSize: "8px",
+      fontSize: "9px",
       letterSpacing: "0.15em",
-      color: "#384858",
+      color: "#8aacbf",
       marginTop: "4px",
       textTransform: "uppercase",
     });
@@ -1586,7 +1682,7 @@ function showAddressOverlay() {
         box-shadow:inset 0 2px 4px rgba(0,0,0,0.3);
         transition:border-color .15s,box-shadow .15s; appearance:none; -webkit-appearance:none;
       }
-      .addr-input::placeholder { color:#2a3848; }
+      .addr-input::placeholder { color:#4a6078; }
       .addr-input:focus, .addr-select:focus {
         outline:none; border-color:#d05818;
         box-shadow:0 0 0 2px rgba(208,88,24,0.18),inset 0 2px 4px rgba(0,0,0,0.3);
@@ -1598,14 +1694,22 @@ function showAddressOverlay() {
       .addr-select-wrap { position:relative; }
       .addr-select-wrap::after {
         content:"▾"; position:absolute; right:12px; top:50%; transform:translateY(-50%);
-        color:#6a8098; font-size:14px; pointer-events:none;
+        color:#8aacbf; font-size:14px; pointer-events:none;
       }
       .addr-select option { background:#18202e; color:#d8e8f4; }
       .addr-label {
-        font-family:'Orbitron',sans-serif; font-size:7.5px; font-weight:700;
-        letter-spacing:0.22em; text-transform:uppercase; color:#6a8098;
+        font-family:'Orbitron',sans-serif; font-size:8px; font-weight:700;
+        letter-spacing:0.22em; text-transform:uppercase; color:#a8c4d8;
         display:block; margin-bottom:6px;
       }
+      .addr-rule-hint {
+        font-family:'Share Tech Mono',monospace; font-size:9px; letter-spacing:0.06em;
+        color:#4a6078; margin-top:4px; display:block; line-height:1.4;
+        transition:color 0.15s;
+      }
+      .addr-input.addr-err ~ .addr-rule-hint,
+      .addr-select.addr-err ~ .addr-rule-hint,
+      .addr-select-wrap .addr-select.addr-err ~ .addr-rule-hint { color:#e05040; }
       .addr-field { display:flex; flex-direction:column; }
       .addr-row { display:grid; gap:14px; margin-bottom:14px; }
       .addr-row-1   { grid-template-columns:1fr; }
@@ -1617,8 +1721,8 @@ function showAddressOverlay() {
         border:1.5px solid; cursor:pointer; transition:all .12s ease;
         display:flex; align-items:center; gap:8px;
       }
-      .addr-btn-cancel { background:transparent; border-color:#2a3848; color:#6a8098; box-shadow:3px 3px 0 #0e1420; }
-      .addr-btn-cancel:hover { background:#1e2838; border-color:#6a8098; color:#d8e8f4; box-shadow:5px 5px 0 #0e1420; transform:translate(-2px,-2px); }
+      .addr-btn-cancel { background:transparent; border-color:#2a3848; color:#8aacbf; box-shadow:3px 3px 0 #0e1420; }
+      .addr-btn-cancel:hover { background:#1e2838; border-color:#8aacbf; color:#d8e8f4; box-shadow:5px 5px 0 #0e1420; transform:translate(-2px,-2px); }
       .addr-btn-submit { background:transparent; border-color:#d05818; color:#d05818; box-shadow:4px 4px 0 #5a2008; }
       .addr-btn-submit:hover { background:#d05818; color:#0e1018; box-shadow:6px 6px 0 #5a2008; transform:translate(-2px,-2px); }
       @media(max-width:540px){
@@ -1628,7 +1732,6 @@ function showAddressOverlay() {
     document.head.appendChild(s);
   }
 
-  // Wrap in a form element so browser autofill works
   const backdrop = document.createElement("div");
   backdrop.id = "addr-overlay";
   Object.assign(backdrop.style, {
@@ -1760,7 +1863,13 @@ function showAddressOverlay() {
   secTitle.innerHTML = `<span style="width:3px;height:13px;background:#d05818;display:inline-block;flex-shrink:0"></span>Delivery Address`;
   body.appendChild(secTitle);
 
-  const mkField = (labelTxt, placeholder, required = true, type = "text") => {
+  const mkField = (
+    labelTxt,
+    placeholder,
+    required = true,
+    type = "text",
+    hint = "",
+  ) => {
     const wrap = document.createElement("div");
     wrap.className = "addr-field";
     const lbl = document.createElement("label");
@@ -1774,10 +1883,16 @@ function showAddressOverlay() {
     inp.addEventListener("input", () => inp.classList.remove("addr-err"));
     wrap.appendChild(lbl);
     wrap.appendChild(inp);
+    if (hint) {
+      const hintEl = document.createElement("span");
+      hintEl.className = "addr-rule-hint";
+      hintEl.textContent = hint;
+      wrap.appendChild(hintEl);
+    }
     return { wrap, inp };
   };
 
-  const mkSelect = (labelTxt, options, required = true) => {
+  const mkSelect = (labelTxt, options, required = true, hint = "") => {
     const wrap = document.createElement("div");
     wrap.className = "addr-field";
     const lbl = document.createElement("label");
@@ -1804,6 +1919,12 @@ function showAddressOverlay() {
     selWrap.appendChild(sel);
     wrap.appendChild(lbl);
     wrap.appendChild(selWrap);
+    if (hint) {
+      const hintEl = document.createElement("span");
+      hintEl.className = "addr-rule-hint";
+      hintEl.textContent = hint;
+      wrap.appendChild(hintEl);
+    }
     return { wrap, inp: sel };
   };
 
@@ -1814,21 +1935,62 @@ function showAddressOverlay() {
     return r;
   };
 
-  const fName = mkField("Full Name", "e.g. Rahul Sharma");
+  const fName = mkField(
+    "Full Name",
+    "e.g. Rahul Sharma",
+    true,
+    "text",
+    "First & last name · letters and spaces only",
+  );
   fName.inp.autocomplete = "name";
-  const fLine1 = mkField("Address Line 1", "House / Flat No., Building Name");
+  const fLine1 = mkField(
+    "Address Line 1",
+    "House / Flat No., Building Name",
+    true,
+    "text",
+    "At least 5 characters",
+  );
   fLine1.inp.autocomplete = "address-line1";
-  const fLine2 = mkField("Address Line 2", "Street, Area, Landmark", false);
+  const fLine2 = mkField(
+    "Address Line 2",
+    "Street, Area, Landmark",
+    false,
+    "text",
+    "Optional",
+  );
   fLine2.inp.autocomplete = "address-line2";
-  const fLine3 = mkField("Address Line 3", "Locality / Neighbourhood", false);
+  const fLine3 = mkField(
+    "Address Line 3",
+    "Locality / Neighbourhood",
+    false,
+    "text",
+    "Optional",
+  );
   fLine3.inp.autocomplete = "address-line3";
-  const fCity = mkField("City", "e.g. Bengaluru");
+  const fCity = mkField(
+    "City",
+    "e.g. Bengaluru",
+    true,
+    "text",
+    "Letters and spaces only",
+  );
   fCity.inp.autocomplete = "address-level2";
-  const fState = mkSelect("State", INDIAN_STATES);
+  const fState = mkSelect(
+    "State",
+    INDIAN_STATES,
+    true,
+    "Select your state from the list",
+  );
   fState.inp.autocomplete = "address-level1";
-  const fPin = mkField("PIN Code", "560001");
+  const fPin = mkField("PIN Code", "560001", true, "text", "Exactly 6 digits");
   fPin.inp.autocomplete = "postal-code";
-  const fPhone = mkField("Phone Number", "+91 98765 43210", true, "tel");
+  const fPhone = mkField(
+    "Phone Number",
+    "+91 98765 43210",
+    true,
+    "tel",
+    "10-digit mobile number · digits only",
+  );
   fPhone.inp.autocomplete = "tel";
 
   body.appendChild(mkRow("addr-row-1", fName));
@@ -1876,27 +2038,61 @@ function showAddressOverlay() {
   submitBtn.className = "addr-btn addr-btn-submit";
   submitBtn.innerHTML = `<span>▶</span> CONFIRM ORDER`;
   submitBtn.onclick = async () => {
-    const requiredFields = [fName, fLine1, fCity, fState, fPin, fPhone];
     let valid = true;
-    requiredFields.forEach((f) => {
-      if (!f.inp.value.trim()) {
-        f.inp.classList.add("addr-err");
-        valid = false;
-      }
-    });
-    if (fPin.inp.value.trim() && !/^\d{6}$/.test(fPin.inp.value.trim())) {
+    const errors = [];
+
+    // Full name: required, letters+spaces only, at least 2 chars
+    const nameVal = fName.inp.value.trim();
+    if (!nameVal || nameVal.length < 2 || !/^[a-zA-Z\s'.]+$/.test(nameVal)) {
+      fName.inp.classList.add("addr-err");
+      valid = false;
+      if (!nameVal) errors.push("Full name is required");
+      else errors.push("Name must contain letters only");
+    }
+
+    // Address line 1: required, at least 5 chars
+    const line1Val = fLine1.inp.value.trim();
+    if (!line1Val || line1Val.length < 5) {
+      fLine1.inp.classList.add("addr-err");
+      valid = false;
+      errors.push("Address Line 1 must be at least 5 characters");
+    }
+
+    // City: required, letters+spaces only
+    const cityVal = fCity.inp.value.trim();
+    if (!cityVal || !/^[a-zA-Z\s]+$/.test(cityVal)) {
+      fCity.inp.classList.add("addr-err");
+      valid = false;
+      errors.push(
+        !cityVal ? "City is required" : "City must contain letters only",
+      );
+    }
+
+    // State: required
+    if (!fState.inp.value) {
+      fState.inp.classList.add("addr-err");
+      valid = false;
+      errors.push("Please select a state");
+    }
+
+    // PIN: required, exactly 6 digits
+    const pinVal = fPin.inp.value.trim();
+    if (!pinVal || !/^\d{6}$/.test(pinVal)) {
       fPin.inp.classList.add("addr-err");
       valid = false;
+      errors.push("PIN code must be exactly 6 digits");
     }
-    if (
-      fPhone.inp.value.trim() &&
-      fPhone.inp.value.replace(/\D/g, "").length < 10
-    ) {
+
+    // Phone: required, 10 digits
+    const phoneDigits = fPhone.inp.value.replace(/\D/g, "");
+    if (!fPhone.inp.value.trim() || phoneDigits.length < 10) {
       fPhone.inp.classList.add("addr-err");
       valid = false;
+      errors.push("Phone number must have at least 10 digits");
     }
+
     if (!valid) {
-      showHudMessage("⚠ Please fill in all required fields correctly");
+      showHudMessage("⚠ " + (errors[0] ?? "Please fix the highlighted fields"));
       return;
     }
 
@@ -1928,7 +2124,6 @@ function showAddressOverlay() {
         fState,
         fPin,
       });
-
       backdrop.remove();
       showOrderConfirmOverlay(
         addrLines,
@@ -1943,7 +2138,6 @@ function showAddressOverlay() {
       console.error("[ORDER SAVE ERROR]", err);
       const msg = err?.message ?? String(err);
       showHudMessage("⚠ " + msg.slice(0, 80));
-      // Also show in a visible alert so user can read full error
       alert("Order save failed:\n\n" + msg);
       submitBtn.disabled = false;
       submitBtn.innerHTML = `<span>▶</span> CONFIRM ORDER`;
@@ -1955,12 +2149,10 @@ function showAddressOverlay() {
   btnRow.appendChild(note);
   btnRow.appendChild(btnGroup);
   body.appendChild(btnRow);
-
   form.appendChild(body);
   card.appendChild(form);
   backdrop.appendChild(card);
   document.body.appendChild(backdrop);
-
   setTimeout(() => fName.inp.focus(), 120);
 }
 
@@ -2112,7 +2304,7 @@ function showOrderConfirmOverlay(
     color: "#4a9898",
     boxShadow: "4px 4px 0 #0e2626",
   });
-  printBtn.innerHTML = `<span style="margin-right:8px">▤</span> PRINT REPORT`;
+  printBtn.innerHTML = `<span style="margin-right:8px">▤</span> PRINT DESIGN SUMMARY`;
   printBtn.onclick = () => printDesign();
 
   const btnGroup = document.createElement("div");
@@ -2137,7 +2329,7 @@ function showOrderConfirmOverlay(
 }
 
 /* =========================================================
-   SUPABASE — Order saving (uses dynamic prices from DB)
+   SUPABASE — Order saving
    ========================================================= */
 
 async function saveOrderToSupabase({
@@ -2181,7 +2373,6 @@ async function saveOrderToSupabase({
     );
   }
 
-  // ── Use live prices from DB (via partConfig.js) ───────────────────────────
   const partRows = [];
   const countsByType = {};
   scene.traverse((o) => {
@@ -2191,8 +2382,8 @@ async function saveOrderToSupabase({
   });
 
   for (const [type, qty] of Object.entries(countsByType)) {
-    const unitCost = getPrice(type); // ← from partConfig.js
-    const partLabel = getLabel(type); // ← from partConfig.js
+    const unitCost = getPrice(type);
+    const partLabel = getLabel(type);
     partRows.push({
       order_id: order.id,
       part_type: type,
@@ -2218,8 +2409,6 @@ async function saveOrderToSupabase({
 async function uploadPrintReport(orderId, orderRef) {
   try {
     showHudMessage("GENERATING REPORT...");
-    console.log("[REPORT] Starting for order:", orderId);
-
     const angleKeys = [
       "perspective",
       "front",
@@ -2256,35 +2445,25 @@ async function uploadPrintReport(orderId, orderRef) {
       const raw = captureFromAngle(key);
       screenshots[key] = await addTechnicalOverlay(raw, overlayLabels[key]);
     }
-    console.log("[REPORT] Screenshots done");
 
     const reportHTML = buildFullReportHTML(screenshots, angleLabels, orderRef);
     const blob = new Blob([reportHTML], { type: "text/html" });
     const filePath = `orders/${orderId}/${orderRef}_report.html`;
-    console.log("[REPORT] Uploading to storage:", filePath);
 
     const { error: uploadErr } = await supabase.storage
       .from("reports")
       .upload(filePath, blob, { contentType: "text/html", upsert: true });
-
     if (uploadErr) {
-      console.error(
-        "[REPORT] Storage upload FAILED:",
-        uploadErr.message,
-        uploadErr,
-      );
+      console.error("[REPORT] Storage upload FAILED:", uploadErr.message);
       showHudMessage("⚠ Report storage failed: " + uploadErr.message);
       return;
     }
-    console.log("[REPORT] Storage upload OK");
 
     const { data: urlData, error: urlErr } = await supabase.storage
       .from("reports")
       .createSignedUrl(filePath, 60 * 60 * 24 * 365);
-
     if (urlErr) console.error("[REPORT] Signed URL FAILED:", urlErr.message);
     const publicUrl = urlData?.signedUrl ?? null;
-    console.log("[REPORT] Signed URL:", publicUrl ? "OK" : "null");
 
     const { error: upsertErr } = await supabase
       .from("print_reports")
@@ -2292,18 +2471,12 @@ async function uploadPrintReport(orderId, orderRef) {
         { order_id: orderId, storage_path: filePath, public_url: publicUrl },
         { onConflict: "order_id" },
       );
-
     if (upsertErr) {
-      console.error(
-        "[REPORT] print_reports upsert FAILED:",
-        upsertErr.message,
-        upsertErr,
-      );
+      console.error("[REPORT] print_reports upsert FAILED:", upsertErr.message);
       showHudMessage("⚠ Report DB save failed: " + upsertErr.message);
       return;
     }
 
-    console.log("[SUPABASE] Report uploaded:", filePath);
     showHudMessage("REPORT SAVED ✓");
   } catch (err) {
     console.error("[REPORT UPLOAD ERROR]", err);
@@ -2319,11 +2492,8 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
     counts[t] = (counts[t] ?? 0) + 1;
   });
 
-  // ── Use live prices/labels from DB ────────────────────────────────────────
   const partCostMap = getAllPrices();
   const partLabelMap = getAllLabels();
-  // ─────────────────────────────────────────────────────────────────────────
-
   const total = document.getElementById("totalPrice")?.textContent ?? "0";
   const totalParts = Object.values(counts).reduce((a, b) => a + b, 0);
   const now = new Date().toLocaleString();
@@ -2333,11 +2503,7 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
     .map(([t, n]) => {
       const cost = (partCostMap[t] ?? 0) * n;
       computedTotal += cost;
-      return `<tr>
-      <td>${(partLabelMap[t] ?? t.replace(/_/g, " ")).toUpperCase()}</td>
-      <td style="text-align:center">${n}</td>
-      <td style="text-align:right;font-family:'Courier New',monospace;color:#cc2200">₹${cost.toLocaleString("en-IN")}</td>
-    </tr>`;
+      return `<tr><td>${(partLabelMap[t] ?? t.replace(/_/g, " ")).toUpperCase()}</td><td style="text-align:center">${n}</td><td style="text-align:right;font-family:'Courier New',monospace;color:#cc2200">₹${cost.toLocaleString("en-IN")}</td></tr>`;
     })
     .join("");
 
@@ -2408,10 +2574,7 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
   @media print{body{padding:12px 16px}}
 </style></head><body>
   <div class="print-header">
-    <div>
-      <div class="print-title">ROBOT CONFIGURATOR</div>
-      <div class="print-subtitle">Design Report · MK-1 Unit · ${orderRef}</div>
-    </div>
+    <div><div class="print-title">ROBOT CONFIGURATOR</div><div class="print-subtitle">Design Report · MK-1 Unit · ${orderRef}</div></div>
     <div class="print-meta">Generated: ${now}<br>Parts: ${totalParts}<br>
       <span class="status-badge ${isFinalized ? "status-final" : "status-draft"}">${isFinalized ? "✓ Finalized" : "⚠ Draft"}</span>
     </div>
@@ -2466,7 +2629,6 @@ function addTechnicalOverlay(dataURL, viewLabel) {
       const imageData = ctx.getImageData(0, 0, W, H);
       const data = imageData.data;
       const BG_THRESH = 200;
-
       let minX = W,
         maxX = 0,
         minY = H,
@@ -2486,7 +2648,6 @@ function addTechnicalOverlay(dataURL, viewLabel) {
           }
         }
       }
-
       if (maxX <= minX + 40 || maxY <= minY + 40) {
         minX = Math.round(W * 0.25);
         maxX = Math.round(W * 0.75);
@@ -2527,12 +2688,12 @@ function addTechnicalOverlay(dataURL, viewLabel) {
       ctx.restore();
 
       const PAD = Math.round(W * 0.018);
-      const LW = Math.max(1.5, W / 600);
-      const AH = Math.max(8, W / 100);
-      const TICK = Math.max(6, W / 150);
-      const FONT_SZ = Math.max(14, W / 80);
-      const LABEL_H = FONT_SZ + 6;
-      const LABEL_P = Math.round(FONT_SZ * 0.35);
+      const LW = Math.max(1.5, W / 600),
+        AH = Math.max(8, W / 100),
+        TICK = Math.max(6, W / 150);
+      const FONT_SZ = Math.max(14, W / 80),
+        LABEL_H = FONT_SZ + 6,
+        LABEL_P = Math.round(FONT_SZ * 0.35);
 
       function dimArrow(x1, y1, x2, y2, label) {
         ctx.save();
@@ -2560,8 +2721,8 @@ function addTechnicalOverlay(dataURL, viewLabel) {
           ctx.closePath();
           ctx.fill();
         }
-        arrowhead(x1, y1, horizontal ? -1 : -1);
-        arrowhead(x2, y2, horizontal ? 1 : 1);
+        arrowhead(x1, y1, -1);
+        arrowhead(x2, y2, 1);
         function tick(ax, ay) {
           ctx.beginPath();
           if (horizontal) {
@@ -2576,8 +2737,8 @@ function addTechnicalOverlay(dataURL, viewLabel) {
         tick(x1, y1);
         tick(x2, y2);
         const mx = (x1 + x2) / 2,
-          my = (y1 + y2) / 2;
-        const tw = ctx.measureText(label).width;
+          my = (y1 + y2) / 2,
+          tw = ctx.measureText(label).width;
         ctx.fillStyle = "rgba(255,255,255,0.92)";
         ctx.fillRect(
           mx - tw / 2 - LABEL_P,
@@ -2608,10 +2769,10 @@ function addTechnicalOverlay(dataURL, viewLabel) {
         const objW = maxX - minX,
           objH = maxY - minY;
         const dLen = Math.min(objW, objH) * 0.32;
-        const dx1 = Math.max(PAD * 2, minX - PAD);
-        const dy1 = minY + Math.round(objH * 0.15);
-        const dx2 = Math.max(PAD, dx1 - dLen * 0.7);
-        const dy2 = dy1 + dLen * 0.45;
+        const dx1 = Math.max(PAD * 2, minX - PAD),
+          dy1 = minY + Math.round(objH * 0.15);
+        const dx2 = Math.max(PAD, dx1 - dLen * 0.7),
+          dy2 = dy1 + dLen * 0.45;
         dimArrow(dx1, dy1, dx2, dy2, "DEPTH");
       }
 
@@ -2663,7 +2824,6 @@ async function printDesign() {
   setTimeout(async () => {
     const rawScreenshots = {};
     for (const key of angleKeys) rawScreenshots[key] = captureFromAngle(key);
-
     const screenshots = {};
     for (const key of angleKeys)
       screenshots[key] = await addTechnicalOverlay(
@@ -2671,77 +2831,15 @@ async function printDesign() {
         overlayLabels[key],
       );
 
-    const total = document.getElementById("totalPrice")?.textContent ?? "0";
-
-    const counts = {};
-    scene.traverse((obj) => {
-      if (!obj.userData?.isMount) return;
-      const t = obj.userData.type ?? "unknown";
-      counts[t] = (counts[t] ?? 0) + 1;
-    });
-
-    // ── Use live prices/labels from DB ──────────────────────────────────────
-    const partCostMap = getAllPrices();
-    const partLabelMap = getAllLabels();
-    // ───────────────────────────────────────────────────────────────────────
-
-    let computedTotal = 0;
-    const manifestRows = Object.entries(counts)
-      .map(([t, n]) => {
-        const cost = (partCostMap[t] ?? 0) * n;
-        computedTotal += cost;
-        return `<tr>
-        <td>${(partLabelMap[t] ?? t.replace(/_/g, " ")).toUpperCase()}</td>
-        <td style="text-align:center">${n}</td>
-        <td style="text-align:right;font-family:'Courier New',monospace;color:#cc2200">₹${cost.toLocaleString("en-IN")}</td>
-      </tr>`;
-      })
-      .join("");
-
-    const totalParts = Object.values(counts).reduce((a, b) => a + b, 0);
-
-    const costGroupRows = Object.entries(counts)
-      .map(([t, n]) => {
-        const unitCost = partCostMap[t] ?? 0;
-        const groupCost = unitCost * n;
-        const label = partLabelMap[t] ?? t.replace(/_/g, " ");
-        return `
-        <tr><td colspan="2" style="font-family:'Courier New',monospace;font-size:8px;letter-spacing:0.18em;color:#999;padding:5px 12px 2px;border-top:1px solid #ddd;border-left:3px solid #cc2200;background:#fafafa;">[ ${label.toUpperCase()} ]</td></tr>
-        <tr><td style="padding-left:18px;border-left:3px solid rgba(204,34,0,0.18)">${n}× ${label}</td><td style="text-align:right;font-family:'Courier New',monospace;font-weight:700">₹${groupCost.toLocaleString("en-IN")}</td></tr>
-        <tr><td style="padding-left:18px;font-size:10px;color:#888;font-family:'Courier New',monospace;border-left:3px solid rgba(204,34,0,0.18)">@ ₹${unitCost.toLocaleString("en-IN")} each</td><td></td></tr>
-        <tr><td colspan="2" style="padding:1px 12px 4px;border-left:3px solid #cc2200;border-bottom:1px solid #e0e0e0;font-size:7px;color:#ccc"> </td></tr>`;
-      })
-      .join("");
-
-    const now = new Date().toLocaleString();
-    const mainShot = screenshots["iso"];
-    const otherAngles = [
-      "perspective",
-      "front",
-      "back",
-      "top",
-      "bottom",
-      "left",
-      "right",
-    ];
-    const otherAnglesHTML = otherAngles
-      .map(
-        (k) =>
-          `<div class="angle-card"><img src="${screenshots[k]}" alt="${angleLabels[k]} view"/></div>`,
-      )
-      .join("");
-
     const printHTML = buildFullReportHTML(
       screenshots,
       angleLabels,
       "PRINT-" + Date.now().toString(36).toUpperCase(),
     );
-
     const win = window.open("", "_blank", "width=1100,height=900");
     win.document.write(printHTML);
     win.document.close();
-
-    showHudMessage("PRINT REPORT READY ✓");
+    showHudMessage("PRINT DESIGN SUMMARY READY ✓");
   }, 100);
 }
 
@@ -2816,9 +2914,7 @@ const SHORTCUT_DEFS = {
 function updateShortcutBar() {
   if (!shortcutBarEl) return;
   shortcutBarEl.innerHTML = "";
-
   const mode = placementMode || "idle";
-
   const modeColors = {
     idle: { color: "#5a6268", label: "BROWSE" },
     frame: { color: "#909aa8", label: "FRAME ●" },
@@ -2827,7 +2923,6 @@ function updateShortcutBar() {
     support: { color: "#606870", label: "SUPPORT ●" },
     wheel: { color: "#e83a1a", label: "WHEEL ●" },
   };
-
   const mc = modeColors[mode] || modeColors.idle;
   const modeLabel = document.createElement("div");
   modeLabel.className = "sb-mode-label";
@@ -2847,18 +2942,17 @@ function updateShortcutBar() {
   }
 
   const defs = SHORTCUT_DEFS[mode] || SHORTCUT_DEFS.idle;
-
   const patchedDefs = defs.map((d) => {
-    if (mode === "frame" && d.key === "← →") {
-      const deg = (((frameOnSupportRotationSteps % 4) + 4) % 4) * 90;
-      return { key: "← →", action: `Rotate on support (${deg}°)` };
-    }
-    if (mode === "triangle" && d.key === "← →") {
+    if (mode === "frame" && d.key === "← →")
+      return {
+        key: "← →",
+        action: `Rotate on support (${(((frameOnSupportRotationSteps % 4) + 4) % 4) * 90}°)`,
+      };
+    if (mode === "triangle" && d.key === "← →")
       return {
         key: "← →",
         action: `flip ${triangleManualRotSteps === 0 ? "0°→180°" : "180°→0°"}`,
       };
-    }
     return d;
   });
 
@@ -2886,7 +2980,6 @@ function updateShortcutBar() {
 function initShortcutBar() {
   shortcutBarEl = document.createElement("div");
   shortcutBarEl.id = "shortcut-bar";
-
   const pw = getPanelWidthPx();
   Object.assign(shortcutBarEl.style, {
     position: "fixed",
@@ -2938,7 +3031,6 @@ function initShortcutBar() {
     helpBtn.style.left = `${getPanelWidthPx() + vpW / 2 - 19}px`;
   }
   positionHelpBtn();
-
   helpBtn.addEventListener("click", toggleShortcutBar);
   document.body.appendChild(helpBtn);
 
@@ -2976,7 +3068,6 @@ function initShortcutBar() {
 function showHudMessage(text) {
   const existing = document.getElementById("hud-msg");
   if (existing) existing.remove();
-
   const el = document.createElement("div");
   el.id = "hud-msg";
   el.textContent = text;
@@ -2999,14 +3090,12 @@ function showHudMessage(text) {
     animation: "hudMsgIn 0.3s ease both",
   });
   document.body.appendChild(el);
-
   if (!document.getElementById("hud-kf")) {
     const s = document.createElement("style");
     s.id = "hud-kf";
     s.textContent = `@keyframes hudMsgIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}`;
     document.head.appendChild(s);
   }
-
   setTimeout(() => {
     el.style.transition = "opacity 0.5s";
     el.style.opacity = "0";
@@ -3029,7 +3118,6 @@ function countPlaced(type) {
 function showPopup(message, actionLabel, actionFn) {
   const existing = document.getElementById("rule-popup");
   if (existing) existing.remove();
-
   const overlay = document.createElement("div");
   overlay.id = "rule-popup";
   Object.assign(overlay.style, {
@@ -3041,7 +3129,6 @@ function showPopup(message, actionLabel, actionFn) {
     justifyContent: "center",
     zIndex: "999999",
   });
-
   const box = document.createElement("div");
   Object.assign(box.style, {
     background: "#111111",
@@ -3056,7 +3143,6 @@ function showPopup(message, actionLabel, actionFn) {
     boxShadow: "0 0 40px rgba(204,34,0,0.25)",
     position: "relative",
   });
-
   const title = document.createElement("div");
   title.textContent = "⚠  BUILD RULE VIOLATION";
   Object.assign(title.style, {
@@ -3067,7 +3153,6 @@ function showPopup(message, actionLabel, actionFn) {
     fontWeight: "700",
     fontFamily: "'Orbitron', sans-serif",
   });
-
   const msg = document.createElement("div");
   msg.textContent = message;
   Object.assign(msg.style, {
@@ -3077,7 +3162,6 @@ function showPopup(message, actionLabel, actionFn) {
     marginBottom: "24px",
     letterSpacing: "0.04em",
   });
-
   const btnRow = document.createElement("div");
   Object.assign(btnRow.style, {
     display: "flex",
@@ -3085,7 +3169,6 @@ function showPopup(message, actionLabel, actionFn) {
     justifyContent: "center",
     flexWrap: "wrap",
   });
-
   function makeBtn(label, primary) {
     const b = document.createElement("button");
     b.textContent = label;
@@ -3111,11 +3194,9 @@ function showPopup(message, actionLabel, actionFn) {
     };
     return b;
   }
-
   const dismissBtn = makeBtn("UNDERSTOOD", false);
   dismissBtn.onclick = () => overlay.remove();
   btnRow.appendChild(dismissBtn);
-
   if (actionLabel && typeof actionFn === "function") {
     const orLabel = document.createElement("span");
     orLabel.textContent = "—  or  —";
@@ -3133,7 +3214,6 @@ function showPopup(message, actionLabel, actionFn) {
     };
     btnRow.appendChild(addBtn);
   }
-
   box.appendChild(title);
   box.appendChild(msg);
   box.appendChild(btnRow);
@@ -3214,6 +3294,7 @@ function clearGhost() {
   updateShortcutBar();
   updateLegendHighlight();
   clearTimeout(idleTimer);
+  hideComponentPreview();
 }
 
 function applySocketDepth(target, socket, depth) {
@@ -3242,10 +3323,8 @@ function findNearestMarkerOnScreen(markers, thresholdPx) {
   const rect = canvas.getBoundingClientRect();
   const mouseScreenX = ((mouse.x + 1) / 2) * rect.width;
   const mouseScreenY = ((1 - mouse.y) / 2) * rect.height;
-
   let best = null,
     bestDist = thresholdPx;
-
   for (const m of markers) {
     if (!m.visible) continue;
     const projected = m.position.clone().project(camera);
@@ -3331,7 +3410,6 @@ function rebuildSocketMarkers() {
     ...frameOnSupportMarkers,
     ...wheelMarkers,
   ].forEach((m) => scene.remove(m));
-
   frameMarkers = [];
   motorMarkers = [];
   triangleSocketMarkers = [];
@@ -3339,7 +3417,6 @@ function rebuildSocketMarkers() {
   triangleMarkers = [];
   frameOnSupportMarkers = [];
   wheelMarkers = [];
-
   scene.updateMatrixWorld(true);
 
   const suppressedSockets = new Set();
@@ -3407,19 +3484,31 @@ function rebuildSocketMarkers() {
     if (!o.name || usedSockets.has(o.uuid) || suppressedSockets.has(o.uuid))
       return;
     if (ghost && isDescendantOf(o, ghost)) return;
-
     if (o.name.toUpperCase() === "SOCKET_FRAME_SUPPORT_B") {
       let parentMount = o.parent;
       while (parentMount && !parentMount.userData?.isMount)
         parentMount = parentMount.parent;
       if (parentMount && parentMount.userData.type === "support_frame") return;
     }
-
     if (o.name.startsWith("SOCKET_FRAME_SUPPORT")) {
       addMarker(o, frameOnSupportMarkers, supportFrameSocketMat);
       return;
     }
-    if (o.name.startsWith("SOCKET_FRAME")) addMarker(o, frameMarkers, frameMat);
+    if (o.name.startsWith("SOCKET_FRAME")) {
+      const upper = o.name.toUpperCase();
+      // Motor attachment sockets on frames (e.g. SOCKET_FRAME_MOTOR_*) → motorMarkers, NOT frameMarkers
+      if (upper.includes("MOTOR")) {
+        addMarker(o, motorMarkers, motorMat);
+        return;
+      }
+      // Wheel attachment sockets on frames → wheelMarkers
+      if (upper.includes("WHEEL")) {
+        addMarker(o, wheelMarkers, wheelSocketMat);
+        return;
+      }
+      addMarker(o, frameMarkers, frameMat);
+      return;
+    }
     if (o.name.startsWith("SOCKET_MOTOR")) addMarker(o, motorMarkers, motorMat);
     if (o.name.startsWith("WHEEL_SOCKET"))
       addMarker(o, wheelMarkers, wheelSocketMat);
@@ -3502,7 +3591,7 @@ function getValidStressConnectorSockets() {
 
 function applySocketHighlights() {
   const mode = placementMode;
-
+  // Hide ALL markers and reset their scale so pulsing from a previous mode doesn't bleed through
   [
     ...frameMarkers,
     ...frameOnSupportMarkers,
@@ -3512,6 +3601,7 @@ function applySocketHighlights() {
     ...wheelMarkers,
   ].forEach((m) => {
     m.visible = false;
+    m.scale.setScalar(1);
   });
 
   if (mode === "frame") {
@@ -3525,19 +3615,66 @@ function applySocketHighlights() {
       m.material = MAT_SUPPORT_ACTIVE;
       m.scale.setScalar(1.5);
     });
+    // Explicitly keep these off — belt-and-suspenders
+    motorMarkers.forEach((m) => {
+      m.visible = false;
+      m.scale.setScalar(1);
+    });
+    wheelMarkers.forEach((m) => {
+      m.visible = false;
+      m.scale.setScalar(1);
+    });
+    triangleSocketMarkers.forEach((m) => {
+      m.visible = false;
+      m.scale.setScalar(1);
+    });
+    stressConnectorMarkers.forEach((m) => {
+      m.visible = false;
+      m.scale.setScalar(1);
+    });
   }
-  if (mode === "motor")
+  if (mode === "motor") {
     motorMarkers.forEach((m) => {
       m.visible = true;
       m.material = MAT_MOTOR_ACTIVE;
       m.scale.setScalar(1.5);
     });
-  if (mode === "triangle")
+    frameMarkers.forEach((m) => {
+      m.visible = false;
+      m.scale.setScalar(1);
+    });
+    frameOnSupportMarkers.forEach((m) => {
+      m.visible = false;
+      m.scale.setScalar(1);
+    });
+    wheelMarkers.forEach((m) => {
+      m.visible = false;
+      m.scale.setScalar(1);
+    });
+  }
+  if (mode === "triangle") {
     triangleSocketMarkers.forEach((m) => {
       m.visible = true;
       m.material = MAT_TRI_ACTIVE;
       m.scale.setScalar(1.5);
     });
+    motorMarkers.forEach((m) => {
+      m.visible = false;
+      m.scale.setScalar(1);
+    });
+    wheelMarkers.forEach((m) => {
+      m.visible = false;
+      m.scale.setScalar(1);
+    });
+    frameMarkers.forEach((m) => {
+      m.visible = false;
+      m.scale.setScalar(1);
+    });
+    stressConnectorMarkers.forEach((m) => {
+      m.visible = false;
+      m.scale.setScalar(1);
+    });
+  }
   if (mode === "support") {
     const validSet = new Set(getValidStressConnectorSockets());
     stressConnectorMarkers.forEach((m) => {
@@ -3545,16 +3682,55 @@ function applySocketHighlights() {
         m.visible = true;
         m.material = MAT_TRI_ACTIVE;
         m.scale.setScalar(1.5);
+      } else {
+        m.visible = false;
+        m.scale.setScalar(1);
       }
     });
+    motorMarkers.forEach((m) => {
+      m.visible = false;
+      m.scale.setScalar(1);
+    });
+    wheelMarkers.forEach((m) => {
+      m.visible = false;
+      m.scale.setScalar(1);
+    });
+    frameMarkers.forEach((m) => {
+      m.visible = false;
+      m.scale.setScalar(1);
+    });
+    triangleSocketMarkers.forEach((m) => {
+      m.visible = false;
+      m.scale.setScalar(1);
+    });
   }
-  if (mode === "wheel")
+  if (mode === "wheel") {
     wheelMarkers.forEach((m) => {
       m.visible = true;
       m.material = MAT_WHEEL_ACTIVE;
       m.scale.setScalar(1.5);
     });
-
+    motorMarkers.forEach((m) => {
+      m.visible = false;
+      m.scale.setScalar(1);
+    });
+    frameMarkers.forEach((m) => {
+      m.visible = false;
+      m.scale.setScalar(1);
+    });
+    frameOnSupportMarkers.forEach((m) => {
+      m.visible = false;
+      m.scale.setScalar(1);
+    });
+    triangleSocketMarkers.forEach((m) => {
+      m.visible = false;
+      m.scale.setScalar(1);
+    });
+    stressConnectorMarkers.forEach((m) => {
+      m.visible = false;
+      m.scale.setScalar(1);
+    });
+  }
   hoveredMotorMarker = null;
 }
 
@@ -3566,12 +3742,10 @@ function showRotationControls(mode) {
   const el = document.getElementById("viewport-rot-controls");
   if (el) el.style.display = "flex";
 }
-
 function hideRotationControls() {
   const el = document.getElementById("viewport-rot-controls");
   if (el) el.style.display = "none";
 }
-
 function updateRotationDisplay() {}
 
 function flashArrowKey(direction) {
@@ -3585,9 +3759,7 @@ function flashArrowKey(direction) {
 function updateWheelButtonState() {
   const btn = document.getElementById("addWheelBtn");
   if (!btn) return;
-  const motorsPlaced = countPlaced("motor");
-  const hasFreeSockets = wheelMarkers.length > 0;
-  const shouldEnable = motorsPlaced > 0 && hasFreeSockets;
+  const shouldEnable = countPlaced("motor") > 0 && wheelMarkers.length > 0;
   btn.disabled = !shouldEnable;
   btn.style.opacity = shouldEnable ? "1" : "0.35";
   btn.style.pointerEvents = shouldEnable ? "auto" : "none";
@@ -3596,9 +3768,8 @@ function updateWheelButtonState() {
 function updateSupportButtonState() {
   const btn = document.getElementById("addSupportFrame");
   if (!btn) return;
-  const triPlaced = countPlaced("triangle_frame");
-  const hasFreeSockets = stressConnectorMarkers.length > 0;
-  const shouldEnable = triPlaced >= 2 && hasFreeSockets;
+  const shouldEnable =
+    countPlaced("triangle_frame") >= 2 && stressConnectorMarkers.length > 0;
   btn.disabled = !shouldEnable;
   btn.style.opacity = shouldEnable ? "1" : "0.35";
   btn.style.pointerEvents = shouldEnable ? "auto" : "none";
@@ -3640,6 +3811,7 @@ function startMotorPlacement() {
   motorRotationGroup.add(m);
   ghost.add(motorRotationGroup);
   scene.add(ghost);
+  showComponentPreview("motor", motorTemplate);
 }
 
 function startFramePlacement() {
@@ -3664,6 +3836,7 @@ function startFramePlacement() {
   ghost = frameTemplate.clone(true);
   makeGhost(ghost);
   scene.add(ghost);
+  showComponentPreview("frame", frameTemplate);
 }
 
 function startTrianglePlacement() {
@@ -3685,6 +3858,7 @@ function startTrianglePlacement() {
   makeGhost(ghost);
   scene.add(ghost);
   showRotationControls("triangle");
+  showComponentPreview("triangle_frame", triangleTemplate);
 }
 
 function startSupportPlacement() {
@@ -3720,6 +3894,7 @@ function startSupportPlacement() {
   ghost = supportTemplate.clone(true);
   makeGhost(ghost);
   scene.add(ghost);
+  showComponentPreview("support_frame", supportTemplate);
 }
 
 function startWheelPlacement() {
@@ -3760,6 +3935,7 @@ function startWheelPlacement() {
   ghost = wheelTemplate.clone(true);
   makeGhost(ghost);
   scene.add(ghost);
+  showComponentPreview("wheel", wheelTemplate);
 }
 
 /* =========================================================
@@ -3770,7 +3946,6 @@ function restartPlacementMode(mode) {
   if (ghost) scene.remove(ghost);
   ghost = null;
   motorRotationGroup = null;
-
   if (mode === "motor") {
     motorAutoBaseYaw = 0;
     motorManualRotSteps = 0;
@@ -3876,19 +4051,16 @@ function resolveBestSupportSocketPair(clickedSocket) {
   clickedSocket.updateMatrixWorld(true);
   const mountMap = buildTriangleMountMap();
   if (mountMap.size < 2) return null;
-
   let clickedMount = clickedSocket.parent;
   while (clickedMount && !clickedMount.userData?.isMount)
     clickedMount = clickedMount.parent;
   if (!clickedMount || !mountMap.has(clickedMount)) return null;
-
   const rectFrameA = getParentRectFrame(clickedMount);
   let bestSocketA = null,
     bestSocketB = null,
     bestPosA = null,
     bestPosB = null,
     bestDist = Infinity;
-
   for (const entryA of mountMap.get(clickedMount)) {
     for (const [mount, entries] of mountMap) {
       if (mount === clickedMount) continue;
@@ -3906,7 +4078,6 @@ function resolveBestSupportSocketPair(clickedSocket) {
       }
     }
   }
-
   if (!bestSocketA || !bestSocketB) return null;
   return {
     socketA: bestSocketA,
@@ -3927,7 +4098,6 @@ function applyTwoPointSupportSnap(
   mountGroup.rotation.set(0, 0, 0);
   mountGroup.position.set(0, 0, 0);
   mountGroup.updateMatrixWorld(true);
-
   let connL = null,
     connR = null;
   connectorRoot.traverse((o) => {
@@ -3935,9 +4105,7 @@ function applyTwoPointSupportSnap(
     if (n === "SOCKET_STRESS_SUPPORT_L") connL = o;
     if (n === "SOCKET_STRESS_SUPPORT_R") connR = o;
   });
-
   const targetY = posB ? (posA.y + posB.y) / 2 : posA.y;
-
   if (connL && connR && posB) {
     const lWorld0 = new THREE.Vector3(),
       rWorld0 = new THREE.Vector3();
@@ -3950,20 +4118,18 @@ function applyTwoPointSupportSnap(
     const fromAngle = Math.atan2(connSpanX, connSpanZ),
       toAngle = Math.atan2(targetSpanX, targetSpanZ);
     const baseYaw = toAngle - fromAngle;
-
     let bestYaw = baseYaw,
       bestConnector = connL,
       bestError = Infinity,
       bestFacingScore = -Infinity;
-
     let triFrontWorld = new THREE.Vector3();
     if (sourceSocket) {
       let triMount = sourceSocket.parent;
       while (triMount && !triMount.userData?.isMount)
         triMount = triMount.parent;
       if (triMount) {
-        const triBox = new THREE.Box3().setFromObject(triMount);
-        const triCenter = triBox.getCenter(new THREE.Vector3());
+        const triBox = new THREE.Box3().setFromObject(triMount),
+          triCenter = triBox.getCenter(new THREE.Vector3());
         const socketPos = new THREE.Vector3();
         sourceSocket.getWorldPosition(socketPos);
         triFrontWorld.subVectors(socketPos, triCenter);
@@ -3971,7 +4137,6 @@ function applyTwoPointSupportSnap(
         if (triFrontWorld.lengthSq() > 0.0001) triFrontWorld.normalize();
       }
     }
-
     for (const yaw of [baseYaw, baseYaw + Math.PI]) {
       mountGroup.rotation.set(0, yaw, 0);
       mountGroup.updateMatrixWorld(true);
@@ -3988,8 +4153,8 @@ function applyTwoPointSupportSnap(
         const err = Math.hypot(oW.x + dx - posB.x, oW.z + dz - posB.z);
         let bridgeFrontWorld = new THREE.Vector3();
         if (connectorRoot) {
-          const box = new THREE.Box3().setFromObject(connectorRoot);
-          const center = box.getCenter(new THREE.Vector3());
+          const box = new THREE.Box3().setFromObject(connectorRoot),
+            center = box.getCenter(new THREE.Vector3());
           const localCenter = connectorRoot.worldToLocal(center.clone());
           const localSocket = new THREE.Vector3();
           snap.getWorldPosition(localSocket);
@@ -4021,7 +4186,6 @@ function applyTwoPointSupportSnap(
         }
       }
     }
-
     mountGroup.rotation.set(0, bestYaw + manualSteps * (Math.PI / 2), 0);
     mountGroup.updateMatrixWorld(true);
     const cWorld = new THREE.Vector3();
@@ -4038,7 +4202,6 @@ function applyTwoPointSupportSnap(
     mountGroup.rotation.set(0, mountGroup.rotation.y, 0);
     return;
   }
-
   const firstConn = connL || connR;
   if (firstConn) {
     mountGroup.rotation.set(0, manualSteps * (Math.PI / 2), 0);
@@ -5049,9 +5212,9 @@ function initColorLegend() {
   const legend = document.getElementById("colorLegend");
   const toggleBtn = document.getElementById("legendToggle");
   if (!legend) return;
-  toggleBtn?.addEventListener("click", () => {
-    legend.classList.toggle("collapsed");
-  });
+  toggleBtn?.addEventListener("click", () =>
+    legend.classList.toggle("collapsed"),
+  );
   legend.querySelectorAll(".legend-item").forEach((el, i) => {
     el.style.animationDelay = `${0.05 + i * 0.06}s`;
   });
@@ -5093,9 +5256,7 @@ function updateLegendHighlight() {
 let idleTimer = null,
   idleArrowsShown = false;
 const IDLE_DELAY_MS = 3000;
-
 function initIdleArrows() {}
-
 function hideIdleArrows() {
   if (!idleArrowsShown) return;
   const container = document.getElementById("idle-arrows");
@@ -5135,15 +5296,12 @@ function buildContextMenu(mount, screenX, screenY) {
 
   const menu = document.createElement("div");
   menu.id = "ctx-menu";
-
   const header = document.createElement("div");
   header.className = "ctx-header";
   header.innerHTML = `<span class="ctx-header-glyph">${glyph}</span><div><div class="ctx-header-name">${label}</div><div class="ctx-header-type">₹${cost.toLocaleString()} · ${type.replace(/_/g, " ")}</div></div>`;
   menu.appendChild(header);
-
   const items = document.createElement("div");
   items.className = "ctx-items";
-
   items.appendChild(
     makeCtxItem({
       icon: "◎",
@@ -5174,7 +5332,6 @@ function buildContextMenu(mount, screenX, screenY) {
     }),
   );
   items.appendChild(makeSep());
-
   const deleteItem = makeCtxItem({
     icon: "✕",
     label: depCount > 0 ? `Delete All (${depCount + 1} parts)` : "Delete Part",
@@ -5202,8 +5359,8 @@ function buildContextMenu(mount, screenX, screenY) {
   ctxMenuEl = menu;
 
   const mw = menu.offsetWidth || 220,
-    mh = menu.offsetHeight || 180;
-  const vw = window.innerWidth,
+    mh = menu.offsetHeight || 180,
+    vw = window.innerWidth,
     vh = window.innerHeight;
   let x = screenX + 4,
     y = screenY + 4;
@@ -5213,7 +5370,6 @@ function buildContextMenu(mount, screenX, screenY) {
   y = Math.max(8, y);
   menu.style.left = `${x}px`;
   menu.style.top = `${y}px`;
-
   setTimeout(() => {
     document.addEventListener("mousedown", onCtxOutsideClick, { once: true });
     document.addEventListener("keydown", onCtxKeyDown, { capture: true });
@@ -5318,7 +5474,6 @@ function executeDelete(mount) {
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
-
   if (placementMode) {
     const t = Date.now() * 0.003,
       pulse = 1.3 + Math.sin(t) * 0.3;
@@ -5339,9 +5494,9 @@ function animate() {
       m.scale.setScalar(pulse);
     });
   }
-
   renderer.render(scene, camera);
   renderMinimap();
+  renderComponentPreview();
 }
 
 /* =========================================================
@@ -5384,14 +5539,13 @@ function initWeightSection() {
   header.id = "weight-section-header";
   header.innerHTML = `<div id="weight-section-title"><span style="color:#384858;font-size:11px">⊕</span>WEIGHT</div><div style="display:flex;align-items:center;gap:0"><div id="weight-total-badge">0 g</div><div id="weight-chevron">▾</div></div>`;
   header.addEventListener("click", () => {
-    const body = document.getElementById("weight-body");
-    const chev = document.getElementById("weight-chevron");
+    const body = document.getElementById("weight-body"),
+      chev = document.getElementById("weight-chevron");
     const collapsed = body.classList.toggle("collapsed");
     chev.style.transform = collapsed ? "rotate(-90deg)" : "rotate(0deg)";
     chev.style.color = collapsed ? "#d05818" : "#384858";
   });
   section.appendChild(header);
-
   const body = document.createElement("div");
   body.id = "weight-body";
   const rows = document.createElement("div");
@@ -5402,7 +5556,6 @@ function initWeightSection() {
   totalRow.innerHTML = `<div id="weight-total-label">TOTAL WEIGHT</div><div id="weight-total-value">0 <span>g</span></div>`;
   body.appendChild(totalRow);
   section.appendChild(body);
-
   const basketFooter = document.querySelector(".basket-footer");
   if (basketFooter?.parentElement)
     basketFooter.parentElement.insertBefore(section, basketFooter);
@@ -5410,7 +5563,6 @@ function initWeightSection() {
     const rp = document.querySelector(".panel-right");
     if (rp) rp.appendChild(section);
   }
-
   updateWeightDisplay();
 }
 
@@ -5427,7 +5579,6 @@ function updateWeightDisplay() {
   const totalVal = document.getElementById("weight-total-value");
   const badge = document.getElementById("weight-total-badge");
   if (!rowsEl) return;
-
   const counts = {};
   scene.traverse((o) => {
     if (!o.userData?.isMount) return;
@@ -5436,7 +5587,6 @@ function updateWeightDisplay() {
   });
   rowsEl.innerHTML = "";
   let totalGrams = 0;
-
   for (const type of [
     "frame",
     "motor",
@@ -5456,10 +5606,8 @@ function updateWeightDisplay() {
     row.innerHTML = `<div class="weight-row-label"><span>${glyph}</span>${label.toUpperCase()}<span class="weight-row-qty">${qty}×</span></div><div class="weight-row-val">${totalG >= 1000 ? (totalG / 1000).toFixed(2) + ' <span class="weight-row-unit">kg</span>' : totalG + ' <span class="weight-row-unit">g</span>'}<span class="weight-row-unit" style="color:#263848;font-size:7px;margin-left:3px">@${unitG}g ea</span></div>`;
     rowsEl.appendChild(row);
   }
-
   if (Object.keys(counts).length === 0)
     rowsEl.innerHTML = `<div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#2a3848;text-align:center;padding:8px 0;letter-spacing:0.1em;text-transform:uppercase;">No parts placed</div>`;
-
   const displayG =
     totalGrams >= 1000
       ? (totalGrams / 1000).toFixed(2) + " kg"
@@ -5488,7 +5636,7 @@ function hideTooltip() {
 let minimapEl = null,
   minimapCanvas = null,
   minimapCtx = null;
-const MINIMAP_SIZE = 220;
+const MINIMAP_SIZE = 240;
 let minimapOrthoCamera = null,
   minimapRenderer = null,
   minimapCollapsed = false;
@@ -5498,18 +5646,21 @@ function initMinimap() {
     const s = document.createElement("style");
     s.id = "minimap-styles";
     s.textContent = `
-      #minimap-section{margin:0;border-top:1px solid rgba(208,88,24,0.18);background:transparent;flex-shrink:0}
+      #minimap-section{margin:0;border-top:1px solid rgba(208,88,24,0.25);background:transparent;flex-shrink:0}
       #minimap-section-header{display:flex;align-items:center;justify-content:space-between;padding:8px 14px 7px;cursor:pointer;user-select:none;transition:background 0.12s}
       #minimap-section-header:hover{background:rgba(208,88,24,0.06)}
       #minimap-section-title{font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:#d05818;display:flex;align-items:center;gap:7px}
       #minimap-section-title span{color:#384858;font-size:11px}
       #minimap-chevron{font-size:9px;color:#384858;transition:transform 0.2s ease,color 0.12s;font-family:'Share Tech Mono',monospace}
       #minimap-section-header:hover #minimap-chevron{color:#d05818}
-      #minimap-body{overflow:hidden;transition:max-height 0.25s ease,opacity 0.2s ease;max-height:260px;opacity:1}
+      #minimap-body{overflow:hidden;transition:max-height 0.3s ease,opacity 0.25s ease;max-height:320px;opacity:1}
       #minimap-body.collapsed{max-height:0;opacity:0}
-      #minimap-canvas-wrap{position:relative;width:${MINIMAP_SIZE}px;height:${MINIMAP_SIZE}px;margin:0 auto 10px;cursor:crosshair;border:1px solid rgba(208,88,24,0.3);overflow:hidden;background:#070d14;display:block}
+      #minimap-canvas-wrap{position:relative;width:${MINIMAP_SIZE}px;height:${MINIMAP_SIZE}px;margin:0 auto 0;cursor:crosshair;border:1px solid rgba(208,88,24,0.5);border-top:none;overflow:hidden;background:#0a1420;display:block;box-shadow:inset 0 0 20px rgba(0,0,0,0.5)}
       #minimap-canvas-wrap canvas{display:block;position:absolute;top:0;left:0}
-      #minimap-hint{text-align:center;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:0.12em;color:#2a3848;padding:0 14px 10px;text-transform:uppercase}
+      #minimap-dims-bar{width:${MINIMAP_SIZE}px;margin:0 auto;padding:5px 10px;background:#0a1420;border:1px solid rgba(208,88,24,0.3);border-top:1px solid rgba(208,88,24,0.15);display:flex;justify-content:space-between;align-items:center;gap:6px}
+      #minimap-dims-bar span{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:0.1em;color:#8aacbf;text-transform:uppercase}
+      #minimap-dims-bar .dim-val{color:#d8e8f4;font-weight:700;font-family:'Orbitron',sans-serif;font-size:9px}
+      #minimap-hint{text-align:center;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:0.12em;color:#4a6878;padding:5px 14px 8px;text-transform:uppercase}
       @keyframes minimapIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
       #minimap-section{animation:minimapIn 0.35s ease 0.5s both}
     `;
@@ -5520,11 +5671,10 @@ function initMinimap() {
   minimapOrthoCamera.position.set(0, 30, 0);
   minimapOrthoCamera.lookAt(0, 0, 0);
   minimapOrthoCamera.up.set(0, 0, -1);
-
   minimapRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
   minimapRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   minimapRenderer.setSize(MINIMAP_SIZE, MINIMAP_SIZE);
-  minimapRenderer.setClearColor(0x070d14, 1);
+  minimapRenderer.setClearColor(0x0a1420, 1);
 
   const undoBtn = document.getElementById("undoBtn");
   let insertAfter = null;
@@ -5566,9 +5716,13 @@ function initMinimap() {
   canvasWrap.appendChild(minimapCanvas);
   canvasWrap.addEventListener("click", onMinimapClick);
   body.appendChild(canvasWrap);
+  const dimsBar = document.createElement("div");
+  dimsBar.id = "minimap-dims-bar";
+  dimsBar.innerHTML = `<span>W <span class="dim-val" id="mm-dim-w">—</span></span><span style="color:#2a3848">·</span><span>D <span class="dim-val" id="mm-dim-d">—</span></span><span style="color:#2a3848">·</span><span>H <span class="dim-val" id="mm-dim-h">—</span></span>`;
+  body.appendChild(dimsBar);
   const hint = document.createElement("div");
   hint.id = "minimap-hint";
-  hint.textContent = "Click to snap camera";
+  hint.textContent = "Top view · Click to snap camera";
   body.appendChild(hint);
   section.appendChild(body);
 
@@ -5583,7 +5737,6 @@ function initMinimap() {
     if (leftPanel) leftPanel.appendChild(section);
     else document.body.appendChild(section);
   }
-
   minimapEl = section;
 }
 
@@ -5671,10 +5824,12 @@ function drawMinimapOverlay() {
     ((wx - cam.left) / (cam.right - cam.left)) * SIZE,
     ((wz - cam.top) / (cam.bottom - cam.top)) * SIZE,
   ];
-  ctx.save();
-  ctx.strokeStyle = "rgba(100,140,180,0.12)";
-  ctx.lineWidth = 0.5;
+
+  // ── Brighter grid ──────────────────────────────────────────────────
   const step = (cam.right - cam.left) / 8;
+  ctx.save();
+  ctx.strokeStyle = "rgba(80,120,170,0.28)";
+  ctx.lineWidth = 0.5;
   for (let wx = cam.left; wx <= cam.right; wx += step) {
     const [sx] = toUV(wx, cam.top);
     ctx.beginPath();
@@ -5689,27 +5844,196 @@ function drawMinimapOverlay() {
     ctx.lineTo(SIZE, sy);
     ctx.stroke();
   }
+  // Major lines every 4 cells
+  ctx.strokeStyle = "rgba(100,150,200,0.18)";
+  ctx.lineWidth = 1;
+  for (let wx = cam.left; wx <= cam.right; wx += step * 4) {
+    const [sx] = toUV(wx, cam.top);
+    ctx.beginPath();
+    ctx.moveTo(sx, 0);
+    ctx.lineTo(sx, SIZE);
+    ctx.stroke();
+  }
+  for (let wz = cam.top; wz <= cam.bottom; wz += step * 4) {
+    const [, sy] = toUV(cam.left, wz);
+    ctx.beginPath();
+    ctx.moveTo(0, sy);
+    ctx.lineTo(SIZE, sy);
+    ctx.stroke();
+  }
   ctx.restore();
-  scene.traverse((mount) => {
-    if (!mount.userData?.isMount) return;
-    const isSelected = mount === selectedMount;
-    const [px, py] = toUV(mount.position.x, mount.position.z);
-    const dotR = 6;
-    if (isSelected) {
-      ctx.save();
-      ctx.strokeStyle = "rgba(220,50,0,0.85)";
-      ctx.lineWidth = 1.5;
+
+  // ── Build bounding box of all placed parts ─────────────────────────
+  const bbox = new THREE.Box3();
+  scene.traverse((o) => {
+    if (o.userData?.isMount) bbox.union(new THREE.Box3().setFromObject(o));
+  });
+
+  if (!bbox.isEmpty()) {
+    const bmin = bbox.min,
+      bmax = bbox.max;
+    const [x0, y0] = toUV(bmin.x, bmin.z);
+    const [x1, y1] = toUV(bmax.x, bmax.z);
+    const bw = x1 - x0,
+      bh = y1 - y0;
+
+    // ── Bounding box fill + stroke ───────────────────────────────────
+    ctx.save();
+    ctx.fillStyle = "rgba(208,88,24,0.07)";
+    ctx.fillRect(x0, y0, bw, bh);
+    ctx.strokeStyle = "rgba(208,88,24,0.6)";
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([4, 3]);
+    ctx.strokeRect(x0, y0, bw, bh);
+    ctx.setLineDash([]);
+    ctx.restore();
+
+    // ── Corner ticks ────────────────────────────────────────────────
+    const tk = 6;
+    ctx.save();
+    ctx.strokeStyle = "rgba(208,120,24,0.9)";
+    ctx.lineWidth = 1.5;
+    [
+      [x0, y0],
+      [x1, y0],
+      [x1, y1],
+      [x0, y1],
+    ].forEach(([cx, cy], i) => {
+      const dx = i === 0 || i === 3 ? 1 : -1,
+        dy = i === 0 || i === 1 ? 1 : -1;
       ctx.beginPath();
-      ctx.arc(px, py, dotR + 5, 0, Math.PI * 2);
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + dx * tk, cy);
       ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx, cy + dy * tk);
+      ctx.stroke();
+    });
+    ctx.restore();
+
+    // ── Dimension arrows (width along bottom, depth along right) ────
+    const MARGIN = 14,
+      AH = 5,
+      FONT = "bold 8px 'Orbitron',sans-serif";
+    const worldW = bmax.x - bmin.x,
+      worldD = bmax.z - bmin.z,
+      worldH = bmax.y - bmin.y;
+    const wStr = worldW.toFixed(2) + "m",
+      dStr = worldD.toFixed(2) + "m";
+
+    ctx.save();
+    ctx.font = FONT;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    // Width arrow — below the bounding box
+    const arrowY = Math.min(y1 + MARGIN, SIZE - 10);
+    if (arrowY < SIZE - 4) {
+      ctx.strokeStyle = "rgba(100,180,220,0.9)";
+      ctx.fillStyle = "rgba(100,180,220,0.9)";
+      ctx.lineWidth = 1;
+      // line
+      ctx.beginPath();
+      ctx.moveTo(x0, arrowY);
+      ctx.lineTo(x1, arrowY);
+      ctx.stroke();
+      // arrowheads
+      [
+        [x0, 1],
+        [x1, -1],
+      ].forEach(([ax, dir]) => {
+        ctx.beginPath();
+        ctx.moveTo(ax, arrowY);
+        ctx.lineTo(ax + dir * AH, arrowY - 3);
+        ctx.lineTo(ax + dir * AH, arrowY + 3);
+        ctx.closePath();
+        ctx.fill();
+      });
+      // tick caps
+      ctx.strokeStyle = "rgba(100,180,220,0.6)";
+      [x0, x1].forEach((ax) => {
+        ctx.beginPath();
+        ctx.moveTo(ax, arrowY - 4);
+        ctx.lineTo(ax, arrowY + 4);
+        ctx.stroke();
+      });
+      // label
+      const lx = (x0 + x1) / 2;
+      ctx.fillStyle = "rgba(8,16,28,0.85)";
+      ctx.fillRect(lx - 18, arrowY - 7, 36, 14);
+      ctx.fillStyle = "#a8d4f0";
+      ctx.fillText(wStr, lx, arrowY);
+    }
+
+    // Depth arrow — right of the bounding box
+    const arrowX = Math.min(x1 + MARGIN, SIZE - 10);
+    if (arrowX < SIZE - 4) {
+      ctx.strokeStyle = "rgba(180,220,100,0.9)";
+      ctx.fillStyle = "rgba(180,220,100,0.9)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(arrowX, y0);
+      ctx.lineTo(arrowX, y1);
+      ctx.stroke();
+      [
+        [y0, 1],
+        [y1, -1],
+      ].forEach(([ay, dir]) => {
+        ctx.beginPath();
+        ctx.moveTo(arrowX, ay);
+        ctx.lineTo(arrowX - 3, ay + dir * AH);
+        ctx.lineTo(arrowX + 3, ay + dir * AH);
+        ctx.closePath();
+        ctx.fill();
+      });
+      ctx.strokeStyle = "rgba(180,220,100,0.6)";
+      [y0, y1].forEach((ay) => {
+        ctx.beginPath();
+        ctx.moveTo(arrowX - 4, ay);
+        ctx.lineTo(arrowX + 4, ay);
+        ctx.stroke();
+      });
+      const ly = (y0 + y1) / 2;
+      ctx.save();
+      ctx.translate(arrowX, ly);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillStyle = "rgba(8,16,28,0.85)";
+      ctx.fillRect(-18, -7, 36, 14);
+      ctx.fillStyle = "#c8e8a0";
+      ctx.fillText(dStr, 0, 0);
       ctx.restore();
     }
+    ctx.restore();
+
+    // ── Update dims bar ──────────────────────────────────────────────
+    const wEl = document.getElementById("mm-dim-w");
+    const dEl = document.getElementById("mm-dim-d");
+    const hEl = document.getElementById("mm-dim-h");
+    if (wEl) wEl.textContent = worldW.toFixed(2) + "m";
+    if (dEl) dEl.textContent = worldD.toFixed(2) + "m";
+    if (hEl) hEl.textContent = worldH.toFixed(2) + "m";
+  }
+
+  // ── Selected mount ring ──────────────────────────────────────────
+  scene.traverse((mount) => {
+    if (!mount.userData?.isMount || mount !== selectedMount) return;
+    const [px, py] = toUV(mount.position.x, mount.position.z);
+    ctx.save();
+    ctx.strokeStyle = "rgba(220,80,0,0.9)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(px, py, 8, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
   });
+
+  // ── Camera frustum footprint ─────────────────────────────────────
   const frustumCorners = getFrustumFootprint();
   if (frustumCorners.length === 4) {
     ctx.save();
-    ctx.strokeStyle = "rgba(255,200,80,0.7)";
-    ctx.fillStyle = "rgba(255,200,80,0.06)";
+    ctx.strokeStyle = "rgba(255,210,80,0.75)";
+    ctx.fillStyle = "rgba(255,210,80,0.05)";
     ctx.lineWidth = 1.2;
     ctx.setLineDash([3, 3]);
     ctx.beginPath();
@@ -5723,6 +6047,7 @@ function drawMinimapOverlay() {
     ctx.setLineDash([]);
     ctx.restore();
   }
+
   drawCompass(ctx, SIZE);
 }
 
@@ -5823,7 +6148,7 @@ function renderMinimap() {
   updateMinimapCamera();
   const savedBg = scene.background ? scene.background.clone() : null,
     savedFog = scene.fog;
-  scene.background = new THREE.Color(0x070d14);
+  scene.background = new THREE.Color(0x0a1420);
   scene.fog = null;
   minimapRenderer.render(scene, minimapOrthoCamera);
   scene.background = savedBg ?? new THREE.Color(0x8aaec8);
@@ -5832,4 +6157,382 @@ function renderMinimap() {
     o.visible = true;
   });
   drawMinimapOverlay();
+}
+
+/* =========================================================
+   COMPONENT PREVIEW — 3D ghost inset top-left of viewport
+   ========================================================= */
+
+let _cpRenderer = null;
+let _cpScene = null;
+let _cpCamera = null;
+let _cpModel = null;
+let _cpEl = null;
+let _cpLabel = null;
+let _cpSubLabel = null;
+let _cpActive = false;
+let _cpRotY = 0;
+
+const PREVIEW_SIZE = 220; // px
+
+const COMPONENT_PREVIEW_INFO = {
+  frame: {
+    label: "Rectangular Frame",
+    sub: "Structural Base",
+    color: "#797979",
+    glyph: "▬",
+  },
+  motor: {
+    label: "Motor Housing",
+    sub: "Drive Unit",
+    color: "#f9b100",
+    glyph: "⬡",
+  },
+  triangle_frame: {
+    label: "Triangular Frame",
+    sub: "Angular Brace",
+    color: "#ada7ab",
+    glyph: "▲",
+  },
+  support_frame: {
+    label: "Stress Bridge",
+    sub: "Cross-Bridge Span",
+    color: "#ff770e",
+    glyph: "╬",
+  },
+  wheel: {
+    label: "Wheel",
+    sub: "Motor-Driven Wheel",
+    color: "#36454f",
+    glyph: "◉",
+  },
+};
+
+function initComponentPreview() {
+  // Inject CSS once
+  if (!document.getElementById("cp-styles")) {
+    const s = document.createElement("style");
+    s.id = "cp-styles";
+    s.textContent = `
+      #comp-preview-wrap {
+        position: absolute;
+        top: 18px;
+        left: 18px;
+        width: ${PREVIEW_SIZE}px;
+        background: rgba(6,11,20,0.96);
+        border: 1.5px solid rgba(208,88,24,0.4);
+        border-left: 3px solid #d05818;
+        clip-path: polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(208,88,24,0.1);
+        backdrop-filter: blur(6px);
+        z-index: 900;
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: opacity 0.28s ease, transform 0.28s ease;
+        overflow: hidden;
+      }
+      #comp-preview-wrap.cp-visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      #comp-preview-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 14px 9px;
+        border-bottom: 1px solid rgba(208,88,24,0.2);
+        background: rgba(208,88,24,0.07);
+      }
+      #comp-preview-glyph {
+        font-size: 22px;
+        line-height: 1;
+        flex-shrink: 0;
+        filter: drop-shadow(0 0 6px currentColor);
+      }
+      #comp-preview-name {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #ffffff;
+        line-height: 1.25;
+      }
+      #comp-preview-sub {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 9px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #6a8898;
+        margin-top: 3px;
+      }
+      #comp-preview-canvas-wrap {
+        width: ${PREVIEW_SIZE}px;
+        height: ${PREVIEW_SIZE}px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(ellipse at center, rgba(208,88,24,0.04) 0%, transparent 70%);
+      }
+      #comp-preview-canvas-wrap canvas {
+        display: block;
+      }
+      #comp-preview-weight-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 7px 14px;
+        border-top: 1px solid rgba(255,255,255,0.06);
+        border-bottom: 1px solid rgba(208,88,24,0.15);
+        background: rgba(0,0,0,0.25);
+      }
+      #comp-preview-weight-label {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: #6a8898;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      #comp-preview-weight-value {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        color: #d8e8f4;
+      }
+      #comp-preview-weight-unit {
+        font-size: 9px;
+        color: #4a6878;
+        margin-left: 2px;
+        font-family: 'Share Tech Mono', monospace;
+        letter-spacing: 0.1em;
+      }
+      #comp-preview-footer {
+        padding: 7px 14px 9px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(0,0,0,0.15);
+      }
+      #comp-preview-dot {
+        width: 6px; height: 6px; border-radius: 50%;
+        flex-shrink: 0;
+        animation: cpPulse 1.4s ease-in-out infinite;
+      }
+      @keyframes cpPulse {
+        0%,100% { opacity: 1; transform: scale(1); }
+        50%      { opacity: 0.4; transform: scale(0.65); }
+      }
+      #comp-preview-status {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 9px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: #8aacbf;
+      }
+      #comp-preview-accent-line {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, #d05818, rgba(208,88,24,0.15), transparent);
+      }
+    `;
+    document.head.appendChild(s);
+  }
+
+  // Build DOM inside the viewport container
+  const viewport =
+    document.getElementById("app")?.parentElement ?? document.body;
+  const wrap = document.createElement("div");
+  wrap.id = "comp-preview-wrap";
+
+  const accentLine = document.createElement("div");
+  accentLine.id = "comp-preview-accent-line";
+  wrap.appendChild(accentLine);
+
+  const header = document.createElement("div");
+  header.id = "comp-preview-header";
+
+  const glyph = document.createElement("div");
+  glyph.id = "comp-preview-glyph";
+
+  const textGroup = document.createElement("div");
+  const name = document.createElement("div");
+  name.id = "comp-preview-name";
+  const sub = document.createElement("div");
+  sub.id = "comp-preview-sub";
+  textGroup.appendChild(name);
+  textGroup.appendChild(sub);
+
+  header.appendChild(glyph);
+  header.appendChild(textGroup);
+  wrap.appendChild(header);
+
+  const canvasWrap = document.createElement("div");
+  canvasWrap.id = "comp-preview-canvas-wrap";
+  wrap.appendChild(canvasWrap);
+
+  // Weight row
+  const weightRow = document.createElement("div");
+  weightRow.id = "comp-preview-weight-row";
+  const weightLabel = document.createElement("div");
+  weightLabel.id = "comp-preview-weight-label";
+  weightLabel.innerHTML = `<span style="opacity:0.5">⊕</span> UNIT WEIGHT`;
+  const weightRight = document.createElement("div");
+  const weightValue = document.createElement("span");
+  weightValue.id = "comp-preview-weight-value";
+  const weightUnit = document.createElement("span");
+  weightUnit.id = "comp-preview-weight-unit";
+  weightUnit.textContent = "g";
+  weightRight.appendChild(weightValue);
+  weightRight.appendChild(weightUnit);
+  weightRow.appendChild(weightLabel);
+  weightRow.appendChild(weightRight);
+  wrap.appendChild(weightRow);
+
+  const footer = document.createElement("div");
+  footer.id = "comp-preview-footer";
+  const dot = document.createElement("div");
+  dot.id = "comp-preview-dot";
+  const status = document.createElement("div");
+  status.id = "comp-preview-status";
+  status.textContent = "Selected Component";
+  footer.appendChild(dot);
+  footer.appendChild(status);
+  wrap.appendChild(footer);
+
+  viewport.style.position = "relative";
+  viewport.appendChild(wrap);
+
+  _cpEl = wrap;
+  _cpLabel = name;
+  _cpSubLabel = sub;
+
+  // Three.js preview renderer
+  _cpRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  _cpRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  _cpRenderer.setSize(PREVIEW_SIZE, PREVIEW_SIZE);
+  _cpRenderer.setClearColor(0x000000, 0);
+  _cpRenderer.outputColorSpace = THREE.SRGBColorSpace;
+  _cpRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+  _cpRenderer.toneMappingExposure = 1.2;
+  canvasWrap.appendChild(_cpRenderer.domElement);
+
+  // Preview scene
+  _cpScene = new THREE.Scene();
+  _cpCamera = new THREE.PerspectiveCamera(38, 1, 0.01, 100);
+  _cpCamera.position.set(0, 0, 4);
+
+  // Lighting for preview
+  _cpScene.add(new THREE.HemisphereLight(0xffffff, 0x334455, 0.7));
+  const keyL = new THREE.DirectionalLight(0xffffff, 1.1);
+  keyL.position.set(4, 5, 4);
+  _cpScene.add(keyL);
+  const fillL = new THREE.DirectionalLight(0xffffff, 0.4);
+  fillL.position.set(-4, 2, 3);
+  _cpScene.add(fillL);
+  const rimL = new THREE.DirectionalLight(0xffffff, 0.5);
+  rimL.position.set(-2, 4, -5);
+  _cpScene.add(rimL);
+}
+
+function showComponentPreview(type, template) {
+  if (!_cpEl || !_cpScene || !_cpRenderer) return;
+  const info = COMPONENT_PREVIEW_INFO[type] ?? {
+    label: type,
+    sub: "",
+    color: "#d05818",
+    glyph: "◈",
+  };
+
+  // Update header text & accent color
+  _cpLabel.textContent = info.label;
+  _cpSubLabel.textContent = info.sub;
+  const glyphEl = document.getElementById("comp-preview-glyph");
+  if (glyphEl) {
+    glyphEl.textContent = info.glyph;
+    glyphEl.style.color = info.color;
+  }
+  const dot = document.getElementById("comp-preview-dot");
+  if (dot) dot.style.background = info.color;
+  const accentLine = document.getElementById("comp-preview-accent-line");
+  if (accentLine)
+    accentLine.style.background = `linear-gradient(90deg, ${info.color}, rgba(208,88,24,0.1), transparent)`;
+  if (_cpEl) {
+    _cpEl.style.borderLeftColor = info.color;
+  }
+
+  // Update weight
+  const wg = PART_WEIGHTS[type] ?? 0;
+  const weightValEl = document.getElementById("comp-preview-weight-value");
+  const weightUnitEl = document.getElementById("comp-preview-weight-unit");
+  if (weightValEl && weightUnitEl) {
+    if (wg >= 1000) {
+      weightValEl.textContent = (wg / 1000).toFixed(2);
+      weightUnitEl.textContent = " kg";
+    } else {
+      weightValEl.textContent = wg;
+      weightUnitEl.textContent = " g";
+    }
+    weightValEl.style.color = info.color;
+  }
+
+  // Remove old model from preview scene
+  if (_cpModel) {
+    _cpScene.remove(_cpModel);
+    _cpModel = null;
+  }
+
+  // Clone & solidify for preview
+  const clone = template.clone(true);
+  clone.traverse((o) => {
+    if (!o.isMesh) return;
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    mats.forEach((mat) => {
+      if (!mat) return;
+      mat = mat.clone();
+      mat.transparent = false;
+      mat.opacity = 1;
+      mat.depthWrite = true;
+      o.material = mat;
+    });
+  });
+
+  // Auto-fit model into the preview camera view
+  const box = new THREE.Box3().setFromObject(clone);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const fov = (_cpCamera.fov * Math.PI) / 180;
+  const dist = (maxDim / (2 * Math.tan(fov / 2))) * 1.6;
+
+  clone.position.sub(center); // center the model
+  _cpModel = new THREE.Group();
+  _cpModel.add(clone);
+  _cpScene.add(_cpModel);
+
+  _cpCamera.position.set(dist * 0.6, dist * 0.35, dist * 0.9);
+  _cpCamera.lookAt(0, 0, 0);
+
+  _cpRotY = 0;
+  _cpActive = true;
+  _cpEl.classList.add("cp-visible");
+}
+
+function hideComponentPreview() {
+  _cpActive = false;
+  if (_cpEl) _cpEl.classList.remove("cp-visible");
+}
+
+function renderComponentPreview() {
+  if (!_cpActive || !_cpRenderer || !_cpScene || !_cpCamera) return;
+  _cpRotY += 0.008;
+  if (_cpModel) _cpModel.rotation.y = _cpRotY;
+  _cpRenderer.render(_cpScene, _cpCamera);
 }

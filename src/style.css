@@ -865,7 +865,7 @@ canvas#app {
 .sidebar-cam-icon {
   font-size: clamp(13px, 1.3vw, 17px);
   line-height: 1;
-  color: inherit;
+  color: #ffffff;
 }
 .sidebar-cam-label {
   font-family: var(--font-hud);
@@ -886,7 +886,10 @@ canvas#app {
   border-top: 1px solid var(--border);
 }
 
-/* ── BASKET HEADER ── */
+/* ═══════════════════════════════════════════════════
+   BASKET / REQUISITION — READABILITY OVERHAUL
+   ═══════════════════════════════════════════════════ */
+
 .basket-header {
   padding: clamp(10px, 1.4vh, 18px) clamp(10px, 1.2vw, 18px)
     clamp(8px, 1.1vh, 14px) clamp(12px, 1.5vw, 20px);
@@ -923,9 +926,9 @@ canvas#app {
 }
 .basket-count {
   font-family: var(--font-mono);
-  font-size: clamp(8px, 0.72vw, 10px);
+  font-size: clamp(9px, 0.82vw, 11px); /* ↑ was 0.72vw / 10px */
   font-weight: 600;
-  color: #8aacbf;
+  color: #a8c4d8; /* ↑ was #8aacbf */
   background: var(--bg-row);
   padding: 3px clamp(6px, 0.7vw, 10px);
   border: 1px solid #344858;
@@ -943,27 +946,61 @@ canvas#app {
   flex-direction: column;
   gap: clamp(2px, 0.3vh, 4px);
 }
+
+/* ── Main basket row (base — border-left colour set per-type below) ── */
 .basket-items > * {
   font-family: var(--font-display);
-  font-size: clamp(10px, 0.88vw, 12px);
+  font-size: clamp(12px, 1.05vw, 14px);
   font-weight: 600;
-  color: #d8eaf8;
-  padding: clamp(4px, 0.45vh, 6px) clamp(8px, 0.9vw, 12px);
+  color: #e8f4ff;
+  padding: clamp(6px, 0.6vh, 9px) clamp(8px, 0.9vw, 12px);
   background: #1e2c3e;
   border: 1px solid #2e4058;
-  border-left: 2px solid rgba(208, 88, 24, 0.65);
+  border-left: 3px solid rgba(208, 88, 24, 0.45); /* fallback — overridden per-type */
   display: flex;
   justify-content: space-between;
   align-items: center;
   clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
   letter-spacing: 0.04em;
-  transition:
-    background 0.15s,
-    border-color 0.15s;
+  transition: background 0.15s;
 }
 .basket-items > *:hover {
   background: #243448;
-  border-color: #3a5068;
+}
+
+/* ── Per-type left-bar colours — exactly match component button borders ── */
+.basket-items > [data-part-type="frame"] {
+  border-left-color: #797979 !important;
+}
+.basket-items > [data-part-type="motor"] {
+  border-left-color: #f9b100 !important;
+}
+.basket-items > [data-part-type="triangle_frame"] {
+  border-left-color: #ada7ab !important;
+}
+.basket-items > [data-part-type="support_frame"] {
+  border-left-color: #ff770e !important;
+}
+.basket-items > [data-part-type="wheel"] {
+  border-left-color: #36454f !important;
+}
+
+/* Sub-text inside basket items (qty badge, "EACH" price) */
+.basket-items > * span,
+.basket-items > * small,
+.basket-items > * [class*="each"],
+.basket-items > * [class*="sub"],
+.basket-items > * [class*="meta"] {
+  color: #8aacbf !important;
+  font-size: clamp(10px, 0.9vw, 12px) !important;
+  letter-spacing: 0.05em;
+}
+
+/* ── Non-part rows injected by inventory.js (green bar, total bar) ──
+   applyBasketTypeColors() in main.js hides these via JS; this is a
+   belt-and-suspenders CSS fallback. ── */
+.basket-items > [data-part-type="__hidden__"] {
+  display: none !important;
 }
 
 .basket-footer {
@@ -973,13 +1010,21 @@ canvas#app {
   justify-content: space-between;
   align-items: center;
   font-family: var(--font-mono);
-  font-size: clamp(9px, 0.78vw, 11px);
+  font-size: clamp(10px, 0.9vw, 12px); /* ↑ was 0.78vw / 11px */
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #7a9ab8;
+  color: #8aacbf; /* ↑ was #7a9ab8 */
   flex-shrink: 0;
 }
+
+/* "Incl. GST" sub-label */
+.basket-footer span[style*="font-size: 8px"],
+.basket-footer span[style*="font-size:8px"] {
+  font-size: 10px !important; /* ↑ was 8px */
+  color: #7a9ab8 !important; /* ↑ was #6a8098 */
+}
+
 .price {
   font-family: var(--font-hud);
   font-size: clamp(16px, 1.6vw, 24px);
@@ -1752,6 +1797,87 @@ canvas#app {
 
 #weight-section-styles {
   display: none;
+}
+
+/* ═══════════════════════════════════════════════════
+   WEIGHT SECTION — READABILITY OVERRIDES
+   These override the inline styles injected by initWeightSection()
+   and updateWeightDisplay() in main.js
+   ═══════════════════════════════════════════════════ */
+
+/* Row container — slightly taller, bigger base font */
+#weight-rows .weight-row {
+  font-size: 11px !important;
+  padding: 7px 10px !important;
+  min-height: 36px;
+}
+
+/* Part label (left side: glyph + name + qty badge) */
+#weight-rows .weight-row-label {
+  color: #a8c4d8 !important; /* ↑ was #6a8098 */
+  font-size: 10px !important; /* ↑ was 9px */
+  letter-spacing: 0.08em;
+}
+
+/* Qty badge e.g. "1×" */
+#weight-rows .weight-row-qty {
+  color: #8aacbf !important; /* ↑ was #384858 — nearly invisible */
+  font-size: 10px !important; /* ↑ was 8px */
+  border-color: #344858 !important;
+  background: #18202e !important;
+}
+
+/* Value (right side: "450 g") */
+#weight-rows .weight-row-val {
+  color: #d8eef8 !important; /* ↑ was #8aacbf */
+  font-size: 12px !important; /* ↑ was 10px */
+  letter-spacing: 0.06em;
+}
+
+/* Unit suffix "g" / "kg" inside value */
+#weight-rows .weight-row-unit {
+  color: #8aacbf !important; /* ↑ was #384858 — nearly invisible */
+  font-size: 10px !important; /* ↑ was inherited small */
+  margin-left: 2px;
+}
+
+/* "@450g ea" annotation — overrides the hard-coded color:#263848 inline style */
+#weight-rows .weight-row-val span[style*="263848"],
+#weight-rows .weight-row-val span[style*="color:#263"] {
+  color: #6a8098 !important; /* ↑ was #263848 — almost black on dark bg */
+  font-size: 10px !important; /* ↑ was 7px */
+}
+
+/* Total row */
+#weight-total-row {
+  padding: 9px 12px !important;
+}
+#weight-total-label {
+  color: #8aacbf !important; /* ↑ was #6a8098 */
+  font-size: 9px !important; /* ↑ was 8px */
+  letter-spacing: 0.16em;
+}
+#weight-total-value {
+  font-size: 16px !important; /* ↑ was 14px */
+  color: #e8f4ff !important;
+}
+#weight-total-value span {
+  color: #8aacbf !important; /* ↑ was #384858 */
+  font-size: 10px !important; /* ↑ was 9px */
+  margin-left: 3px;
+}
+
+/* Section header badge (shows "450 g" next to WEIGHT title) */
+#weight-total-badge {
+  font-size: 12px !important; /* ↑ was 11px */
+  color: #c8dce8 !important;
+}
+
+/* "No parts placed" empty state */
+#weight-rows > div[style*="color:#2a3848"],
+#weight-rows > div[style*="color: #2a3848"] {
+  color: #5a7a8a !important; /* ↑ was #2a3848 — invisible */
+  font-size: 10px !important;
 }
 
 /* ── RESPONSIVE ── */

@@ -192,16 +192,9 @@
         <canvas id="app"></canvas>
         <div id="idle-arrows"></div>
 
+        <!-- ↑ and ↓ keys removed — only Rotate L / Rotate R remain -->
         <div id="viewport-rot-controls" style="display: none">
-          <div class="arrow-key-row arrow-key-row-top">
-            <div
-              class="arrow-key arrow-key-inactive arrow-key-center"
-              id="arrowKeyUp"
-            >
-              <span class="arrow-key-glyph">↑</span>
-            </div>
-          </div>
-          <div class="arrow-key-row arrow-key-row-bottom">
+          <div class="arrow-key-row">
             <button
               class="arrow-key arrow-key-active arrow-key-labeled"
               id="arrowKeyLeft"
@@ -210,12 +203,6 @@
               <span class="arrow-key-label">Rotate L</span>
               <span class="arrow-key-glyph">←</span>
             </button>
-            <div
-              class="arrow-key arrow-key-inactive arrow-key-center"
-              id="arrowKeyDown"
-            >
-              <span class="arrow-key-glyph">↓</span>
-            </div>
             <button
               class="arrow-key arrow-key-active arrow-key-labeled"
               id="arrowKeyRight"
@@ -276,7 +263,7 @@
           <button id="printDesignBtn" class="btn btn-print">
             <div class="btn-inner">
               <span class="btn-icon">▤</span>
-              <span class="btn-action-label">Print Report</span>
+              <span class="btn-action-label">Print Design Summary</span>
             </div>
           </button>
         </div>
