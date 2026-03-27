@@ -2409,39 +2409,23 @@ async function saveOrderToSupabase({
 async function uploadPrintReport(orderId, orderRef) {
   try {
     showHudMessage("GENERATING REPORT...");
-    const angleKeys = [
-      "perspective",
-      "front",
-      "back",
-      "top",
-      "bottom",
-      "left",
-      "right",
-      "iso",
-    ];
+    // Capture all needed angles
+    const captureKeys = ["iso", "top", "left", "front"];
     const overlayLabels = {
-      perspective: "PERSPECTIVE",
-      front: "FRONT",
-      back: "BACK",
-      top: "TOP",
-      bottom: "BOTTOM",
-      left: "LEFT",
-      right: "RIGHT",
       iso: "ISOMETRIC",
+      top: "TOP",
+      left: "LEFT",
+      front: "FRONT",
     };
     const angleLabels = {
-      perspective: "Perspective",
-      front: "Front",
-      back: "Back",
-      top: "Top",
-      bottom: "Bottom",
-      left: "Left",
-      right: "Right",
       iso: "Isometric",
+      top: "Top View",
+      left: "Side View",
+      front: "Front View",
     };
 
     const screenshots = {};
-    for (const key of angleKeys) {
+    for (const key of captureKeys) {
       const raw = captureFromAngle(key);
       screenshots[key] = await addTechnicalOverlay(raw, overlayLabels[key]);
     }
@@ -2498,6 +2482,7 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
   const totalParts = Object.values(counts).reduce((a, b) => a + b, 0);
   const now = new Date().toLocaleString();
 
+  // ── Cost ──────────────────────────────────────────────────────────
   let computedTotal = 0;
   const manifestRows = Object.entries(counts)
     .map(([t, n]) => {
@@ -2520,20 +2505,36 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
     })
     .join("");
 
+  // ── Weight ────────────────────────────────────────────────────────
+  let totalGrams = 0;
+  const weightRows = Object.entries(counts)
+    .map(([t, n]) => {
+      const unitG = PART_WEIGHTS[t] ?? 0;
+      const lineG = unitG * n;
+      totalGrams += lineG;
+      const label = (partLabelMap[t] ?? t.replace(/_/g, " ")).toUpperCase();
+      const lineDisp =
+        lineG >= 1000 ? `${(lineG / 1000).toFixed(2)} kg` : `${lineG} g`;
+      return `<tr><td>${label}</td><td style="text-align:center">${n}</td><td style="text-align:right;color:#555">${unitG} g ea</td><td style="text-align:right;font-family:'Courier New',monospace;font-weight:700;color:#1a5276">${lineDisp}</td></tr>`;
+    })
+    .join("");
+  const totalWeightDisp =
+    totalGrams >= 1000
+      ? `${(totalGrams / 1000).toFixed(2)} kg`
+      : `${totalGrams} g`;
+
+  // ── Views ─────────────────────────────────────────────────────────
+  // Main shot = ISO (clean, no dimensions)
   const mainShot = screenshots["iso"];
-  const otherAngles = [
-    "perspective",
-    "front",
-    "back",
-    "top",
-    "bottom",
-    "left",
-    "right",
-  ];
-  const otherAnglesHTML = otherAngles
+  // Secondary = top, left, front (each with dimension arrows)
+  const secondaryKeys = ["top", "left", "front"];
+  const secondaryHTML = secondaryKeys
     .map(
-      (k) =>
-        `<div class="angle-card"><img src="${screenshots[k]}" alt="${angleLabels[k]} view"/></div>`,
+      (k) => `
+    <div class="angle-card">
+      <div class="angle-label">${angleLabels[k] ?? k}</div>
+      <img src="${screenshots[k]}" alt="${angleLabels[k]} view"/>
+    </div>`,
     )
     .join("");
 
@@ -2550,38 +2551,52 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
   .status-badge{display:inline-block;padding:2px 10px;font-size:9px;font-family:'Orbitron',sans-serif;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;border:1.5px solid;margin-top:4px}
   .status-final{color:#166534;border-color:#166534;background:#f0fdf4}
   .status-draft{color:#7f1d1d;border-color:#cc2200;background:#fff5f5}
-  .main-view-wrap{width:100%;border:2px solid #222;margin-bottom:14px;background:#f0f0f0;overflow:hidden}
-  .main-view-wrap img{width:100%;display:block;max-height:440px;object-fit:contain}
-  .section-title{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.2em;color:#111;text-transform:uppercase;border-left:4px solid #cc2200;padding-left:10px;margin-bottom:10px}
-  .angles-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px}
-  .angle-card{border:1.5px solid #222;background:#f0f0f0;overflow:hidden}
-  .angle-card img{width:100%;display:block;max-height:180px;object-fit:contain}
-  .tables-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+  .main-view-wrap{width:100%;border:2px solid #222;margin-bottom:8px;background:#e8edf2;overflow:hidden;position:relative}
+  .main-view-wrap img{width:100%;display:block;max-height:560px;object-fit:contain}
+  .main-view-label{position:absolute;top:10px;left:14px;font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.2em;color:#fff;background:rgba(0,0,0,0.55);padding:3px 10px;text-transform:uppercase}
+  .section-title{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.2em;color:#111;text-transform:uppercase;border-left:4px solid #cc2200;padding-left:10px;margin-bottom:10px;margin-top:16px}
+  .angles-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+  .angle-card{border:1.5px solid #222;background:#e8edf2;overflow:hidden;position:relative}
+  .angle-label{font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#fff;background:rgba(0,0,0,0.6);padding:3px 10px;position:absolute;top:0;left:0;z-index:2}
+  .angle-card img{width:100%;display:block;max-height:300px;object-fit:contain}
+  .tables-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px}
   .table-card{border:1.5px solid #222}
   .table-card-header{background:#1a1a1a;color:#cc2200;font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.18em;padding:6px 12px;text-transform:uppercase}
-  table{width:100%;border-collapse:collapse;font-size:12px}
-  td{padding:6px 12px;border-bottom:1px solid #e5e5e5;font-family:'Rajdhani',sans-serif;letter-spacing:0.03em}
+  .table-card-header.weight-header{color:#2e86c1}
+  table{width:100%;border-collapse:collapse;font-size:11px}
+  td{padding:5px 10px;border-bottom:1px solid #e5e5e5;font-family:'Rajdhani',sans-serif;letter-spacing:0.03em}
   tr:last-child td{border-bottom:none}
   tr:nth-child(even) td{background:#fafafa}
-  .manifest-subtotal td{font-family:'Share Tech Mono',monospace!important;font-size:11px!important;font-weight:700!important;color:#cc2200!important;background:#fff5f5!important;border-top:2px solid #cc2200!important;border-bottom:none!important}
-  .manifest-total-parts td{font-family:'Share Tech Mono',monospace!important;font-size:10px!important;color:#555!important;background:#f8f8f8!important;border-bottom:none!important}
-  .cost-table td{padding:4px 12px;font-size:12px;border-bottom:none}
+  .manifest-subtotal td{font-family:'Share Tech Mono',monospace!important;font-size:10px!important;font-weight:700!important;color:#cc2200!important;background:#fff5f5!important;border-top:2px solid #cc2200!important;border-bottom:none!important}
+  .manifest-total-parts td{font-family:'Share Tech Mono',monospace!important;font-size:9px!important;color:#555!important;background:#f8f8f8!important;border-bottom:none!important}
+  .weight-total-row td{font-family:'Share Tech Mono',monospace!important;font-size:11px!important;font-weight:700!important;color:#1a5276!important;background:#eaf4fb!important;border-top:2px solid #2e86c1!important;border-bottom:none!important}
+  .cost-table td{padding:4px 10px;font-size:11px;border-bottom:none}
   .cost-table tr:nth-child(even) td{background:transparent}
-  .total-bar{display:flex;justify-content:space-between;align-items:center;border:2px solid #1a1a1a;padding:10px 20px;margin-bottom:16px;background:#f8f8f8}
-  .total-label{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.1em;color:#111}
-  .total-value{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;color:#cc2200;letter-spacing:0.06em}
+  .totals-bar{display:flex;gap:0;margin-bottom:16px}
+  .totals-bar-item{flex:1;display:flex;justify-content:space-between;align-items:center;border:2px solid #1a1a1a;padding:10px 18px;background:#f8f8f8;margin-right:-2px}
+  .totals-bar-item:last-child{margin-right:0;border-left:2px solid #cc2200;background:#fff5f5}
+  .total-label{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.1em;color:#111}
+  .total-value{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;color:#cc2200;letter-spacing:0.06em}
+  .total-value.weight-val{color:#1a5276;font-size:18px}
   .print-footer{border-top:1px solid #ccc;padding-top:10px;display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:9px;color:#888;letter-spacing:0.08em}
   @media print{body{padding:12px 16px}}
 </style></head><body>
   <div class="print-header">
     <div><div class="print-title">ROBOT CONFIGURATOR</div><div class="print-subtitle">Design Report · MK-1 Unit · ${orderRef}</div></div>
-    <div class="print-meta">Generated: ${now}<br>Parts: ${totalParts}<br>
+    <div class="print-meta">Generated: ${now}<br>Parts: ${totalParts} · Weight: ${totalWeightDisp}<br>
       <span class="status-badge ${isFinalized ? "status-final" : "status-draft"}">${isFinalized ? "✓ Finalized" : "⚠ Draft"}</span>
     </div>
   </div>
-  <div class="main-view-wrap"><img src="${mainShot}" alt="Isometric View"/></div>
-  <div class="section-title">◼ MULTI-ANGLE VIEWS</div>
-  <div class="angles-grid">${otherAnglesHTML}</div>
+
+  <div class="main-view-wrap">
+    <div class="main-view-label">◈ Isometric View</div>
+    <img src="${mainShot}" alt="Isometric View"/>
+  </div>
+
+  <div class="section-title">◼ ORTHOGRAPHIC VIEWS WITH DIMENSIONS</div>
+  <div class="angles-grid">${secondaryHTML}</div>
+
+  <div class="section-title">◼ COMPONENT DATA</div>
   <div class="tables-row">
     <div class="table-card">
       <div class="table-card-header">Component Manifest</div>
@@ -2593,14 +2608,30 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
       </table>
     </div>
     <div class="table-card">
+      <div class="table-card-header weight-header">Weight Breakdown</div>
+      <table>
+        <tr><td><strong>Type</strong></td><td style="text-align:center"><strong>Qty</strong></td><td style="text-align:right"><strong>Unit</strong></td><td style="text-align:right"><strong>Total</strong></td></tr>
+        ${weightRows || "<tr><td colspan='4'>No parts placed</td></tr>"}
+        <tr class="weight-total-row"><td colspan="3">TOTAL WEIGHT</td><td style="text-align:right">${totalWeightDisp}</td></tr>
+      </table>
+    </div>
+    <div class="table-card">
       <div class="table-card-header">Cost Breakdown</div>
       <table class="cost-table">${costGroupRows || "<tr><td colspan='2'>Empty</td></tr>"}</table>
     </div>
   </div>
-  <div class="total-bar">
-    <span class="total-label">TOTAL REQUISITION COST</span>
-    <span class="total-value">₹${computedTotal.toLocaleString("en-IN")}</span>
+
+  <div class="totals-bar">
+    <div class="totals-bar-item">
+      <span class="total-label">TOTAL WEIGHT</span>
+      <span class="total-value weight-val">${totalWeightDisp}</span>
+    </div>
+    <div class="totals-bar-item">
+      <span class="total-label">TOTAL REQUISITION COST</span>
+      <span class="total-value">₹${computedTotal.toLocaleString("en-IN")}</span>
+    </div>
   </div>
+
   <div class="print-footer">
     <span>ROBOT CONFIGURATOR v1.0 — UNIT MK-1</span>
     <span>ORDER REF: ${orderRef}</span>
@@ -2620,15 +2651,33 @@ function addTechnicalOverlay(dataURL, viewLabel) {
       const W = img.naturalWidth || 1200;
       const H = img.naturalHeight || 600;
 
+      // ── Draw full image onto a working canvas ─────────────────────
       const canvas = document.createElement("canvas");
       canvas.width = W;
       canvas.height = H;
       const ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0, W, H);
 
+      // ── Detect model bounding box (non-background pixels) ─────────
       const imageData = ctx.getImageData(0, 0, W, H);
       const data = imageData.data;
-      const BG_THRESH = 200;
+
+      // Sample the actual background colour from the four corners
+      function getPixel(x, y) {
+        const i = (y * W + x) * 4;
+        return [data[i], data[i + 1], data[i + 2]];
+      }
+      const corners = [
+        getPixel(0, 0),
+        getPixel(W - 1, 0),
+        getPixel(0, H - 1),
+        getPixel(W - 1, H - 1),
+      ];
+      const bgR = Math.round(corners.reduce((s, c) => s + c[0], 0) / 4);
+      const bgG = Math.round(corners.reduce((s, c) => s + c[1], 0) / 4);
+      const bgB = Math.round(corners.reduce((s, c) => s + c[2], 0) / 4);
+      const BG_TOL = 28; // tolerance — pixels within this distance from bg colour are background
+
       let minX = W,
         maxX = 0,
         minY = H,
@@ -2636,11 +2685,13 @@ function addTechnicalOverlay(dataURL, viewLabel) {
       for (let py = 0; py < H; py++) {
         for (let px = 0; px < W; px++) {
           const i = (py * W + px) * 4;
-          const r = data[i],
-            g = data[i + 1],
-            b = data[i + 2],
-            a = data[i + 3];
-          if (a > 128 && (r < BG_THRESH || g < BG_THRESH || b < BG_THRESH)) {
+          const a = data[i + 3];
+          if (a < 128) continue;
+          const dr = data[i] - bgR;
+          const dg = data[i + 1] - bgG;
+          const db = data[i + 2] - bgB;
+          const dist = Math.sqrt(dr * dr + dg * dg + db * db);
+          if (dist > BG_TOL) {
             if (px < minX) minX = px;
             if (px > maxX) maxX = px;
             if (py < minY) minY = py;
@@ -2648,135 +2699,160 @@ function addTechnicalOverlay(dataURL, viewLabel) {
           }
         }
       }
-      if (maxX <= minX + 40 || maxY <= minY + 40) {
+      if (maxX <= minX + 20 || maxY <= minY + 20) {
         minX = Math.round(W * 0.25);
         maxX = Math.round(W * 0.75);
         minY = Math.round(H * 0.2);
         maxY = Math.round(H * 0.8);
       }
 
-      const GRID = Math.round(W / 30);
-      ctx.save();
-      ctx.strokeStyle = "rgba(100,120,140,0.15)";
-      ctx.lineWidth = Math.max(0.5, W / 2400);
-      for (let x = 0; x <= W; x += GRID) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, H);
-        ctx.stroke();
-      }
-      for (let y = 0; y <= H; y += GRID) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(W, y);
-        ctx.stroke();
-      }
-      ctx.strokeStyle = "rgba(80,110,140,0.25)";
-      ctx.lineWidth = Math.max(0.75, W / 1600);
-      for (let x = 0; x <= W; x += GRID * 5) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, H);
-        ctx.stroke();
-      }
-      for (let y = 0; y <= H; y += GRID * 5) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(W, y);
-        ctx.stroke();
-      }
-      ctx.restore();
+      // ── Tight crop with uniform padding ───────────────────────────
+      // Extra padding for orthographic views to leave room for dim arrows
+      const isIsoOrPersp =
+        viewLabel === "ISOMETRIC" || viewLabel === "PERSPECTIVE";
+      const CROP_PAD = isIsoOrPersp
+        ? Math.round(Math.max(W, H) * 0.06) // ISO: small padding
+        : Math.round(Math.max(W, H) * 0.1); // Ortho: extra space for arrows
 
-      const PAD = Math.round(W * 0.018);
-      const LW = Math.max(1.5, W / 600),
-        AH = Math.max(8, W / 100),
-        TICK = Math.max(6, W / 150);
-      const FONT_SZ = Math.max(14, W / 80),
-        LABEL_H = FONT_SZ + 6,
-        LABEL_P = Math.round(FONT_SZ * 0.35);
+      const cropX = Math.max(0, minX - CROP_PAD);
+      const cropY = Math.max(0, minY - CROP_PAD);
+      const cropW = Math.min(W, maxX + CROP_PAD) - cropX;
+      const cropH = Math.min(H, maxY + CROP_PAD) - cropY;
 
-      function dimArrow(x1, y1, x2, y2, label) {
-        ctx.save();
-        ctx.strokeStyle = "rgba(200,50,0,0.92)";
-        ctx.fillStyle = "rgba(200,50,0,0.92)";
-        ctx.lineWidth = LW;
-        ctx.font = `bold ${FONT_SZ}px 'Courier New', monospace`;
-        ctx.textBaseline = "middle";
-        const horizontal = Math.abs(x2 - x1) >= Math.abs(y2 - y1);
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-        function arrowhead(ax, ay, dir) {
-          ctx.beginPath();
-          if (horizontal) {
-            ctx.moveTo(ax, ay);
-            ctx.lineTo(ax - dir * AH, ay - AH * 0.45);
-            ctx.lineTo(ax - dir * AH, ay + AH * 0.45);
-          } else {
-            ctx.moveTo(ax, ay);
-            ctx.lineTo(ax - AH * 0.45, ay - dir * AH);
-            ctx.lineTo(ax + AH * 0.45, ay - dir * AH);
+      // Create final canvas at cropped size
+      const out = document.createElement("canvas");
+      out.width = cropW;
+      out.height = cropH;
+      const octx = out.getContext("2d");
+
+      // Fill background to match render bg colour
+      octx.fillStyle = "#e8edf2";
+      octx.fillRect(0, 0, cropW, cropH);
+
+      // Draw cropped region
+      octx.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+      // ── Grid on cropped canvas ─────────────────────────────────────
+      const GRID = Math.round(cropW / 20);
+      octx.save();
+      octx.strokeStyle = "rgba(100,120,140,0.12)";
+      octx.lineWidth = 0.6;
+      for (let x = 0; x <= cropW; x += GRID) {
+        octx.beginPath();
+        octx.moveTo(x, 0);
+        octx.lineTo(x, cropH);
+        octx.stroke();
+      }
+      for (let y = 0; y <= cropH; y += GRID) {
+        octx.beginPath();
+        octx.moveTo(0, y);
+        octx.lineTo(cropW, y);
+        octx.stroke();
+      }
+      octx.strokeStyle = "rgba(80,110,140,0.22)";
+      octx.lineWidth = 1;
+      for (let x = 0; x <= cropW; x += GRID * 4) {
+        octx.beginPath();
+        octx.moveTo(x, 0);
+        octx.lineTo(x, cropH);
+        octx.stroke();
+      }
+      for (let y = 0; y <= cropH; y += GRID * 4) {
+        octx.beginPath();
+        octx.moveTo(0, y);
+        octx.lineTo(cropW, y);
+        octx.stroke();
+      }
+      octx.restore();
+
+      // ── Dimension arrows (ortho views only) ───────────────────────
+      if (!isIsoOrPersp) {
+        // Model bounds in cropped coords
+        const mX0 = minX - cropX,
+          mX1 = maxX - cropX;
+        const mY0 = minY - cropY,
+          mY1 = maxY - cropY;
+
+        const PAD = CROP_PAD * 0.55;
+        const LW = Math.max(1.5, cropW / 600);
+        const AH = Math.max(7, cropW / 110);
+        const TICK = Math.max(5, cropW / 160);
+        const FONT_SZ = Math.max(13, cropW / 70);
+        const LABEL_H = FONT_SZ + 6;
+        const LABEL_P = Math.round(FONT_SZ * 0.35);
+
+        function dimArrow(x1, y1, x2, y2, label) {
+          octx.save();
+          octx.strokeStyle = "rgba(200,50,0,0.92)";
+          octx.fillStyle = "rgba(200,50,0,0.92)";
+          octx.lineWidth = LW;
+          octx.font = `bold ${FONT_SZ}px 'Courier New', monospace`;
+          octx.textBaseline = "middle";
+          const horizontal = Math.abs(x2 - x1) >= Math.abs(y2 - y1);
+          octx.beginPath();
+          octx.moveTo(x1, y1);
+          octx.lineTo(x2, y2);
+          octx.stroke();
+          function arrowhead(ax, ay, dir) {
+            octx.beginPath();
+            if (horizontal) {
+              octx.moveTo(ax, ay);
+              octx.lineTo(ax - dir * AH, ay - AH * 0.45);
+              octx.lineTo(ax - dir * AH, ay + AH * 0.45);
+            } else {
+              octx.moveTo(ax, ay);
+              octx.lineTo(ax - AH * 0.45, ay - dir * AH);
+              octx.lineTo(ax + AH * 0.45, ay - dir * AH);
+            }
+            octx.closePath();
+            octx.fill();
           }
-          ctx.closePath();
-          ctx.fill();
-        }
-        arrowhead(x1, y1, -1);
-        arrowhead(x2, y2, 1);
-        function tick(ax, ay) {
-          ctx.beginPath();
-          if (horizontal) {
-            ctx.moveTo(ax, ay - TICK);
-            ctx.lineTo(ax, ay + TICK);
-          } else {
-            ctx.moveTo(ax - TICK, ay);
-            ctx.lineTo(ax + TICK, ay);
+          arrowhead(x1, y1, -1);
+          arrowhead(x2, y2, 1);
+          function tick(ax, ay) {
+            octx.beginPath();
+            if (horizontal) {
+              octx.moveTo(ax, ay - TICK);
+              octx.lineTo(ax, ay + TICK);
+            } else {
+              octx.moveTo(ax - TICK, ay);
+              octx.lineTo(ax + TICK, ay);
+            }
+            octx.stroke();
           }
-          ctx.stroke();
+          tick(x1, y1);
+          tick(x2, y2);
+          const mx = (x1 + x2) / 2,
+            my = (y1 + y2) / 2,
+            tw = octx.measureText(label).width;
+          octx.fillStyle = "rgba(255,255,255,0.93)";
+          octx.fillRect(
+            mx - tw / 2 - LABEL_P,
+            my - LABEL_H / 2,
+            tw + LABEL_P * 2,
+            LABEL_H,
+          );
+          octx.strokeStyle = "rgba(200,50,0,0.6)";
+          octx.lineWidth = Math.max(1, LW * 0.6);
+          octx.strokeRect(
+            mx - tw / 2 - LABEL_P,
+            my - LABEL_H / 2,
+            tw + LABEL_P * 2,
+            LABEL_H,
+          );
+          octx.fillStyle = "rgba(200,50,0,0.98)";
+          octx.textAlign = "center";
+          octx.fillText(label, mx, my + 1);
+          octx.restore();
         }
-        tick(x1, y1);
-        tick(x2, y2);
-        const mx = (x1 + x2) / 2,
-          my = (y1 + y2) / 2,
-          tw = ctx.measureText(label).width;
-        ctx.fillStyle = "rgba(255,255,255,0.92)";
-        ctx.fillRect(
-          mx - tw / 2 - LABEL_P,
-          my - LABEL_H / 2,
-          tw + LABEL_P * 2,
-          LABEL_H,
-        );
-        ctx.strokeStyle = "rgba(200,50,0,0.6)";
-        ctx.lineWidth = Math.max(1, LW * 0.6);
-        ctx.strokeRect(
-          mx - tw / 2 - LABEL_P,
-          my - LABEL_H / 2,
-          tw + LABEL_P * 2,
-          LABEL_H,
-        );
-        ctx.fillStyle = "rgba(200,50,0,0.98)";
-        ctx.textAlign = "center";
-        ctx.fillText(label, mx, my + 1);
-        ctx.restore();
+
+        const widthY = Math.min(mY1 + PAD, cropH - LABEL_H - 4);
+        dimArrow(mX0, widthY, mX1, widthY, "WIDTH");
+        const heightX = Math.min(mX1 + PAD, cropW - LABEL_H - 4);
+        dimArrow(heightX, mY0, heightX, mY1, "HEIGHT");
       }
 
-      const widthY = Math.min(maxY + PAD * 2, H - LABEL_H - 4);
-      dimArrow(minX, widthY, maxX, widthY, "WIDTH");
-      const heightX = Math.min(maxX + PAD * 2, W - LABEL_H - 4);
-      dimArrow(heightX, minY, heightX, maxY, "HEIGHT");
-
-      if (viewLabel === "ISOMETRIC" || viewLabel === "PERSPECTIVE") {
-        const objW = maxX - minX,
-          objH = maxY - minY;
-        const dLen = Math.min(objW, objH) * 0.32;
-        const dx1 = Math.max(PAD * 2, minX - PAD),
-          dy1 = minY + Math.round(objH * 0.15);
-        const dx2 = Math.max(PAD, dx1 - dLen * 0.7),
-          dy2 = dy1 + dLen * 0.45;
-        dimArrow(dx1, dy1, dx2, dy2, "DEPTH");
-      }
-
-      resolve(canvas.toDataURL("image/png"));
+      resolve(out.toDataURL("image/png"));
     };
     img.onerror = () => resolve(dataURL);
     img.src = dataURL;
@@ -2788,44 +2864,27 @@ function addTechnicalOverlay(dataURL, viewLabel) {
    ========================================================= */
 
 async function printDesign() {
-  const angleKeys = [
-    "perspective",
-    "front",
-    "back",
-    "top",
-    "bottom",
-    "left",
-    "right",
-    "iso",
-  ];
-  const angleLabels = {
-    perspective: "Perspective",
-    front: "Front",
-    back: "Back",
-    top: "Top",
-    bottom: "Bottom",
-    left: "Left",
-    right: "Right",
-    iso: "Isometric",
-  };
-  const overlayLabels = {
-    perspective: "PERSPECTIVE",
-    front: "FRONT",
-    back: "BACK",
-    top: "TOP",
-    bottom: "BOTTOM",
-    left: "LEFT",
-    right: "RIGHT",
-    iso: "ISOMETRIC",
-  };
-
   showHudMessage("CAPTURING VIEWS...");
 
   setTimeout(async () => {
+    const captureKeys = ["iso", "top", "left", "front"];
+    const overlayLabels = {
+      iso: "ISOMETRIC",
+      top: "TOP",
+      left: "LEFT",
+      front: "FRONT",
+    };
+    const angleLabels = {
+      iso: "Isometric",
+      top: "Top View",
+      left: "Side View",
+      front: "Front View",
+    };
+
     const rawScreenshots = {};
-    for (const key of angleKeys) rawScreenshots[key] = captureFromAngle(key);
+    for (const key of captureKeys) rawScreenshots[key] = captureFromAngle(key);
     const screenshots = {};
-    for (const key of angleKeys)
+    for (const key of captureKeys)
       screenshots[key] = await addTechnicalOverlay(
         rawScreenshots[key],
         overlayLabels[key],
