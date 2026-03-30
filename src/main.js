@@ -1236,8 +1236,8 @@ function updateBasketTotals() {
           ${label}
         </span>
         <span style="text-align:right;flex-shrink:0;margin-left:8px;">
-          <span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.06em;color:#e8f4ff;display:block;">₹${subtotal.toLocaleString("en-IN")}</span>
-          <span style="font-family:'Oswald',sans-serif;font-size:10px;font-weight:300;letter-spacing:0.08em;color:#6a8098;display:block;">₹${price.toLocaleString("en-IN")} EACH</span>
+         <span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;letter-spacing:0.06em;color:#ffffff;display:block;">₹${subtotal.toLocaleString("en-IN")}</span>
+        <span style="font-family:'Oswald',sans-serif;font-size:8px;font-weight:300;letter-spacing:0.08em;color:#6a8098;display:block;">₹${price.toLocaleString("en-IN")} EACH</span>
         </span>
       `;
       basketEl.appendChild(row);
@@ -3657,6 +3657,12 @@ function rebuildSocketMarkers() {
         addMarker(o, wheelMarkers, wheelSocketMat);
         return;
       }
+      // Guard: skip any SOCKET_FRAME_* that lives on a non-frame mount
+      // (e.g. SOCKET_FRAME_CONNECTOR on triangle_frame models)
+      let parentMount = o.parent;
+      while (parentMount && !parentMount.userData?.isMount)
+        parentMount = parentMount.parent;
+      if (parentMount && parentMount.userData.type !== "frame") return;
       addMarker(o, frameMarkers, frameMat);
       return;
     }

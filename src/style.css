@@ -985,17 +985,6 @@ canvas#app {
   border-left-color: #36454f !important;
 }
 
-/* Sub-text inside basket items */
-.basket-items > * span,
-.basket-items > * small,
-.basket-items > * [class*="each"],
-.basket-items > * [class*="sub"],
-.basket-items > * [class*="meta"] {
-  color: #8aacbf !important;
-  font-size: clamp(10px, 0.9vw, 12px) !important;
-  letter-spacing: 0.05em;
-}
-
 .basket-footer {
   padding: clamp(8px, 1.1vh, 14px) clamp(10px, 1.2vw, 18px);
   border-top: 1px solid var(--border-amb);
