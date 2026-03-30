@@ -1225,12 +1225,21 @@ function updateBasketTotals() {
       total += subtotal;
 
       const row = document.createElement("div");
-      // ── colour-match the left bar to the component button ──
       row.dataset.partType = type;
       const color = BASKET_BTN_COLORS[type] ?? "rgba(208,88,24,0.65)";
       row.style.setProperty("border-left-color", color, "important");
       row.style.setProperty("border-left-width", "3px", "important");
-      row.innerHTML = `<span>${qty}× ${label}</span><span>₹${subtotal.toLocaleString("en-IN")}</span>`;
+
+      row.innerHTML = `
+        <span style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:400;letter-spacing:0.06em;color:#e8f4ff;display:flex;align-items:center;gap:6px;">
+          <span style="font-size:11px;color:#8aacbf;background:#111820;border:1px solid #2a3848;padding:1px 5px;letter-spacing:0.06em;font-family:'Oswald',sans-serif;">${qty}×</span>
+          ${label}
+        </span>
+        <span style="text-align:right;flex-shrink:0;margin-left:8px;">
+          <span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.06em;color:#e8f4ff;display:block;">₹${subtotal.toLocaleString("en-IN")}</span>
+          <span style="font-family:'Oswald',sans-serif;font-size:10px;font-weight:300;letter-spacing:0.08em;color:#6a8098;display:block;">₹${price.toLocaleString("en-IN")} EACH</span>
+        </span>
+      `;
       basketEl.appendChild(row);
     }
   }
@@ -1355,9 +1364,7 @@ function bindUI() {
   bind("addWheelBtn", () => !isFinalized && startWheelPlacement());
 
   bind("finalizeBtn", onFinalize);
-  bind("editBtn", onEdit);
   bind("proceedPaymentBtn", onProceedToPayment);
-  bind("printDesignBtn", printDesign);
   bind("undoBtn", () => !isFinalized && performUndo());
   bind("redoBtn", () => !isFinalized && performRedo());
 
@@ -1458,237 +1465,14 @@ function bind(id, fn) {
    ========================================================= */
 
 function onFinalize() {
-  if (isFinalized) return;
-  isFinalized = true;
-  clearGhost();
-  document.getElementById("paymentSection")?.classList.remove("hidden");
-  const btn = document.getElementById("finalizeBtn");
-  if (btn) {
-    btn.innerHTML = `<div class="btn-inner">
-      <span class="btn-icon">◈</span>
-      <span class="btn-action-label">Edit Design</span>
-    </div>`;
-    const fresh = btn.cloneNode(true);
-    btn.parentNode.replaceChild(fresh, btn);
-    fresh.addEventListener("click", onEdit);
-  }
+  printDesign();
 }
 
-function onEdit() {
-  if (!isFinalized) return;
-  isFinalized = false;
-  document.getElementById("paymentSection")?.classList.add("hidden");
-  const btn = document.getElementById("finalizeBtn");
-  if (btn) {
-    btn.innerHTML = `<div class="btn-inner">
-      <span class="btn-icon">◼</span>
-      <span class="btn-action-label">Finalize Design</span>
-    </div>`;
-    const fresh = btn.cloneNode(true);
-    btn.parentNode.replaceChild(fresh, btn);
-    fresh.addEventListener("click", onFinalize);
-  }
-}
+function onEdit() {}
 
 function onProceedToPayment() {
-  const existing = document.getElementById("payment-confirm-popup");
-  if (existing) existing.remove();
-
-  const overlay = document.createElement("div");
-  overlay.id = "payment-confirm-popup";
-  Object.assign(overlay.style, {
-    position: "fixed",
-    top: "0",
-    left: "0",
-    width: "100vw",
-    height: "100vh",
-    background: "rgba(0,0,0,0.82)",
-    zIndex: "9999999",
-    pointerEvents: "all",
-  });
-
-  const box = document.createElement("div");
-  Object.assign(box.style, {
-    position: "fixed",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    zIndex: "10000000",
-    background: "#18202e",
-    border: "2px solid #d05818",
-    padding: "36px 44px",
-    maxWidth: "480px",
-    width: "92%",
-    fontFamily: "'Share Tech Mono', monospace",
-    color: "#c8d8e4",
-    textAlign: "center",
-    clipPath: "polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%)",
-    boxShadow: "0 0 50px rgba(208,88,24,0.25), 0 20px 60px rgba(0,0,0,0.6)",
-  });
-
-  const topLine = document.createElement("div");
-  Object.assign(topLine.style, {
-    position: "absolute",
-    top: "0",
-    left: "0",
-    right: "0",
-    height: "2px",
-    background: "linear-gradient(90deg, transparent, #d05818, transparent)",
-  });
-  box.appendChild(topLine);
-
-  const badge = document.createElement("div");
-  badge.textContent = "⚠  PAYMENT CONFIRMATION";
-  Object.assign(badge.style, {
-    fontSize: "9px",
-    letterSpacing: "0.24em",
-    color: "#d05818",
-    marginBottom: "20px",
-    fontWeight: "700",
-    fontFamily: "'Orbitron', sans-serif",
-  });
-
-  const title = document.createElement("div");
-  title.textContent = "Proceeding to Payment";
-  Object.assign(title.style, {
-    fontSize: "16px",
-    fontFamily: "'Orbitron', sans-serif",
-    fontWeight: "700",
-    color: "#d8e8f4",
-    letterSpacing: "0.1em",
-    marginBottom: "14px",
-  });
-
-  const msg = document.createElement("div");
-  msg.textContent =
-    "Are you sure your design is final? Once you proceed, you will be taken to payment and the build cannot be modified.";
-  Object.assign(msg.style, {
-    fontSize: "13px",
-    lineHeight: "1.8",
-    color: "#a8c4d8",
-    marginBottom: "28px",
-    letterSpacing: "0.04em",
-  });
-
-  const counts = {};
-  scene.traverse((o) => {
-    if (!o.userData?.isMount) return;
-    const t = o.userData.type ?? "unknown";
-    counts[t] = (counts[t] ?? 0) + 1;
-  });
-  const totalParts = Object.values(counts).reduce((a, b) => a + b, 0);
-  const totalCost = document.getElementById("totalPrice")?.textContent ?? "0";
-
-  const summary = document.createElement("div");
-  Object.assign(summary.style, {
-    background: "rgba(208,88,24,0.07)",
-    border: "1px solid rgba(208,88,24,0.22)",
-    padding: "12px 18px",
-    marginBottom: "26px",
-    display: "flex",
-    justifyContent: "space-around",
-    gap: "16px",
-  });
-
-  const makeStatBlock = (label, value) => {
-    const block = document.createElement("div");
-    Object.assign(block.style, { textAlign: "center" });
-    const valEl = document.createElement("div");
-    valEl.textContent = value;
-    Object.assign(valEl.style, {
-      fontFamily: "'Orbitron', sans-serif",
-      fontSize: "18px",
-      fontWeight: "700",
-      color: "#d05818",
-      letterSpacing: "0.06em",
-      lineHeight: "1",
-    });
-    const lblEl = document.createElement("div");
-    lblEl.textContent = label;
-    Object.assign(lblEl.style, {
-      fontSize: "9px",
-      letterSpacing: "0.15em",
-      color: "#8aacbf",
-      marginTop: "4px",
-      textTransform: "uppercase",
-    });
-    block.appendChild(valEl);
-    block.appendChild(lblEl);
-    return block;
-  };
-
-  summary.appendChild(makeStatBlock("PARTS", totalParts));
-  const divider = document.createElement("div");
-  Object.assign(divider.style, {
-    width: "1px",
-    background: "rgba(208,88,24,0.2)",
-    flexShrink: "0",
-  });
-  summary.appendChild(divider);
-  summary.appendChild(makeStatBlock("TOTAL COST", "₹" + totalCost));
-
-  const btnRow = document.createElement("div");
-  Object.assign(btnRow.style, {
-    display: "flex",
-    gap: "12px",
-    justifyContent: "center",
-  });
-
-  function makeBtn(label, primary) {
-    const b = document.createElement("button");
-    b.textContent = label;
-    Object.assign(b.style, {
-      background: primary ? "#d05818" : "transparent",
-      border: "2px solid #d05818",
-      color: primary ? "#0e1018" : "#d05818",
-      fontFamily: "'Orbitron', sans-serif",
-      fontSize: "9px",
-      letterSpacing: "0.2em",
-      padding: "11px 26px",
-      cursor: "pointer",
-      textTransform: "uppercase",
-      transition: "all 0.15s",
-      boxShadow: primary ? "4px 4px 0 #5a2008" : "none",
-    });
-    b.onmouseover = () => {
-      b.style.background = "#d05818";
-      b.style.color = "#0e1018";
-      b.style.boxShadow = "4px 4px 0 #5a2008";
-    };
-    b.onmouseout = () => {
-      b.style.background = primary ? "#d05818" : "transparent";
-      b.style.color = primary ? "#0e1018" : "#d05818";
-      b.style.boxShadow = primary ? "4px 4px 0 #5a2008" : "none";
-    };
-    return b;
-  }
-
-  const cancelBtn = makeBtn("GO BACK", false);
-  cancelBtn.onclick = () => overlay.remove();
-
-  const confirmBtn = makeBtn("YES, PROCEED", true);
-  confirmBtn.onclick = () => {
-    overlay.remove();
-    showAddressOverlay();
-  };
-
-  btnRow.appendChild(cancelBtn);
-  btnRow.appendChild(confirmBtn);
-
-  box.appendChild(badge);
-  box.appendChild(title);
-  box.appendChild(msg);
-  box.appendChild(summary);
-  box.appendChild(btnRow);
-  overlay.appendChild(box);
-
-  overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) overlay.remove();
-  });
-
-  document.body.appendChild(overlay);
+  showAddressOverlay();
 }
-
 /* =========================================================
    ADDRESS OVERLAY
    ========================================================= */
@@ -2559,30 +2343,15 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
   const totalParts = Object.values(counts).reduce((a, b) => a + b, 0);
   const now = new Date().toLocaleString();
 
-  // ── Cost ──────────────────────────────────────────────────────────
   let computedTotal = 0;
   const manifestRows = Object.entries(counts)
     .map(([t, n]) => {
       const cost = (partCostMap[t] ?? 0) * n;
       computedTotal += cost;
-      return `<tr><td>${(partLabelMap[t] ?? t.replace(/_/g, " ")).toUpperCase()}</td><td style="text-align:center">${n}</td><td style="text-align:right;font-family:'Courier New',monospace;color:#cc2200">₹${cost.toLocaleString("en-IN")}</td></tr>`;
+      return `<tr><td>${(partLabelMap[t] ?? t.replace(/_/g, " ")).toUpperCase()}</td><td style="text-align:center">${n}</td><td style="text-align:right;font-family:'Oswald',sans-serif;color:#cc2200">₹${cost.toLocaleString("en-IN")}</td></tr>`;
     })
     .join("");
 
-  const costGroupRows = Object.entries(counts)
-    .map(([t, n]) => {
-      const unitCost = partCostMap[t] ?? 0;
-      const groupCost = unitCost * n;
-      const label = partLabelMap[t] ?? t.replace(/_/g, " ");
-      return `
-      <tr><td colspan="2" style="font-family:'Courier New',monospace;font-size:8px;letter-spacing:0.18em;color:#999;padding:5px 12px 2px;border-top:1px solid #ddd;border-left:3px solid #cc2200;background:#fafafa;">[ ${label.toUpperCase()} ]</td></tr>
-      <tr><td style="padding-left:18px;border-left:3px solid rgba(204,34,0,0.18)">${n}× ${label}</td><td style="text-align:right;font-family:'Courier New',monospace;font-weight:700">₹${groupCost.toLocaleString("en-IN")}</td></tr>
-      <tr><td style="padding-left:18px;font-size:10px;color:#888;font-family:'Courier New',monospace;border-left:3px solid rgba(204,34,0,0.18)">@ ₹${unitCost.toLocaleString("en-IN")} each</td><td></td></tr>
-      <tr><td colspan="2" style="padding:1px 12px 4px;border-left:3px solid #cc2200;border-bottom:1px solid #e0e0e0;font-size:7px;color:#ccc"> </td></tr>`;
-    })
-    .join("");
-
-  // ── Weight ────────────────────────────────────────────────────────
   let totalGrams = 0;
   const weightRows = Object.entries(counts)
     .map(([t, n]) => {
@@ -2592,18 +2361,16 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
       const label = (partLabelMap[t] ?? t.replace(/_/g, " ")).toUpperCase();
       const lineDisp =
         lineG >= 1000 ? `${(lineG / 1000).toFixed(2)} kg` : `${lineG} g`;
-      return `<tr><td>${label}</td><td style="text-align:center">${n}</td><td style="text-align:right;color:#555">${unitG} g ea</td><td style="text-align:right;font-family:'Courier New',monospace;font-weight:700;color:#1a5276">${lineDisp}</td></tr>`;
+      return `<tr><td>${label}</td><td style="text-align:center">${n}</td><td style="text-align:right;color:#555">${unitG} g ea</td><td style="text-align:right;font-family:'Oswald',sans-serif;font-weight:600;color:#1a5276">${lineDisp}</td></tr>`;
     })
     .join("");
+
   const totalWeightDisp =
     totalGrams >= 1000
       ? `${(totalGrams / 1000).toFixed(2)} kg`
       : `${totalGrams} g`;
 
-  // ── Views ─────────────────────────────────────────────────────────
-  // Main shot = ISO (clean, no dimensions)
   const mainShot = screenshots["iso"];
-  // Secondary = top, left, front (each with dimension arrows)
   const secondaryKeys = ["top", "left", "front"];
   const secondaryHTML = secondaryKeys
     .map(
@@ -2618,49 +2385,295 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
   return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8"/><title>Robot Design — ${orderRef}</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&display=swap');
+
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:#fff;color:#111;font-family:'Rajdhani',sans-serif;padding:22px 28px}
-  .print-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px;border-bottom:3px solid #1a1a1a;margin-bottom:18px}
-  .print-title{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;letter-spacing:0.12em;color:#111;line-height:1}
-  .print-subtitle{font-family:'Share Tech Mono',monospace;font-size:10px;color:#666;letter-spacing:0.15em;text-transform:uppercase;margin-top:5px}
-  .print-meta{text-align:right;font-family:'Share Tech Mono',monospace;font-size:10px;color:#555;line-height:1.7;letter-spacing:0.05em}
-  .status-badge{display:inline-block;padding:2px 10px;font-size:9px;font-family:'Orbitron',sans-serif;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;border:1.5px solid;margin-top:4px}
+
+  body{
+    background:#fff;
+    color:#111;
+    font-family:'Oswald',sans-serif;
+    font-weight:400;
+    padding:22px 28px;
+  }
+
+  .print-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    padding-bottom:14px;
+    border-bottom:3px solid #1a1a1a;
+    margin-bottom:18px;
+  }
+  .print-title{
+    font-family:'Oswald',sans-serif;
+    font-size:26px;
+    font-weight:700;
+    letter-spacing:0.14em;
+    color:#111;
+    line-height:1;
+    text-transform:uppercase;
+  }
+  .print-subtitle{
+    font-family:'Oswald',sans-serif;
+    font-size:11px;
+    font-weight:300;
+    color:#666;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    margin-top:6px;
+  }
+  .print-meta{
+    text-align:right;
+    font-family:'Oswald',sans-serif;
+    font-size:11px;
+    font-weight:400;
+    color:#555;
+    line-height:1.8;
+    letter-spacing:0.06em;
+  }
+  .status-badge{
+    display:inline-block;
+    padding:2px 10px;
+    font-size:9px;
+    font-family:'Oswald',sans-serif;
+    font-weight:600;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    border:1.5px solid;
+    margin-top:4px;
+  }
   .status-final{color:#166534;border-color:#166534;background:#f0fdf4}
   .status-draft{color:#7f1d1d;border-color:#cc2200;background:#fff5f5}
-  .main-view-wrap{width:100%;border:2px solid #222;margin-bottom:8px;background:#e8edf2;overflow:hidden;position:relative}
-  .main-view-wrap img{width:100%;display:block;max-height:560px;object-fit:contain}
-  .main-view-label{position:absolute;top:10px;left:14px;font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.2em;color:#fff;background:rgba(0,0,0,0.55);padding:3px 10px;text-transform:uppercase}
-  .section-title{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.2em;color:#111;text-transform:uppercase;border-left:4px solid #cc2200;padding-left:10px;margin-bottom:10px;margin-top:16px}
-  .angles-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
-  .angle-card{border:1.5px solid #222;background:#e8edf2;overflow:hidden;position:relative}
-  .angle-label{font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#fff;background:rgba(0,0,0,0.6);padding:3px 10px;position:absolute;top:0;left:0;z-index:2}
-  .angle-card img{width:100%;display:block;max-height:300px;object-fit:contain}
-  .tables-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px}
+
+  /* ── MAIN ISO VIEW ── */
+  .main-view-wrap{
+    width:100%;
+    border:2px solid #222;
+    margin-bottom:8px;
+    background:#ffffff;
+    overflow:hidden;
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .main-view-wrap img{
+    display:block;
+    max-height:480px;
+    max-width:100%;
+    object-fit:contain;
+    margin:0 auto;
+    background:#ffffff;
+  }
+  .main-view-label{
+    position:absolute;
+    top:10px;
+    left:14px;
+    font-family:'Oswald',sans-serif;
+    font-size:10px;
+    font-weight:600;
+    letter-spacing:0.22em;
+    color:#fff;
+    background:rgba(0,0,0,0.6);
+    padding:3px 12px;
+    text-transform:uppercase;
+  }
+
+  .section-title{
+    font-family:'Oswald',sans-serif;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:0.22em;
+    color:#111;
+    text-transform:uppercase;
+    border-left:4px solid #cc2200;
+    padding-left:10px;
+    margin-bottom:10px;
+    margin-top:16px;
+  }
+
+  /* ── ORTHOGRAPHIC GRID ── */
+  .angles-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    margin-bottom:18px;
+  }
+  .angle-card{
+    border:1.5px solid #222;
+    background:#ffffff;
+    overflow:hidden;
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .angle-label{
+    font-family:'Oswald',sans-serif;
+    font-size:9px;
+    font-weight:600;
+    letter-spacing:0.2em;
+    text-transform:uppercase;
+    color:#fff;
+    background:rgba(0,0,0,0.65);
+    padding:3px 10px;
+    position:absolute;
+    top:0;
+    left:0;
+    z-index:2;
+  }
+  .angle-card img{
+    width:100%;
+    display:block;
+    max-height:300px;
+    object-fit:contain;
+    background:#ffffff;
+    margin:0 auto;
+  }
+
+  /* ── TABLES ── */
+  .tables-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin-bottom:16px;
+  }
   .table-card{border:1.5px solid #222}
-  .table-card-header{background:#1a1a1a;color:#cc2200;font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.18em;padding:6px 12px;text-transform:uppercase}
+  .table-card-header{
+    background:#1a1a1a;
+    color:#cc2200;
+    font-family:'Oswald',sans-serif;
+    font-size:10px;
+    font-weight:600;
+    letter-spacing:0.2em;
+    padding:7px 12px;
+    text-transform:uppercase;
+  }
   .table-card-header.weight-header{color:#2e86c1}
-  table{width:100%;border-collapse:collapse;font-size:11px}
-  td{padding:5px 10px;border-bottom:1px solid #e5e5e5;font-family:'Rajdhani',sans-serif;letter-spacing:0.03em}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  td{
+    padding:6px 10px;
+    border-bottom:1px solid #e5e5e5;
+    font-family:'Oswald',sans-serif;
+    font-weight:400;
+    letter-spacing:0.04em;
+  }
+  th{
+    font-family:'Oswald',sans-serif;
+    font-weight:600;
+    letter-spacing:0.08em;
+    font-size:11px;
+  }
   tr:last-child td{border-bottom:none}
   tr:nth-child(even) td{background:#fafafa}
-  .manifest-subtotal td{font-family:'Share Tech Mono',monospace!important;font-size:10px!important;font-weight:700!important;color:#cc2200!important;background:#fff5f5!important;border-top:2px solid #cc2200!important;border-bottom:none!important}
-  .manifest-total-parts td{font-family:'Share Tech Mono',monospace!important;font-size:9px!important;color:#555!important;background:#f8f8f8!important;border-bottom:none!important}
-  .weight-total-row td{font-family:'Share Tech Mono',monospace!important;font-size:11px!important;font-weight:700!important;color:#1a5276!important;background:#eaf4fb!important;border-top:2px solid #2e86c1!important;border-bottom:none!important}
-  .cost-table td{padding:4px 10px;font-size:11px;border-bottom:none}
-  .cost-table tr:nth-child(even) td{background:transparent}
-  .totals-bar{display:flex;gap:0;margin-bottom:16px}
-  .totals-bar-item{flex:1;display:flex;justify-content:space-between;align-items:center;border:2px solid #1a1a1a;padding:10px 18px;background:#f8f8f8;margin-right:-2px}
-  .totals-bar-item:last-child{margin-right:0;border-left:2px solid #cc2200;background:#fff5f5}
-  .total-label{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.1em;color:#111}
-  .total-value{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;color:#cc2200;letter-spacing:0.06em}
-  .total-value.weight-val{color:#1a5276;font-size:18px}
-  .print-footer{border-top:1px solid #ccc;padding-top:10px;display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:9px;color:#888;letter-spacing:0.08em}
-  @media print{body{padding:12px 16px}}
-</style></head><body>
+
+  .manifest-subtotal td{
+    font-family:'Oswald',sans-serif !important;
+    font-size:11px !important;
+    font-weight:700 !important;
+    color:#cc2200 !important;
+    background:#fff5f5 !important;
+    border-top:2px solid #cc2200 !important;
+    border-bottom:none !important;
+    letter-spacing:0.1em;
+  }
+  .manifest-total-parts td{
+    font-family:'Oswald',sans-serif !important;
+    font-size:10px !important;
+    font-weight:400 !important;
+    color:#555 !important;
+    background:#f8f8f8 !important;
+    border-bottom:none !important;
+    letter-spacing:0.08em;
+  }
+  .weight-total-row td{
+    font-family:'Oswald',sans-serif !important;
+    font-size:12px !important;
+    font-weight:700 !important;
+    color:#1a5276 !important;
+    background:#eaf4fb !important;
+    border-top:2px solid #2e86c1 !important;
+    border-bottom:none !important;
+    letter-spacing:0.1em;
+  }
+
+  /* ── FOOTER ── */
+  .print-footer{
+    border-top:1px solid #ccc;
+    padding-top:10px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-family:'Oswald',sans-serif;
+    font-size:10px;
+    font-weight:300;
+    color:#888;
+    letter-spacing:0.1em;
+    margin-top:16px;
+    text-transform:uppercase;
+  }
+
+  /* ── SAVE PDF BUTTON ── */
+  .save-pdf-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:#cc2200;
+    color:#fff;
+    border:none;
+    font-family:'Oswald',sans-serif;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:0.2em;
+    text-transform:uppercase;
+    padding:10px 22px;
+    cursor:pointer;
+    box-shadow:3px 3px 0 #7a1000;
+    transition:all 0.12s ease;
+  }
+  .save-pdf-btn:hover{
+    background:#a81a00;
+    box-shadow:5px 5px 0 #7a1000;
+    transform:translate(-2px,-2px);
+  }
+  .save-pdf-btn:active{
+    transform:translate(1px,1px);
+    box-shadow:1px 1px 0 #7a1000;
+  }
+  .save-pdf-btn svg{
+    width:14px;
+    height:14px;
+    fill:#fff;
+    flex-shrink:0;
+  }
+
+  @media print{
+    .save-pdf-btn{display:none !important}
+    .no-print{display:none !important}
+    body{padding:12px 16px}
+  }
+</style>
+</head><body>
+
+  <!-- ── SAVE PDF BUTTON BAR ── -->
+  <div class="no-print" style="display:flex;justify-content:flex-end;margin-bottom:14px;">
+    <button class="save-pdf-btn" onclick="window.print()">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
+      </svg>
+      SAVE AS PDF
+    </button>
+  </div>
+
   <div class="print-header">
-    <div><div class="print-title">ROBOT CONFIGURATOR</div><div class="print-subtitle">Design Report · MK-1 Unit · ${orderRef}</div></div>
-    <div class="print-meta">Generated: ${now}<br>Parts: ${totalParts} · Weight: ${totalWeightDisp}<br>
+    <div>
+      <div class="print-title">ROBOT CONFIGURATOR</div>
+      <div class="print-subtitle">Design Report · MK-1 Unit · ${orderRef}</div>
+    </div>
+    <div class="print-meta">
+      Generated: ${now}<br>
+      Parts: ${totalParts} · Weight: ${totalWeightDisp}<br>
       <span class="status-badge ${isFinalized ? "status-final" : "status-draft"}">${isFinalized ? "✓ Finalized" : "⚠ Draft"}</span>
     </div>
   </div>
@@ -2678,34 +2691,36 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
     <div class="table-card">
       <div class="table-card-header">Component Manifest</div>
       <table>
-        <tr><td><strong>Type</strong></td><td style="text-align:center"><strong>Qty</strong></td><td style="text-align:right"><strong>Cost</strong></td></tr>
+        <tr>
+          <td><strong>Type</strong></td>
+          <td style="text-align:center"><strong>Qty</strong></td>
+          <td style="text-align:right"><strong>Cost</strong></td>
+        </tr>
         ${manifestRows || "<tr><td colspan='3'>No parts placed</td></tr>"}
-        <tr class="manifest-subtotal"><td colspan="2">SUBTOTAL</td><td style="text-align:right">₹${computedTotal.toLocaleString("en-IN")}</td></tr>
-        <tr class="manifest-total-parts"><td colspan="3">${totalParts} PARTS · ${Object.keys(counts).length} TYPES</td></tr>
+        <tr class="manifest-subtotal">
+          <td colspan="2">TOTAL COST</td>
+          <td style="text-align:right">₹${computedTotal.toLocaleString("en-IN")}</td>
+        </tr>
+        <tr class="manifest-total-parts">
+          <td colspan="3">${totalParts} PARTS · ${Object.keys(counts).length} TYPES</td>
+        </tr>
       </table>
     </div>
     <div class="table-card">
       <div class="table-card-header weight-header">Weight Breakdown</div>
       <table>
-        <tr><td><strong>Type</strong></td><td style="text-align:center"><strong>Qty</strong></td><td style="text-align:right"><strong>Unit</strong></td><td style="text-align:right"><strong>Total</strong></td></tr>
+        <tr>
+          <td><strong>Type</strong></td>
+          <td style="text-align:center"><strong>Qty</strong></td>
+          <td style="text-align:right"><strong>Unit</strong></td>
+          <td style="text-align:right"><strong>Total</strong></td>
+        </tr>
         ${weightRows || "<tr><td colspan='4'>No parts placed</td></tr>"}
-        <tr class="weight-total-row"><td colspan="3">TOTAL WEIGHT</td><td style="text-align:right">${totalWeightDisp}</td></tr>
+        <tr class="weight-total-row">
+          <td colspan="3">TOTAL WEIGHT</td>
+          <td style="text-align:right">${totalWeightDisp}</td>
+        </tr>
       </table>
-    </div>
-    <div class="table-card">
-      <div class="table-card-header">Cost Breakdown</div>
-      <table class="cost-table">${costGroupRows || "<tr><td colspan='2'>Empty</td></tr>"}</table>
-    </div>
-  </div>
-
-  <div class="totals-bar">
-    <div class="totals-bar-item">
-      <span class="total-label">TOTAL WEIGHT</span>
-      <span class="total-value weight-val">${totalWeightDisp}</span>
-    </div>
-    <div class="totals-bar-item">
-      <span class="total-label">TOTAL REQUISITION COST</span>
-      <span class="total-value">₹${computedTotal.toLocaleString("en-IN")}</span>
     </div>
   </div>
 
@@ -2714,9 +2729,9 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
     <span>ORDER REF: ${orderRef}</span>
     <span>${now}</span>
   </div>
+
 </body></html>`;
 }
-
 /* =========================================================
    TECHNICAL OVERLAY
    ========================================================= */
@@ -3947,6 +3962,7 @@ function startMotorPlacement() {
   motorRotationGroup.add(m);
   ghost.add(motorRotationGroup);
   scene.add(ghost);
+  ghost.position.set(0, -9999, 0);
   showComponentPreview("motor", motorTemplate);
 }
 
@@ -3972,6 +3988,7 @@ function startFramePlacement() {
   ghost = frameTemplate.clone(true);
   makeGhost(ghost);
   scene.add(ghost);
+  ghost.position.set(0, -9999, 0);
   showComponentPreview("frame", frameTemplate);
 }
 
@@ -3993,6 +4010,7 @@ function startTrianglePlacement() {
   ghost = triangleTemplate.clone(true);
   makeGhost(ghost);
   scene.add(ghost);
+  ghost.position.set(0, -9999, 0);
   showRotationControls("triangle");
   showComponentPreview("triangle_frame", triangleTemplate);
 }
@@ -4030,6 +4048,7 @@ function startSupportPlacement() {
   ghost = supportTemplate.clone(true);
   makeGhost(ghost);
   scene.add(ghost);
+  ghost.position.set(0, -9999, 0);
   showComponentPreview("support_frame", supportTemplate);
 }
 
@@ -4071,6 +4090,7 @@ function startWheelPlacement() {
   ghost = wheelTemplate.clone(true);
   makeGhost(ghost);
   scene.add(ghost);
+  ghost.position.set(0, -9999, 0);
   showComponentPreview("wheel", wheelTemplate);
 }
 
@@ -4426,7 +4446,19 @@ function onMouseMove(e) {
       return;
     }
     const frameHit = raycaster.intersectObjects(frameMarkers)[0];
-    if (!frameHit) return;
+    if (!frameHit) {
+      const groundPlane = new THREE.Plane(
+        new THREE.Vector3(0, 1, 0),
+        -baseFrameYLevel,
+      );
+      const target = new THREE.Vector3();
+      raycaster.ray.intersectPlane(groundPlane, target);
+      if (target) {
+        ghost.position.set(target.x, baseFrameYLevel, target.z);
+        ghost.rotation.set(0, 0, 0);
+      }
+      return;
+    }
     frameHoverType = "frame";
     const socket = frameHit.object.userData.socket;
     const { mountPos } = computeFrameSnapPosition(socket);
@@ -4437,7 +4469,17 @@ function onMouseMove(e) {
 
   if (placementMode === "wheel") {
     const hit = raycaster.intersectObjects(wheelMarkers)[0];
-    if (!hit) return;
+    if (!hit) {
+      const groundPlane = new THREE.Plane(
+        new THREE.Vector3(0, 1, 0),
+        -baseFrameYLevel,
+      );
+      const target = new THREE.Vector3();
+      if (raycaster.ray.intersectPlane(groundPlane, target)) {
+        ghost.position.set(target.x, baseFrameYLevel, target.z);
+      }
+      return;
+    }
     const socket = hit.object.userData.socket;
     socket.updateMatrixWorld(true);
     ghost.matrix.copy(socket.matrixWorld);
@@ -4452,7 +4494,18 @@ function onMouseMove(e) {
       hoveredMotorMarker.scale.setScalar(1.5);
       hoveredMotorMarker = null;
     }
-    if (!hit) return;
+    if (!hit) {
+      const groundPlane = new THREE.Plane(
+        new THREE.Vector3(0, 1, 0),
+        -baseFrameYLevel,
+      );
+      const target = new THREE.Vector3();
+      if (raycaster.ray.intersectPlane(groundPlane, target)) {
+        ghost.position.set(target.x, baseFrameYLevel, target.z);
+        ghost.rotation.set(0, motorAutoBaseYaw, 0);
+      }
+      return;
+    }
     const socket = hit.object.userData.socket;
     socket.updateMatrixWorld(true);
     if (hit.object !== hoveredMotorMarker) {
@@ -4478,7 +4531,15 @@ function onMouseMove(e) {
         hoveredTriangleMarker.scale.setScalar(1.5);
         hoveredTriangleMarker = null;
       }
-      if (ghost) ghost.position.set(0, -9999, 0);
+      const groundPlane = new THREE.Plane(
+        new THREE.Vector3(0, 1, 0),
+        -baseFrameYLevel,
+      );
+      const target = new THREE.Vector3();
+      if (raycaster.ray.intersectPlane(groundPlane, target)) {
+        ghost.position.set(target.x, baseFrameYLevel, target.z);
+        ghost.rotation.set(0, 0, 0);
+      }
       return;
     }
     const hit = raycaster.intersectObjects(targets)[0];
@@ -4492,7 +4553,15 @@ function onMouseMove(e) {
       hoveredTriangleMarker = null;
     }
     if (!hit) {
-      if (ghost) ghost.position.set(0, -9999, 0);
+      const groundPlane = new THREE.Plane(
+        new THREE.Vector3(0, 1, 0),
+        -baseFrameYLevel,
+      );
+      const target = new THREE.Vector3();
+      if (raycaster.ray.intersectPlane(groundPlane, target)) {
+        ghost.position.set(target.x, baseFrameYLevel, target.z);
+        ghost.rotation.set(0, 0, 0);
+      }
       return;
     }
     const rawSocket = hit.object.userData.socket;
@@ -4537,7 +4606,22 @@ function onMouseMove(e) {
     hoveredTriangleMarker = null;
     updateShortcutBar();
   }
-  if (!hit) return;
+  if (!hit) {
+    const groundPlane = new THREE.Plane(
+      new THREE.Vector3(0, 1, 0),
+      -baseFrameYLevel,
+    );
+    const target = new THREE.Vector3();
+    if (raycaster.ray.intersectPlane(groundPlane, target)) {
+      ghost.position.set(target.x, baseFrameYLevel, target.z);
+      ghost.rotation.set(
+        0,
+        triangleAutoBaseYaw + triangleManualRotSteps * Math.PI,
+        0,
+      );
+    }
+    return;
+  }
   const socket = hit.object.userData.socket;
   socket.updateMatrixWorld(true);
   if (hit.object !== hoveredTriangleMarker) {
@@ -5715,14 +5799,17 @@ function updateWeightDisplay() {
   const totalVal = document.getElementById("weight-total-value");
   const badge = document.getElementById("weight-total-badge");
   if (!rowsEl) return;
+
   const counts = {};
   scene.traverse((o) => {
     if (!o.userData?.isMount) return;
     const t = o.userData.type ?? "unknown";
     counts[t] = (counts[t] ?? 0) + 1;
   });
+
   rowsEl.innerHTML = "";
   let totalGrams = 0;
+
   for (const type of [
     "frame",
     "motor",
@@ -5732,22 +5819,52 @@ function updateWeightDisplay() {
   ]) {
     const qty = counts[type] ?? 0;
     if (qty === 0) continue;
-    const unitG = PART_WEIGHTS[type] ?? 0,
-      totalG = unitG * qty;
+    const unitG = PART_WEIGHTS[type] ?? 0;
+    const totalG = unitG * qty;
     totalGrams += totalG;
     const label = PART_LABELS()[type] ?? type.replace(/_/g, " ");
-    const glyph = PART_GLYPHS_W[type] ?? "◈";
+    const color = BASKET_BTN_COLORS[type] ?? "rgba(208,88,24,0.65)";
+
+    const totalDisp =
+      totalG >= 1000 ? `${(totalG / 1000).toFixed(2)} kg` : `${totalG} g`;
+    const unitDisp =
+      unitG >= 1000 ? `${(unitG / 1000).toFixed(2)}kg ea` : `${unitG}g ea`;
+
     const row = document.createElement("div");
-    row.className = "weight-row";
-    row.innerHTML = `<div class="weight-row-label"><span>${glyph}</span>${label.toUpperCase()}<span class="weight-row-qty">${qty}×</span></div><div class="weight-row-val">${totalG >= 1000 ? (totalG / 1000).toFixed(2) + ' <span class="weight-row-unit">kg</span>' : totalG + ' <span class="weight-row-unit">g</span>'}<span class="weight-row-unit" style="color:#263848;font-size:7px;margin-left:3px">@${unitG}g ea</span></div>`;
+    row.dataset.partType = type;
+    Object.assign(row.style, {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: "7px 10px",
+      background: "#1e2836",
+      border: "1px solid #2e4058",
+      borderLeft: `3px solid ${color}`,
+      marginBottom: "3px",
+    });
+
+    row.innerHTML = `
+      <span style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:400;letter-spacing:0.06em;color:#e8f4ff;display:flex;align-items:center;gap:6px;">
+        <span style="font-size:11px;color:#8aacbf;background:#111820;border:1px solid #2a3848;padding:1px 5px;letter-spacing:0.06em;font-family:'Oswald',sans-serif;">${qty}×</span>
+        ${label}
+      </span>
+      <span style="text-align:right;flex-shrink:0;margin-left:8px;">
+        <span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.06em;color:#d8eef8;display:block;">${totalDisp}</span>
+        <span style="font-family:'Oswald',sans-serif;font-size:10px;font-weight:300;letter-spacing:0.08em;color:#6a8098;display:block;">${unitDisp}</span>
+      </span>
+    `;
     rowsEl.appendChild(row);
   }
-  if (Object.keys(counts).length === 0)
-    rowsEl.innerHTML = `<div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#2a3848;text-align:center;padding:8px 0;letter-spacing:0.1em;text-transform:uppercase;">No parts placed</div>`;
+
+  if (Object.keys(counts).length === 0) {
+    rowsEl.innerHTML = `<div style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:300;color:#2a3848;text-align:center;padding:8px 0;letter-spacing:0.1em;text-transform:uppercase;">No parts placed</div>`;
+  }
+
   const displayG =
     totalGrams >= 1000
-      ? (totalGrams / 1000).toFixed(2) + " kg"
-      : totalGrams + " g";
+      ? `${(totalGrams / 1000).toFixed(2)} kg`
+      : `${totalGrams} g`;
+
   if (totalVal)
     totalVal.innerHTML =
       totalGrams >= 1000
@@ -5958,10 +6075,16 @@ function updateMinimapCamera() {
     const half = Math.max(halfW, halfH);
     halfW = halfH = half;
   }
-  minimapOrthoCamera.left = cx - halfW;
-  minimapOrthoCamera.right = cx + halfW;
-  minimapOrthoCamera.top = cz - halfH;
-  minimapOrthoCamera.bottom = cz + halfH;
+  minimapOrthoCamera._worldLeft = cx - halfW;
+  minimapOrthoCamera._worldRight = cx + halfW;
+  minimapOrthoCamera._worldZMin = cz - halfH;
+  minimapOrthoCamera._worldZMax = cz + halfH;
+
+  minimapOrthoCamera.left = -halfW;
+  minimapOrthoCamera.right = halfW;
+  minimapOrthoCamera.top = halfH;
+  minimapOrthoCamera.bottom = -halfH;
+
   minimapOrthoCamera.position.set(cx, 30, cz);
   minimapOrthoCamera.lookAt(cx, 0, cz);
   minimapOrthoCamera.updateProjectionMatrix();
@@ -5974,41 +6097,40 @@ function drawMinimapOverlay() {
     cam = minimapOrthoCamera;
   ctx.clearRect(0, 0, SIZE, SIZE);
   const toUV = (wx, wz) => [
-    ((wx - cam.left) / (cam.right - cam.left)) * SIZE,
-    ((wz - cam.top) / (cam.bottom - cam.top)) * SIZE,
+    ((wx - cam._worldLeft) / (cam._worldRight - cam._worldLeft)) * SIZE,
+    ((wz - cam._worldZMin) / (cam._worldZMax - cam._worldZMin)) * SIZE,
   ];
 
   // ── Brighter grid ──────────────────────────────────────────────────
-  const step = (cam.right - cam.left) / 8;
+  const step = (cam._worldRight - cam._worldLeft) / 8;
   ctx.save();
   ctx.strokeStyle = "rgba(80,120,170,0.28)";
   ctx.lineWidth = 0.5;
-  for (let wx = cam.left; wx <= cam.right; wx += step) {
-    const [sx] = toUV(wx, cam.top);
+  for (let wx = cam._worldLeft; wx <= cam._worldRight; wx += step) {
+    const [sx] = toUV(wx, cam._worldZMin);
     ctx.beginPath();
     ctx.moveTo(sx, 0);
     ctx.lineTo(sx, SIZE);
     ctx.stroke();
   }
-  for (let wz = cam.top; wz <= cam.bottom; wz += step) {
-    const [, sy] = toUV(cam.left, wz);
+  for (let wz = cam._worldZMin; wz <= cam._worldZMax; wz += step) {
+    const [, sy] = toUV(cam._worldLeft, wz);
     ctx.beginPath();
     ctx.moveTo(0, sy);
     ctx.lineTo(SIZE, sy);
     ctx.stroke();
   }
-  // Major lines every 4 cells
   ctx.strokeStyle = "rgba(100,150,200,0.18)";
   ctx.lineWidth = 1;
-  for (let wx = cam.left; wx <= cam.right; wx += step * 4) {
-    const [sx] = toUV(wx, cam.top);
+  for (let wx = cam._worldLeft; wx <= cam._worldRight; wx += step * 4) {
+    const [sx] = toUV(wx, cam._worldZMin);
     ctx.beginPath();
     ctx.moveTo(sx, 0);
     ctx.lineTo(sx, SIZE);
     ctx.stroke();
   }
-  for (let wz = cam.top; wz <= cam.bottom; wz += step * 4) {
-    const [, sy] = toUV(cam.left, wz);
+  for (let wz = cam._worldZMin; wz <= cam._worldZMax; wz += step * 4) {
+    const [, sy] = toUV(cam._worldLeft, wz);
     ctx.beginPath();
     ctx.moveTo(0, sy);
     ctx.lineTo(SIZE, sy);
@@ -6181,26 +6303,6 @@ function drawMinimapOverlay() {
     ctx.restore();
   });
 
-  // ── Camera frustum footprint ─────────────────────────────────────
-  const frustumCorners = getFrustumFootprint();
-  if (frustumCorners.length === 4) {
-    ctx.save();
-    ctx.strokeStyle = "rgba(255,210,80,0.75)";
-    ctx.fillStyle = "rgba(255,210,80,0.05)";
-    ctx.lineWidth = 1.2;
-    ctx.setLineDash([3, 3]);
-    ctx.beginPath();
-    frustumCorners.forEach(([wx, wz], i) => {
-      const [px, py] = toUV(wx, wz);
-      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
-    });
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.restore();
-  }
-
   drawCompass(ctx, SIZE);
 }
 
@@ -6326,7 +6428,7 @@ let _cpSubLabel = null;
 let _cpActive = false;
 let _cpRotY = 0;
 
-const PREVIEW_SIZE = 220; // px
+const PREVIEW_SIZE = 140; // px
 
 const COMPONENT_PREVIEW_INFO = {
   frame: {
@@ -6362,16 +6464,16 @@ const COMPONENT_PREVIEW_INFO = {
 };
 
 function initComponentPreview() {
-  // Inject CSS once
   if (!document.getElementById("cp-styles")) {
     const s = document.createElement("style");
     s.id = "cp-styles";
     s.textContent = `
+      @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&display=swap');
       #comp-preview-wrap {
         position: absolute;
         top: 18px;
         left: 18px;
-        width: ${PREVIEW_SIZE}px;
+        width: 140px;
         background: rgba(6,11,20,0.96);
         border: 1.5px solid rgba(208,88,24,0.4);
         border-left: 3px solid #d05818;
@@ -6392,42 +6494,43 @@ function initComponentPreview() {
       #comp-preview-header {
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 11px 14px 9px;
+        gap: 6px;
+        padding: 6px 8px 5px;
         border-bottom: 1px solid rgba(208,88,24,0.2);
         background: rgba(208,88,24,0.07);
       }
       #comp-preview-glyph {
-        font-size: 22px;
+        font-size: 14px;
         line-height: 1;
         flex-shrink: 0;
-        filter: drop-shadow(0 0 6px currentColor);
+        filter: drop-shadow(0 0 4px currentColor);
       }
       #comp-preview-name {
-        font-family: 'Orbitron', sans-serif;
-        font-size: 11px;
-        font-weight: 800;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        color: #ffffff;
-        line-height: 1.25;
-      }
-      #comp-preview-sub {
-        font-family: 'Share Tech Mono', monospace;
+        font-family: 'Oswald', sans-serif;
         font-size: 9px;
+        font-weight: 600;
         letter-spacing: 0.12em;
         text-transform: uppercase;
+        color: #ffffff;
+        line-height: 1.2;
+      }
+      #comp-preview-sub {
+        font-family: 'Oswald', sans-serif;
+        font-size: 7px;
+        font-weight: 400;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
         color: #6a8898;
-        margin-top: 3px;
+        margin-top: 2px;
       }
       #comp-preview-canvas-wrap {
-        width: ${PREVIEW_SIZE}px;
-        height: ${PREVIEW_SIZE}px;
+        width: 140px;
+        height: 140px;
         position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: radial-gradient(ellipse at center, rgba(208,88,24,0.04) 0%, transparent 70%);
+        background: linear-gradient(135deg, #1e2d3d 0%, #243447 50%, #1a2838 100%);
       }
       #comp-preview-canvas-wrap canvas {
         display: block;
@@ -6436,45 +6539,46 @@ function initComponentPreview() {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 7px 14px;
+        padding: 4px 8px;
         border-top: 1px solid rgba(255,255,255,0.06);
         border-bottom: 1px solid rgba(208,88,24,0.15);
         background: rgba(0,0,0,0.25);
       }
       #comp-preview-weight-label {
-        font-family: 'Orbitron', sans-serif;
-        font-size: 8px;
-        font-weight: 700;
-        letter-spacing: 0.2em;
+        font-family: 'Oswald', sans-serif;
+        font-size: 7px;
+        font-weight: 500;
+        letter-spacing: 0.15em;
         text-transform: uppercase;
         color: #6a8898;
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 4px;
       }
       #comp-preview-weight-value {
-        font-family: 'Orbitron', sans-serif;
-        font-size: 13px;
-        font-weight: 700;
+        font-family: 'Oswald', sans-serif;
+        font-size: 11px;
+        font-weight: 600;
         letter-spacing: 0.06em;
         color: #d8e8f4;
       }
       #comp-preview-weight-unit {
-        font-size: 9px;
+        font-size: 8px;
         color: #4a6878;
         margin-left: 2px;
-        font-family: 'Share Tech Mono', monospace;
+        font-family: 'Oswald', sans-serif;
+        font-weight: 400;
         letter-spacing: 0.1em;
       }
       #comp-preview-footer {
-        padding: 7px 14px 9px;
+        padding: 4px 8px 5px;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         background: rgba(0,0,0,0.15);
       }
       #comp-preview-dot {
-        width: 6px; height: 6px; border-radius: 50%;
+        width: 5px; height: 5px; border-radius: 50%;
         flex-shrink: 0;
         animation: cpPulse 1.4s ease-in-out infinite;
       }
@@ -6483,8 +6587,9 @@ function initComponentPreview() {
         50%      { opacity: 0.4; transform: scale(0.65); }
       }
       #comp-preview-status {
-        font-family: 'Share Tech Mono', monospace;
-        font-size: 9px;
+        font-family: 'Oswald', sans-serif;
+        font-size: 7px;
+        font-weight: 400;
         letter-spacing: 0.16em;
         text-transform: uppercase;
         color: #8aacbf;
@@ -6499,7 +6604,6 @@ function initComponentPreview() {
     document.head.appendChild(s);
   }
 
-  // Build DOM inside the viewport container
   const viewport =
     document.getElementById("app")?.parentElement ?? document.body;
   const wrap = document.createElement("div");
@@ -6531,7 +6635,6 @@ function initComponentPreview() {
   canvasWrap.id = "comp-preview-canvas-wrap";
   wrap.appendChild(canvasWrap);
 
-  // Weight row
   const weightRow = document.createElement("div");
   weightRow.id = "comp-preview-weight-row";
   const weightLabel = document.createElement("div");
@@ -6567,34 +6670,39 @@ function initComponentPreview() {
   _cpLabel = name;
   _cpSubLabel = sub;
 
-  // Three.js preview renderer
-  _cpRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  _cpRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
   _cpRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  _cpRenderer.setSize(PREVIEW_SIZE, PREVIEW_SIZE);
-  _cpRenderer.setClearColor(0x000000, 0);
+  _cpRenderer.setSize(140, 140);
+  _cpRenderer.setClearColor(0x1e2d3d, 1);
   _cpRenderer.outputColorSpace = THREE.SRGBColorSpace;
   _cpRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-  _cpRenderer.toneMappingExposure = 1.2;
+  _cpRenderer.toneMappingExposure = 2.2;
   canvasWrap.appendChild(_cpRenderer.domElement);
 
-  // Preview scene
   _cpScene = new THREE.Scene();
+  _cpScene.background = new THREE.Color(0x1e2d3d);
   _cpCamera = new THREE.PerspectiveCamera(38, 1, 0.01, 100);
   _cpCamera.position.set(0, 0, 4);
 
-  // Lighting for preview
-  _cpScene.add(new THREE.HemisphereLight(0xffffff, 0x334455, 0.7));
-  const keyL = new THREE.DirectionalLight(0xffffff, 1.1);
-  keyL.position.set(4, 5, 4);
-  _cpScene.add(keyL);
-  const fillL = new THREE.DirectionalLight(0xffffff, 0.4);
-  fillL.position.set(-4, 2, 3);
-  _cpScene.add(fillL);
-  const rimL = new THREE.DirectionalLight(0xffffff, 0.5);
-  rimL.position.set(-2, 4, -5);
-  _cpScene.add(rimL);
-}
+  // Much brighter lighting for sharp readable preview
+  _cpScene.add(new THREE.AmbientLight(0xffffff, 1.2));
 
+  const keyL = new THREE.DirectionalLight(0xffffff, 3.5);
+  keyL.position.set(4, 5, 6);
+  _cpScene.add(keyL);
+
+  const fillL = new THREE.DirectionalLight(0xc8d8f0, 2.0);
+  fillL.position.set(-5, 3, 4);
+  _cpScene.add(fillL);
+
+  const rimL = new THREE.DirectionalLight(0xffd0a0, 1.8);
+  rimL.position.set(-3, 6, -5);
+  _cpScene.add(rimL);
+
+  const bottomL = new THREE.DirectionalLight(0xffffff, 1.0);
+  bottomL.position.set(0, -4, 3);
+  _cpScene.add(bottomL);
+}
 function showComponentPreview(type, template) {
   if (!_cpEl || !_cpScene || !_cpRenderer) return;
   const info = COMPONENT_PREVIEW_INFO[type] ?? {

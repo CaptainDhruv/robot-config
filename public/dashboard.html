@@ -665,33 +665,33 @@
         text-align: center;
       }
       .confirm-icon {
-        font-size: 40px; /* ↑ was 32px */
+        font-size: 40px;
         color: var(--red);
-        margin-bottom: 18px; /* ↑ was 14px */
+        margin-bottom: 18px;
       }
       .confirm-title {
-        font-size: 18px; /* ↑ was 14px */
+        font-size: 18px;
         font-weight: 800;
         letter-spacing: 0.1em;
         color: var(--text);
         text-transform: uppercase;
-        margin-bottom: 14px; /* ↑ was 10px */
+        margin-bottom: 14px;
       }
       .confirm-msg {
-        font-size: 14px; /* ↑ was 12px */
+        font-size: 14px;
         font-weight: 500;
         color: var(--text-secondary);
         letter-spacing: 0.02em;
         line-height: 1.75;
-        margin-bottom: 22px; /* ↑ was 20px */
+        margin-bottom: 22px;
       }
       .confirm-ref {
-        font-size: 15px; /* ↑ was 12px */
+        font-size: 15px;
         font-weight: 700;
         color: var(--red);
         letter-spacing: 0.14em;
-        margin-bottom: 28px; /* ↑ was 24px */
-        padding: 10px 20px; /* ↑ was 8px 16px */
+        margin-bottom: 28px;
+        padding: 10px 20px;
         background: var(--red-bg);
         display: inline-block;
       }
@@ -702,10 +702,10 @@
       }
       .confirm-btn {
         font-family: "Montserrat", sans-serif;
-        font-size: 11px; /* ↑ was 9px */
+        font-size: 11px;
         font-weight: 700;
         letter-spacing: 0.16em;
-        padding: 13px 30px; /* ↑ was 11px 26px */
+        padding: 13px 30px;
         cursor: pointer;
         text-transform: uppercase;
         transition: all 0.15s;
@@ -747,6 +747,110 @@
           padding: 12px 16px;
           gap: 10px;
         }
+      }
+
+      /* ── SEARCH & FILTER ── */
+      .search-filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+      }
+      .search-wrap {
+        position: relative;
+        flex: 1;
+        min-width: 220px;
+      }
+      .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted);
+        font-size: 13px;
+        pointer-events: none;
+      }
+      .search-input {
+        width: 100%;
+        background: var(--bg2);
+        border: 1.5px solid var(--border);
+        color: var(--text);
+        font-family: "Montserrat", sans-serif;
+        font-size: 12px;
+        font-weight: 500;
+        padding: 9px 14px 9px 34px;
+        outline: none;
+        border-radius: 2px;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+        letter-spacing: 0.01em;
+      }
+      .search-input::placeholder {
+        color: var(--muted);
+      }
+      .search-input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(208, 88, 24, 0.1);
+      }
+      .search-clear {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: var(--muted);
+        font-size: 14px;
+        cursor: pointer;
+        display: none;
+        padding: 2px 4px;
+        line-height: 1;
+      }
+      .search-clear:hover {
+        color: var(--red);
+      }
+      .filter-pills {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+      .filter-pill {
+        font-family: "Montserrat", sans-serif;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        padding: 7px 14px;
+        border: 1.5px solid var(--border);
+        background: transparent;
+        color: var(--text-secondary);
+        cursor: pointer;
+        border-radius: 2px;
+        transition: all 0.15s;
+        white-space: nowrap;
+      }
+      .filter-pill:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .filter-pill.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      .results-count {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--muted);
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+        align-self: center;
+      }
+      .results-count span {
+        color: var(--accent);
+        font-weight: 800;
       }
 
       .nav-pill-active {
@@ -854,6 +958,64 @@
           <button class="refresh-btn" onclick="loadOrders()">⟳ Refresh</button>
         </div>
 
+        <div class="search-filter-bar">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input
+              class="search-input"
+              id="search-input"
+              type="text"
+              placeholder="Search by name, phone, order ID, payment ID, city…"
+              oninput="applyFilters()"
+            />
+            <button
+              class="search-clear"
+              id="search-clear"
+              onclick="clearSearch()"
+            >
+              ✕
+            </button>
+          </div>
+          <div class="filter-pills">
+            <button
+              class="filter-pill active"
+              data-days="all"
+              onclick="setDateFilter(this)"
+            >
+              All
+            </button>
+            <button
+              class="filter-pill"
+              data-days="30"
+              onclick="setDateFilter(this)"
+            >
+              30 Days
+            </button>
+            <button
+              class="filter-pill"
+              data-days="180"
+              onclick="setDateFilter(this)"
+            >
+              6 Months
+            </button>
+            <button
+              class="filter-pill"
+              data-days="365"
+              onclick="setDateFilter(this)"
+            >
+              1 Year
+            </button>
+            <button
+              class="filter-pill"
+              data-days="730"
+              onclick="setDateFilter(this)"
+            >
+              2 Years
+            </button>
+          </div>
+          <div class="results-count" id="results-count"></div>
+        </div>
+
         <div class="orders-table-wrap">
           <table>
             <thead>
@@ -955,11 +1117,15 @@
       let allOrders = [];
       let selectedOrderId = null;
       let realtimeChannel = null;
+      let activeDateDays = "all";
 
       window.handleLogin = handleLogin;
       window.handleLogout = handleLogout;
       window.loadOrders = loadOrders;
       window.closeDetail = closeDetail;
+      window.setDateFilter = setDateFilter;
+      window.applyFilters = applyFilters;
+      window.clearSearch = clearSearch;
 
       const {
         data: { session },
@@ -1029,8 +1195,73 @@
           return;
         }
         allOrders = data || [];
-        renderTable(allOrders);
+        applyFilters();
         updateStats(allOrders);
+      }
+
+      function setDateFilter(btn) {
+        document
+          .querySelectorAll(".filter-pill")
+          .forEach((p) => p.classList.remove("active"));
+        btn.classList.add("active");
+        activeDateDays = btn.dataset.days;
+        applyFilters();
+      }
+
+      function clearSearch() {
+        document.getElementById("search-input").value = "";
+        document.getElementById("search-clear").style.display = "none";
+        applyFilters();
+      }
+
+      function applyFilters() {
+        const raw = (document.getElementById("search-input")?.value || "")
+          .trim()
+          .toLowerCase();
+        const clearBtn = document.getElementById("search-clear");
+        if (clearBtn) clearBtn.style.display = raw ? "block" : "none";
+
+        const now = Date.now();
+        const dayMs = 86400000;
+
+        let filtered = allOrders.filter((o) => {
+          // Date filter
+          if (activeDateDays !== "all") {
+            const created = new Date(o.created_at).getTime();
+            if (now - created > Number(activeDateDays) * dayMs) return false;
+          }
+          // Search filter
+          if (raw) {
+            const haystack = [
+              o.order_ref,
+              o.customer_name,
+              o.customer_phone,
+              o.city,
+              o.state,
+              o.razorpay_payment_id,
+              o.razorpay_order_id,
+              o.order_status,
+              o.payment_status,
+              o.address_line1,
+              o.address_line2,
+              o.address_line3,
+              o.pin,
+            ]
+              .map((v) => (v || "").toLowerCase())
+              .join(" ");
+            if (!haystack.includes(raw)) return false;
+          }
+          return true;
+        });
+
+        renderTable(filtered);
+        const countEl = document.getElementById("results-count");
+        if (countEl) {
+          countEl.innerHTML =
+            raw || activeDateDays !== "all"
+              ? `<span>${filtered.length}</span> of ${allOrders.length} orders`
+              : "";
+        }
       }
 
       function renderTable(orders) {
@@ -1100,7 +1331,7 @@
           order.delivered_at = delivered ? new Date().toISOString() : null;
           order.order_status = delivered ? "paid" : "confirmed";
         }
-        renderTable(allOrders);
+        applyFilters();
         updateStats(allOrders);
         showToast(
           delivered ? "✓ Marked as delivered" : "Delivery mark removed",
@@ -1152,7 +1383,7 @@
           return;
         }
         allOrders = allOrders.filter((o) => o.id !== id);
-        renderTable(allOrders);
+        applyFilters();
         updateStats(allOrders);
         showToast("Order deleted", "info");
       }
@@ -1197,7 +1428,7 @@
 
       async function selectOrder(id) {
         selectedOrderId = id;
-        renderTable(allOrders);
+        applyFilters();
         const order = allOrders.find((o) => o.id === id);
         if (!order) return;
         document.getElementById("order-detail").style.display = "block";
@@ -1297,7 +1528,7 @@
       function closeDetail() {
         selectedOrderId = null;
         document.getElementById("order-detail").style.display = "none";
-        renderTable(allOrders);
+        applyFilters();
       }
 
       function updateStats(orders) {
@@ -1523,11 +1754,11 @@ tfoot td{padding:10px}
   <tbody>${partsRows}</tbody>
   <tfoot>
     <tr style="background:#f8f4f0;border-top:2px solid #d05818;">
-      <td style="font-size:9px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:#d05818;">TOTALS</td>
+      <td style="font-size:9px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:#d05818;">Total</td>
       <td style="text-align:center;font-weight:800;font-size:14px;">${order.parts_count}</td>
-      <td style="text-align:right;font-weight:800;font-size:14px;">₹${grandBase.toLocaleString("en-IN")}</td>
+      <td style="text-align:right;color:#bbb;">—</td>
       <td style="text-align:center;color:#bbb;">—</td>
-      <td style="text-align:right;font-weight:800;font-size:14px;">₹${grandGst.toLocaleString("en-IN")}</td>
+      <td style="text-align:right;color:#bbb;">—</td>
       <td style="text-align:right;color:#bbb;">—</td>
       <td style="text-align:right;font-weight:800;font-size:16px;color:#d05818;">₹${Number(order.total_amount).toLocaleString("en-IN")}</td>
     </tr>

@@ -887,7 +887,7 @@ canvas#app {
 }
 
 /* ═══════════════════════════════════════════════════
-   BASKET / REQUISITION — READABILITY OVERHAUL
+   BASKET / REQUISITION
    ═══════════════════════════════════════════════════ */
 
 .basket-header {
@@ -926,9 +926,9 @@ canvas#app {
 }
 .basket-count {
   font-family: var(--font-mono);
-  font-size: clamp(9px, 0.82vw, 11px); /* ↑ was 0.72vw / 10px */
+  font-size: clamp(9px, 0.82vw, 11px);
   font-weight: 600;
-  color: #a8c4d8; /* ↑ was #8aacbf */
+  color: #a8c4d8;
   background: var(--bg-row);
   padding: 3px clamp(6px, 0.7vw, 10px);
   border: 1px solid #344858;
@@ -947,7 +947,7 @@ canvas#app {
   gap: clamp(2px, 0.3vh, 4px);
 }
 
-/* ── Main basket row (base — border-left colour set per-type below) ── */
+/* ── Main basket row ── */
 .basket-items > * {
   font-family: var(--font-display);
   font-size: clamp(12px, 1.05vw, 14px);
@@ -956,7 +956,7 @@ canvas#app {
   padding: clamp(6px, 0.6vh, 9px) clamp(8px, 0.9vw, 12px);
   background: #1e2c3e;
   border: 1px solid #2e4058;
-  border-left: 3px solid rgba(208, 88, 24, 0.45); /* fallback — overridden per-type */
+  border-left: 3px solid rgba(208, 88, 24, 0.45);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -968,7 +968,7 @@ canvas#app {
   background: #243448;
 }
 
-/* ── Per-type left-bar colours — exactly match component button borders ── */
+/* ── Per-type left-bar colours ── */
 .basket-items > [data-part-type="frame"] {
   border-left-color: #797979 !important;
 }
@@ -985,7 +985,7 @@ canvas#app {
   border-left-color: #36454f !important;
 }
 
-/* Sub-text inside basket items (qty badge, "EACH" price) */
+/* Sub-text inside basket items */
 .basket-items > * span,
 .basket-items > * small,
 .basket-items > * [class*="each"],
@@ -996,13 +996,6 @@ canvas#app {
   letter-spacing: 0.05em;
 }
 
-/* ── Non-part rows injected by inventory.js (green bar, total bar) ──
-   applyBasketTypeColors() in main.js hides these via JS; this is a
-   belt-and-suspenders CSS fallback. ── */
-.basket-items > [data-part-type="__hidden__"] {
-  display: none !important;
-}
-
 .basket-footer {
   padding: clamp(8px, 1.1vh, 14px) clamp(10px, 1.2vw, 18px);
   border-top: 1px solid var(--border-amb);
@@ -1010,19 +1003,17 @@ canvas#app {
   justify-content: space-between;
   align-items: center;
   font-family: var(--font-mono);
-  font-size: clamp(10px, 0.9vw, 12px); /* ↑ was 0.78vw / 11px */
+  font-size: clamp(10px, 0.9vw, 12px);
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #8aacbf; /* ↑ was #7a9ab8 */
+  color: #8aacbf;
   flex-shrink: 0;
 }
-
-/* "Incl. GST" sub-label */
 .basket-footer span[style*="font-size: 8px"],
 .basket-footer span[style*="font-size:8px"] {
-  font-size: 10px !important; /* ↑ was 8px */
-  color: #7a9ab8 !important; /* ↑ was #6a8098 */
+  font-size: 10px !important;
+  color: #7a9ab8 !important;
 }
 
 .price {
@@ -1034,28 +1025,7 @@ canvas#app {
   letter-spacing: 0.06em;
 }
 
-.payment-section {
-  padding: clamp(6px, 0.9vh, 12px) clamp(8px, 0.9vw, 14px);
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.payment-section .btn {
-  margin-bottom: 0;
-}
-.payment-section .btn .btn-glyph,
-.payment-section .btn .btn-tag,
-.payment-section .btn .btn-body {
-  display: none;
-}
-.payment-section .btn .btn-inner {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: clamp(9px, 1.1vh, 13px) 16px;
-}
-
+/* ── SAVE-PRINT SECTION — holds Save Design + Proceed to Payment ── */
 .save-print-section {
   padding: clamp(6px, 0.8vh, 10px) clamp(8px, 0.9vw, 14px)
     clamp(8px, 1.1vh, 14px);
@@ -1082,6 +1052,7 @@ canvas#app {
   padding: clamp(8px, 1vh, 12px) clamp(10px, 1vw, 14px);
 }
 
+/* Save Design button — same large treatment as old Finalize */
 .btn-finalize-large .btn-inner {
   padding: clamp(12px, 1.5vh, 18px) 14px !important;
   justify-content: center !important;
@@ -1098,17 +1069,9 @@ canvas#app {
   box-shadow: 8px 8px 0 #5a2008 !important;
 }
 
-.btn-print .btn-inner {
-  background: #101e1e;
-  border: 2px solid #2a5858;
-  color: #4a9898;
-  box-shadow: 4px 4px 0 #0e2626;
-}
-.btn-print:hover .btn-inner {
-  background: #2a6868;
-  color: #0a1010;
-  border-color: #3a8888;
-  box-shadow: 7px 7px 0 #0e2626;
+/* Proceed to Payment inside save-print-section */
+.save-print-section .btn-primary .btn-inner {
+  justify-content: center !important;
 }
 
 #part-tooltip {
@@ -1800,83 +1763,93 @@ canvas#app {
 }
 
 /* ═══════════════════════════════════════════════════
-   WEIGHT SECTION — READABILITY OVERRIDES
-   These override the inline styles injected by initWeightSection()
-   and updateWeightDisplay() in main.js
+   WEIGHT SECTION
    ═══════════════════════════════════════════════════ */
 
-/* Row container — slightly taller, bigger base font */
 #weight-rows .weight-row {
   font-size: 11px !important;
   padding: 7px 10px !important;
   min-height: 36px;
 }
 
-/* Part label (left side: glyph + name + qty badge) */
 #weight-rows .weight-row-label {
-  color: #a8c4d8 !important; /* ↑ was #6a8098 */
-  font-size: 10px !important; /* ↑ was 9px */
+  color: #a8c4d8 !important;
+  font-size: 10px !important;
   letter-spacing: 0.08em;
 }
 
-/* Qty badge e.g. "1×" */
 #weight-rows .weight-row-qty {
-  color: #8aacbf !important; /* ↑ was #384858 — nearly invisible */
-  font-size: 10px !important; /* ↑ was 8px */
+  color: #8aacbf !important;
+  font-size: 10px !important;
   border-color: #344858 !important;
   background: #18202e !important;
 }
 
-/* Value (right side: "450 g") */
 #weight-rows .weight-row-val {
-  color: #d8eef8 !important; /* ↑ was #8aacbf */
-  font-size: 12px !important; /* ↑ was 10px */
+  color: #d8eef8 !important;
+  font-size: 12px !important;
   letter-spacing: 0.06em;
 }
 
-/* Unit suffix "g" / "kg" inside value */
 #weight-rows .weight-row-unit {
-  color: #8aacbf !important; /* ↑ was #384858 — nearly invisible */
-  font-size: 10px !important; /* ↑ was inherited small */
+  color: #8aacbf !important;
+  font-size: 10px !important;
   margin-left: 2px;
 }
 
-/* "@450g ea" annotation — overrides the hard-coded color:#263848 inline style */
 #weight-rows .weight-row-val span[style*="263848"],
 #weight-rows .weight-row-val span[style*="color:#263"] {
-  color: #6a8098 !important; /* ↑ was #263848 — almost black on dark bg */
-  font-size: 10px !important; /* ↑ was 7px */
+  color: #6a8098 !important;
+  font-size: 10px !important;
 }
 
-/* Total row */
+/* ── Per-type left-bar colours for weight rows ── */
+#weight-rows .weight-row[data-part-type="frame"] {
+  border-left-color: #797979 !important;
+  border-left-width: 3px !important;
+}
+#weight-rows .weight-row[data-part-type="motor"] {
+  border-left-color: #f9b100 !important;
+  border-left-width: 3px !important;
+}
+#weight-rows .weight-row[data-part-type="triangle_frame"] {
+  border-left-color: #ada7ab !important;
+  border-left-width: 3px !important;
+}
+#weight-rows .weight-row[data-part-type="support_frame"] {
+  border-left-color: #ff770e !important;
+  border-left-width: 3px !important;
+}
+#weight-rows .weight-row[data-part-type="wheel"] {
+  border-left-color: #36454f !important;
+  border-left-width: 3px !important;
+}
+
 #weight-total-row {
   padding: 9px 12px !important;
 }
 #weight-total-label {
-  color: #8aacbf !important; /* ↑ was #6a8098 */
-  font-size: 9px !important; /* ↑ was 8px */
+  color: #8aacbf !important;
+  font-size: 9px !important;
   letter-spacing: 0.16em;
 }
 #weight-total-value {
-  font-size: 16px !important; /* ↑ was 14px */
+  font-size: 16px !important;
   color: #e8f4ff !important;
 }
 #weight-total-value span {
-  color: #8aacbf !important; /* ↑ was #384858 */
-  font-size: 10px !important; /* ↑ was 9px */
+  color: #8aacbf !important;
+  font-size: 10px !important;
   margin-left: 3px;
 }
-
-/* Section header badge (shows "450 g" next to WEIGHT title) */
 #weight-total-badge {
-  font-size: 12px !important; /* ↑ was 11px */
+  font-size: 12px !important;
   color: #c8dce8 !important;
 }
 
-/* "No parts placed" empty state */
 #weight-rows > div[style*="color:#2a3848"],
 #weight-rows > div[style*="color: #2a3848"] {
-  color: #5a7a8a !important; /* ↑ was #2a3848 — invisible */
+  color: #5a7a8a !important;
   font-size: 10px !important;
 }
 

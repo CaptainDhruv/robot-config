@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Exo+2:wght@300;400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Exo+2:wght@300;400;500;600;700;800&family=Oswald:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
   </head>
@@ -216,9 +216,22 @@
 
       <!-- ═══════ RIGHT PANEL ═══════ -->
       <aside class="panel panel-right">
+        <!-- ── Basket header ── -->
         <div class="basket-header">
-          <span class="basket-title">Requisition</span>
-          <span class="basket-count" id="basketCount">0 ITEMS</span>
+          <div style="display: flex; flex-direction: column; gap: 2px">
+            <span class="basket-title">Requisition</span>
+            <span
+              style="
+                font-family: &quot;Orbitron&quot;, sans-serif;
+                font-size: 8px;
+                font-weight: 700;
+                letter-spacing: 0.22em;
+                color: #d05818;
+                text-transform: uppercase;
+              "
+              >COST</span
+            >
+          </div>
         </div>
 
         <div class="basket-section">
@@ -242,27 +255,18 @@
           <span class="price">&#8377;<span id="totalPrice">0</span></span>
         </div>
 
-        <div id="paymentSection" class="payment-section hidden">
+        <!-- SAVE DESIGN + PROCEED TO PAYMENT -->
+        <div class="save-print-section">
+          <button id="finalizeBtn" class="btn btn-primary btn-finalize-large">
+            <div class="btn-inner">
+              <span class="btn-icon">▤</span>
+              <span class="btn-action-label">Save Design</span>
+            </div>
+          </button>
           <button id="proceedPaymentBtn" class="btn btn-primary">
             <div class="btn-inner">
               <span class="btn-icon">▶▶</span>
               <span class="btn-action-label">Proceed to Payment</span>
-            </div>
-          </button>
-        </div>
-
-        <!-- FINALIZE + PRINT -->
-        <div class="save-print-section">
-          <button id="finalizeBtn" class="btn btn-primary btn-finalize-large">
-            <div class="btn-inner">
-              <span class="btn-icon">◼</span>
-              <span class="btn-action-label">Finalize Design</span>
-            </div>
-          </button>
-          <button id="printDesignBtn" class="btn btn-print">
-            <div class="btn-inner">
-              <span class="btn-icon">▤</span>
-              <span class="btn-action-label">Print Design Summary</span>
             </div>
           </button>
         </div>
@@ -287,16 +291,6 @@
           }
         });
       });
-
-      // ── Basket item counter ───────────────────────────────────────
-      const basketEl = document.getElementById("basketItems");
-      const countEl = document.getElementById("basketCount");
-      if (basketEl && countEl) {
-        new MutationObserver(() => {
-          const n = basketEl.children.length;
-          countEl.textContent = n + (n === 1 ? " ITEM" : " ITEMS");
-        }).observe(basketEl, { childList: true });
-      }
     </script>
 
     <script type="module" src="/src/main.js"></script>
