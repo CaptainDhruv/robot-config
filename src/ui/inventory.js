@@ -100,8 +100,14 @@ function render() {
     itemsEl.appendChild(row);
   });
 
+  // ── Update total price display ────────────────────────────────────────
   totalEl.textContent = total.toLocaleString("en-IN");
 
+  // ── Update collapsible cost header badge ─────────────────────────────
+  const costBadge = document.getElementById("cost-total-badge");
+  if (costBadge) costBadge.textContent = "₹" + total.toLocaleString("en-IN");
+
+  // ── Update basket count badge ─────────────────────────────────────────
   if (countEl) {
     countEl.textContent = totalItems + (totalItems === 1 ? " ITEM" : " ITEMS");
   }

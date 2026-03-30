@@ -154,7 +154,6 @@
                 <span class="sidebar-cam-label">ISO</span>
               </button>
             </div>
-            <div class="cam-hint">Alt+0–7 or click to switch</div>
           </div>
         </section>
 
@@ -216,28 +215,34 @@
 
       <!-- ═══════ RIGHT PANEL ═══════ -->
       <aside class="panel panel-right">
-        <!-- ── Basket header ── -->
-        <div class="basket-header">
-          <div style="display: flex; flex-direction: column; gap: 2px">
-            <span class="basket-title">Requisition</span>
-            <span
-              style="
-                font-family: &quot;Orbitron&quot;, sans-serif;
-                font-size: 8px;
-                font-weight: 700;
-                letter-spacing: 0.22em;
-                color: #d05818;
-                text-transform: uppercase;
-              "
-              >COST</span
-            >
+        <!-- ── REQUISITION MASTER HEADER ── -->
+        <div class="requisition-header">
+          <span class="requisition-title">REQUISITION</span>
+        </div>
+
+        <!-- ── COST — collapsible tab ── -->
+        <div id="cost-section">
+          <div id="cost-section-header">
+            <div id="cost-section-title">
+              <span style="color: #384858; font-size: 11px">⊕</span>
+              COST
+            </div>
+            <div style="display: flex; align-items: center; gap: 0">
+              <div id="cost-total-badge">₹0</div>
+              <div id="cost-chevron">▾</div>
+            </div>
+          </div>
+          <div id="cost-body">
+            <div class="basket-section">
+              <div id="basketItems" class="basket-items"></div>
+            </div>
           </div>
         </div>
 
-        <div class="basket-section">
-          <div id="basketItems" class="basket-items"></div>
-        </div>
+        <!-- ── WEIGHT — collapsible tab (injected by JS, placeholder here) ── -->
+        <div id="weight-section-placeholder"></div>
 
+        <!-- ── TOTAL COST FOOTER ── -->
         <div class="basket-footer">
           <div style="display: flex; flex-direction: column; gap: 2px">
             <span>Total Cost</span>
@@ -274,7 +279,7 @@
     </div>
 
     <script>
-      // ── Collapsible sections ──────────────────────────────────────
+      // ── Collapsible sections (left panel) ────────────────────────
       document.querySelectorAll(".section-toggle").forEach((toggle) => {
         const targetId = toggle.dataset.target;
         const body = document.getElementById(targetId);
@@ -290,6 +295,20 @@
             body.classList.add("collapsed");
           }
         });
+      });
+
+      // ── Cost section collapsible ──────────────────────────────────
+      const costHeader = document.getElementById("cost-section-header");
+      const costBody = document.getElementById("cost-body");
+      const costChevron = document.getElementById("cost-chevron");
+      let costCollapsed = false;
+      costHeader.addEventListener("click", () => {
+        costCollapsed = !costCollapsed;
+        costBody.classList.toggle("collapsed", costCollapsed);
+        costChevron.style.transform = costCollapsed
+          ? "rotate(-90deg)"
+          : "rotate(0deg)";
+        costChevron.style.color = costCollapsed ? "#d05818" : "#384858";
       });
     </script>
 

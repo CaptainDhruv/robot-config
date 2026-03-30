@@ -1,6 +1,5 @@
 /* ═══════════════════════════════════════════════════
    ROBOT CONFIGURATOR — SLATE / AMBER / TEAL THEME
-   Font: Montserrat (primary UI), Orbitron (HUD/headings), Share Tech Mono (mono)
    ═══════════════════════════════════════════════════ */
 
 *,
@@ -22,7 +21,6 @@ body {
   cursor: crosshair;
 }
 
-/* ── PLACEMENT MODE CURSOR ── */
 body.placement-mode,
 body.placement-mode * {
   cursor:
@@ -228,11 +226,17 @@ body::after {
   clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
   box-shadow: inset -1px 0 0 rgba(208, 88, 24, 0.05);
 }
+
+/* ── KEY CHANGE: right panel is a fixed flex column ── */
 .panel-right {
   background: linear-gradient(160deg, #1a2236 0%, #161e2c 100%);
   border-left: 1px solid var(--border);
   clip-path: polygon(12px 0, 100% 0, 100% 100%, 0 100%, 0 12px);
   box-shadow: inset 1px 0 0 rgba(208, 88, 24, 0.05);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .logo-header {
@@ -887,16 +891,13 @@ canvas#app {
 }
 
 /* ═══════════════════════════════════════════════════
-   BASKET / REQUISITION
+   REQUISITION MASTER HEADER
    ═══════════════════════════════════════════════════ */
 
-.basket-header {
+.requisition-header {
   padding: clamp(10px, 1.4vh, 18px) clamp(10px, 1.2vw, 18px)
     clamp(8px, 1.1vh, 14px) clamp(12px, 1.5vw, 20px);
   border-bottom: 1px solid var(--border-amb);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
@@ -906,7 +907,7 @@ canvas#app {
     transparent 60%
   );
 }
-.basket-header::after {
+.requisition-header::after {
   content: "";
   position: absolute;
   bottom: 0;
@@ -916,28 +917,85 @@ canvas#app {
   background: linear-gradient(90deg, transparent, var(--amb), transparent);
   opacity: 0.4;
 }
-.basket-title {
+.requisition-title {
   font-family: var(--font-hud);
   font-size: clamp(11px, 1vw, 15px);
   font-weight: 800;
   letter-spacing: 0.14em;
   color: #e8f0f8;
   text-shadow: 0 0 16px rgba(200, 216, 228, 0.22);
+  text-transform: uppercase;
 }
-.basket-count {
-  font-family: var(--font-mono);
-  font-size: clamp(9px, 0.82vw, 11px);
-  font-weight: 600;
-  color: #a8c4d8;
-  background: var(--bg-row);
-  padding: 3px clamp(6px, 0.7vw, 10px);
-  border: 1px solid #344858;
-  letter-spacing: 0.1em;
+
+/* ═══════════════════════════════════════════════════
+   COST SECTION — collapsible tab
+   ═══════════════════════════════════════════════════ */
+
+#cost-section {
+  border-bottom: 1px solid rgba(208, 88, 24, 0.18);
+  flex-shrink: 0;
 }
+#cost-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 14px 8px 16px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.12s;
+}
+#cost-section-header:hover {
+  background: rgba(208, 88, 24, 0.05);
+}
+#cost-section-title {
+  font-family: "Orbitron", sans-serif;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #d05818;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+#cost-total-badge {
+  font-family: "Orbitron", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #d8e8f4;
+  letter-spacing: 0.06em;
+}
+#cost-chevron {
+  font-size: 9px;
+  color: #384858;
+  transition:
+    transform 0.2s ease,
+    color 0.12s;
+  font-family: "Share Tech Mono", monospace;
+  margin-left: 8px;
+}
+#cost-section-header:hover #cost-chevron {
+  color: #d05818;
+}
+#cost-body {
+  overflow-y: auto;
+  transition:
+    max-height 0.25s ease,
+    opacity 0.2s ease;
+  max-height: 240px;
+  opacity: 1;
+}
+#cost-body.collapsed {
+  max-height: 0;
+  opacity: 0;
+}
+
+/* ═══════════════════════════════════════════════════
+   BASKET / REQUISITION ROWS
+   ═══════════════════════════════════════════════════ */
 
 .basket-section {
   padding: clamp(6px, 0.9vh, 12px) clamp(8px, 0.9vw, 14px);
-  flex: 1;
   overflow-y: auto;
   min-height: 0;
 }
@@ -968,7 +1026,6 @@ canvas#app {
   background: #243448;
 }
 
-/* ── Per-type left-bar colours ── */
 .basket-items > [data-part-type="frame"] {
   border-left-color: #797979 !important;
 }
@@ -985,6 +1042,7 @@ canvas#app {
   border-left-color: #36454f !important;
 }
 
+/* ── BASKET FOOTER — pinned via margin-top:auto ── */
 .basket-footer {
   padding: clamp(8px, 1.1vh, 14px) clamp(10px, 1.2vw, 18px);
   border-top: 1px solid var(--border-amb);
@@ -998,6 +1056,7 @@ canvas#app {
   text-transform: uppercase;
   color: #8aacbf;
   flex-shrink: 0;
+  margin-top: auto;
 }
 .basket-footer span[style*="font-size: 8px"],
 .basket-footer span[style*="font-size:8px"] {
@@ -1014,7 +1073,7 @@ canvas#app {
   letter-spacing: 0.06em;
 }
 
-/* ── SAVE-PRINT SECTION — holds Save Design + Proceed to Payment ── */
+/* ── SAVE-PRINT SECTION ── */
 .save-print-section {
   padding: clamp(6px, 0.8vh, 10px) clamp(8px, 0.9vw, 14px)
     clamp(8px, 1.1vh, 14px);
@@ -1040,8 +1099,6 @@ canvas#app {
   gap: clamp(8px, 1vw, 12px);
   padding: clamp(8px, 1vh, 12px) clamp(10px, 1vw, 14px);
 }
-
-/* Save Design button — same large treatment as old Finalize */
 .btn-finalize-large .btn-inner {
   padding: clamp(12px, 1.5vh, 18px) 14px !important;
   justify-content: center !important;
@@ -1057,8 +1114,6 @@ canvas#app {
 .btn-finalize-large:hover .btn-inner {
   box-shadow: 8px 8px 0 #5a2008 !important;
 }
-
-/* Proceed to Payment inside save-print-section */
 .save-print-section .btn-primary .btn-inner {
   justify-content: center !important;
 }
@@ -1594,7 +1649,7 @@ canvas#app {
   cursor: not-allowed !important;
 }
 
-/* ── UNDO / REDO BUTTONS ── */
+/* ── UNDO / REDO ── */
 .undo-redo-section {
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
@@ -1755,44 +1810,47 @@ canvas#app {
    WEIGHT SECTION
    ═══════════════════════════════════════════════════ */
 
+#weight-section {
+  border-top: 1px solid rgba(208, 88, 24, 0.18);
+  flex-shrink: 0;
+}
+#weight-body {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
 #weight-rows .weight-row {
   font-size: 11px !important;
   padding: 7px 10px !important;
   min-height: 36px;
 }
-
 #weight-rows .weight-row-label {
   color: #a8c4d8 !important;
   font-size: 10px !important;
   letter-spacing: 0.08em;
 }
-
 #weight-rows .weight-row-qty {
   color: #8aacbf !important;
   font-size: 10px !important;
   border-color: #344858 !important;
   background: #18202e !important;
 }
-
 #weight-rows .weight-row-val {
   color: #d8eef8 !important;
   font-size: 12px !important;
   letter-spacing: 0.06em;
 }
-
 #weight-rows .weight-row-unit {
   color: #8aacbf !important;
   font-size: 10px !important;
   margin-left: 2px;
 }
-
 #weight-rows .weight-row-val span[style*="263848"],
 #weight-rows .weight-row-val span[style*="color:#263"] {
   color: #6a8098 !important;
   font-size: 10px !important;
 }
 
-/* ── Per-type left-bar colours for weight rows ── */
 #weight-rows .weight-row[data-part-type="frame"] {
   border-left-color: #797979 !important;
   border-left-width: 3px !important;
@@ -1835,7 +1893,6 @@ canvas#app {
   font-size: 12px !important;
   color: #c8dce8 !important;
 }
-
 #weight-rows > div[style*="color:#2a3848"],
 #weight-rows > div[style*="color: #2a3848"] {
   color: #5a7a8a !important;

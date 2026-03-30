@@ -2446,7 +2446,6 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
   .status-final{color:#166534;border-color:#166534;background:#f0fdf4}
   .status-draft{color:#7f1d1d;border-color:#cc2200;background:#fff5f5}
 
-  /* ── MAIN ISO VIEW ── */
   .main-view-wrap{
     width:100%;
     border:2px solid #222;
@@ -2493,7 +2492,6 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
     margin-top:16px;
   }
 
-  /* ── ORTHOGRAPHIC GRID ── */
   .angles-grid{
     display:grid;
     grid-template-columns:repeat(3,1fr);
@@ -2532,7 +2530,6 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
     margin:0 auto;
   }
 
-  /* ── TABLES ── */
   .tables-row{
     display:grid;
     grid-template-columns:1fr 1fr;
@@ -2598,7 +2595,6 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
     letter-spacing:0.1em;
   }
 
-  /* ── FOOTER ── */
   .print-footer{
     border-top:1px solid #ccc;
     padding-top:10px;
@@ -2614,7 +2610,6 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
     text-transform:uppercase;
   }
 
-  /* ── SAVE PDF BUTTON ── */
   .save-pdf-btn{
     display:inline-flex;
     align-items:center;
@@ -2655,16 +2650,6 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
   }
 </style>
 </head><body>
-
-  <!-- ── SAVE PDF BUTTON BAR ── -->
-  <div class="no-print" style="display:flex;justify-content:flex-end;margin-bottom:14px;">
-    <button class="save-pdf-btn" onclick="window.print()">
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
-      </svg>
-      SAVE AS PDF
-    </button>
-  </div>
 
   <div class="print-header">
     <div>
@@ -2728,6 +2713,16 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
     <span>ROBOT CONFIGURATOR v1.0 — UNIT MK-1</span>
     <span>ORDER REF: ${orderRef}</span>
     <span>${now}</span>
+  </div>
+
+  <!-- ── SAVE PDF BUTTON BAR ── -->
+  <div class="no-print" style="display:flex;justify-content:flex-end;margin-top:18px;">
+    <button class="save-pdf-btn" onclick="window.print()">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
+      </svg>
+      SAVE AS PDF
+    </button>
   </div>
 
 </body></html>`;
@@ -5782,12 +5777,17 @@ function initWeightSection() {
   totalRow.innerHTML = `<div id="weight-total-label">TOTAL WEIGHT</div><div id="weight-total-value">0 <span>g</span></div>`;
   body.appendChild(totalRow);
   section.appendChild(body);
-  const basketFooter = document.querySelector(".basket-footer");
-  if (basketFooter?.parentElement)
-    basketFooter.parentElement.insertBefore(section, basketFooter);
-  else {
-    const rp = document.querySelector(".panel-right");
-    if (rp) rp.appendChild(section);
+  const placeholder = document.getElementById("weight-section-placeholder");
+  if (placeholder) {
+    placeholder.replaceWith(section);
+  } else {
+    const basketFooter = document.querySelector(".basket-footer");
+    if (basketFooter?.parentElement)
+      basketFooter.parentElement.insertBefore(section, basketFooter);
+    else {
+      const rp = document.querySelector(".panel-right");
+      if (rp) rp.appendChild(section);
+    }
   }
   updateWeightDisplay();
 }
@@ -6434,7 +6434,7 @@ let _cpSubLabel = null;
 let _cpActive = false;
 let _cpRotY = 0;
 
-const PREVIEW_SIZE = 140; // px
+const PREVIEW_SIZE = 150; // px
 
 const COMPONENT_PREVIEW_INFO = {
   frame: {
@@ -6479,12 +6479,12 @@ function initComponentPreview() {
         position: absolute;
         top: 18px;
         left: 18px;
-        width: 140px;
-        background: rgba(6,11,20,0.96);
-        border: 1.5px solid rgba(208,88,24,0.4);
+        width: 150px;
+        background: rgba(6,11,20,0.97);
+        border: 1.5px solid rgba(208,88,24,0.5);
         border-left: 3px solid #d05818;
-        clip-path: polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%);
-        box-shadow: 0 12px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(208,88,24,0.1);
+        clip-path: polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.8), 0 0 0 1px rgba(208,88,24,0.15);
         backdrop-filter: blur(6px);
         z-index: 900;
         pointer-events: none;
@@ -6500,38 +6500,38 @@ function initComponentPreview() {
       #comp-preview-header {
         display: flex;
         align-items: center;
-        gap: 6px;
-        padding: 6px 8px 5px;
-        border-bottom: 1px solid rgba(208,88,24,0.2);
-        background: rgba(208,88,24,0.07);
+        gap: 7px;
+        padding: 8px 10px 7px;
+        border-bottom: 1px solid rgba(208,88,24,0.25);
+        background: rgba(208,88,24,0.09);
       }
       #comp-preview-glyph {
-        font-size: 14px;
+        font-size: 15px;
         line-height: 1;
         flex-shrink: 0;
-        filter: drop-shadow(0 0 4px currentColor);
+        filter: drop-shadow(0 0 5px currentColor);
       }
       #comp-preview-name {
         font-family: 'Oswald', sans-serif;
-        font-size: 9px;
+        font-size: 11px;
         font-weight: 600;
-        letter-spacing: 0.12em;
+        letter-spacing: 0.1em;
         text-transform: uppercase;
         color: #ffffff;
         line-height: 1.2;
       }
       #comp-preview-sub {
         font-family: 'Oswald', sans-serif;
-        font-size: 7px;
+        font-size: 9px;
         font-weight: 400;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
-        color: #6a8898;
+        color: #7a9ab8;
         margin-top: 2px;
       }
       #comp-preview-canvas-wrap {
-        width: 140px;
-        height: 140px;
+        width: 150px;
+        height: 100px;
         position: relative;
         display: flex;
         align-items: center;
@@ -6545,43 +6545,43 @@ function initComponentPreview() {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 4px 8px;
-        border-top: 1px solid rgba(255,255,255,0.06);
-        border-bottom: 1px solid rgba(208,88,24,0.15);
-        background: rgba(0,0,0,0.25);
+        padding: 5px 10px;
+        border-top: 1px solid rgba(255,255,255,0.07);
+        border-bottom: 1px solid rgba(208,88,24,0.18);
+        background: rgba(0,0,0,0.3);
       }
       #comp-preview-weight-label {
         font-family: 'Oswald', sans-serif;
-        font-size: 7px;
+        font-size: 8px;
         font-weight: 500;
-        letter-spacing: 0.15em;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
-        color: #6a8898;
+        color: #7a9ab8;
         display: flex;
         align-items: center;
         gap: 4px;
       }
       #comp-preview-weight-value {
         font-family: 'Oswald', sans-serif;
-        font-size: 11px;
+        font-size: 13px;
         font-weight: 600;
         letter-spacing: 0.06em;
-        color: #d8e8f4;
+        color: #e8f4ff;
       }
       #comp-preview-weight-unit {
-        font-size: 8px;
-        color: #4a6878;
+        font-size: 9px;
+        color: #5a7888;
         margin-left: 2px;
         font-family: 'Oswald', sans-serif;
         font-weight: 400;
         letter-spacing: 0.1em;
       }
       #comp-preview-footer {
-        padding: 4px 8px 5px;
+        padding: 5px 10px 6px;
         display: flex;
         align-items: center;
         gap: 6px;
-        background: rgba(0,0,0,0.15);
+        background: rgba(0,0,0,0.2);
       }
       #comp-preview-dot {
         width: 5px; height: 5px; border-radius: 50%;
@@ -6594,9 +6594,9 @@ function initComponentPreview() {
       }
       #comp-preview-status {
         font-family: 'Oswald', sans-serif;
-        font-size: 7px;
+        font-size: 8px;
         font-weight: 400;
-        letter-spacing: 0.16em;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
         color: #8aacbf;
       }
@@ -6645,7 +6645,7 @@ function initComponentPreview() {
   weightRow.id = "comp-preview-weight-row";
   const weightLabel = document.createElement("div");
   weightLabel.id = "comp-preview-weight-label";
-  weightLabel.innerHTML = `<span style="opacity:0.5">⊕</span> UNIT WEIGHT`;
+  weightLabel.innerHTML = `<span style="opacity:0.5">⊕</span> WEIGHT`;
   const weightRight = document.createElement("div");
   const weightValue = document.createElement("span");
   weightValue.id = "comp-preview-weight-value";
@@ -6678,34 +6678,33 @@ function initComponentPreview() {
 
   _cpRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
   _cpRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  _cpRenderer.setSize(140, 140);
+  _cpRenderer.setSize(150, 100);
   _cpRenderer.setClearColor(0x1e2d3d, 1);
   _cpRenderer.outputColorSpace = THREE.SRGBColorSpace;
   _cpRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-  _cpRenderer.toneMappingExposure = 2.2;
+  _cpRenderer.toneMappingExposure = 2.4;
   canvasWrap.appendChild(_cpRenderer.domElement);
 
   _cpScene = new THREE.Scene();
   _cpScene.background = new THREE.Color(0x1e2d3d);
-  _cpCamera = new THREE.PerspectiveCamera(38, 1, 0.01, 100);
+  _cpCamera = new THREE.PerspectiveCamera(38, 150 / 100, 0.01, 100);
   _cpCamera.position.set(0, 0, 4);
 
-  // Much brighter lighting for sharp readable preview
-  _cpScene.add(new THREE.AmbientLight(0xffffff, 1.2));
+  _cpScene.add(new THREE.AmbientLight(0xffffff, 1.4));
 
-  const keyL = new THREE.DirectionalLight(0xffffff, 3.5);
+  const keyL = new THREE.DirectionalLight(0xffffff, 4.0);
   keyL.position.set(4, 5, 6);
   _cpScene.add(keyL);
 
-  const fillL = new THREE.DirectionalLight(0xc8d8f0, 2.0);
+  const fillL = new THREE.DirectionalLight(0xd0e8ff, 2.2);
   fillL.position.set(-5, 3, 4);
   _cpScene.add(fillL);
 
-  const rimL = new THREE.DirectionalLight(0xffd0a0, 1.8);
+  const rimL = new THREE.DirectionalLight(0xffd0a0, 2.0);
   rimL.position.set(-3, 6, -5);
   _cpScene.add(rimL);
 
-  const bottomL = new THREE.DirectionalLight(0xffffff, 1.0);
+  const bottomL = new THREE.DirectionalLight(0xffffff, 1.2);
   bottomL.position.set(0, -4, 3);
   _cpScene.add(bottomL);
 }
@@ -6784,7 +6783,7 @@ function showComponentPreview(type, template) {
   _cpModel.add(clone);
   _cpScene.add(_cpModel);
 
-  _cpCamera.position.set(dist * 0.6, dist * 0.35, dist * 0.9);
+  _cpCamera.position.set(dist * 0.5, dist * 0.28, dist * 0.75);
   _cpCamera.lookAt(0, 0, 0);
 
   _cpRotY = 0;
