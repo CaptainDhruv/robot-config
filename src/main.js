@@ -1985,16 +1985,23 @@ function showAddressOverlay() {
         fState,
         fPin,
       });
+
       backdrop.remove();
-      showOrderConfirmOverlay(
-        addrLines,
-        orderRef,
-        totalCost,
-        totalParts,
-        null,
-        savedOrder,
-      );
-      uploadPrintReport(savedOrder.id, orderRef);
+
+      try {
+        await initiateRazorpayPayment({
+          savedOrder,
+          orderRef,
+          totalCost,
+          totalParts,
+          customerName,
+          customerPhone: fPhone.inp.value.replace(/\D/g, "").slice(-10),
+          addrLines,
+        });
+        uploadPrintReport(savedOrder.id, orderRef);
+      } catch (payErr) {
+        console.warn("[PAYMENT]", payErr.message);
+      }
     } catch (err) {
       console.error("[ORDER SAVE ERROR]", err);
       const msg = err?.message ?? String(err);
@@ -2137,7 +2144,10 @@ function showOrderConfirmOverlay(
   });
 
   const refEl = document.createElement("div");
-  refEl.innerHTML = `ORDER REF: ${orderRef}${savedOrder ? `<br><span style="font-size:8px;color:#2a3848;letter-spacing:0.12em">DB ID: ${savedOrder.id}</span>` : ""}`;
+  const paymentLine = paymentResult?.razorpay_payment_id
+    ? `<br><span style="font-size:9px;color:#2a6848;letter-spacing:0.1em;font-family:'Share Tech Mono',monospace">✓ PAYMENT ID: ${paymentResult.razorpay_payment_id}</span>`
+    : `<br><span style="font-size:9px;color:#cc4422;letter-spacing:0.1em;font-family:'Share Tech Mono',monospace">⚠ PAYMENT PENDING</span>`;
+  refEl.innerHTML = `ORDER REF: ${orderRef}${paymentLine}${savedOrder ? `<br><span style="font-size:8px;color:#2a3848;letter-spacing:0.12em">DB ID: ${savedOrder.id}</span>` : ""}`;
   Object.assign(refEl.style, {
     fontFamily: "'Orbitron',sans-serif",
     fontSize: "9px",
@@ -5284,23 +5294,34 @@ function performUndo() {
     showHudMessage("NOTHING TO UNDO");
     return;
   }
-  const { mount, socketUuids, type } = undoStack.pop();
-  if (selectedMount === mount) {
-    restoreMeshEmissive(selectedMesh, selectedOrigEm);
-    selectedMesh = null;
-    selectedMount = null;
+  const entry = undoStack.pop();
+  const { mount, socketUuids, type, action } = entry;
+
+  if (action === "delete") {
+    // Undo a delete → re-add the mount
+    scene.add(mount);
+    socketUuids.forEach((uuid) => usedSockets.add(uuid));
+    addToInventory(type);
+  } else {
+    // Undo a place → remove the mount
+    if (selectedMount === mount) {
+      restoreMeshEmissive(selectedMesh, selectedOrigEm);
+      selectedMesh = null;
+      selectedMount = null;
+    }
+    if (hoveredMount === mount) {
+      restoreMeshEmissive(hoveredMesh, hoveredOrigEm);
+      hoveredMesh = null;
+      hoveredMount = null;
+    }
+    socketUuids.forEach((uuid) => usedSockets.delete(uuid));
+    hoveredMotorMarker = null;
+    hoveredTriangleMarker = null;
+    scene.remove(mount);
+    removeFromInventory(type);
   }
-  if (hoveredMount === mount) {
-    restoreMeshEmissive(hoveredMesh, hoveredOrigEm);
-    hoveredMesh = null;
-    hoveredMount = null;
-  }
-  socketUuids.forEach((uuid) => usedSockets.delete(uuid));
-  hoveredMotorMarker = null;
-  hoveredTriangleMarker = null;
-  scene.remove(mount);
-  removeFromInventory(type);
-  redoStack.push({ mount, socketUuids: [...socketUuids], type });
+
+  redoStack.push(entry);
   rebuildSocketMarkers();
   updateWheelButtonState();
   updateSupportButtonState();
@@ -5315,11 +5336,27 @@ function performRedo() {
     showHudMessage("NOTHING TO REDO");
     return;
   }
-  const { mount, socketUuids, type } = redoStack.pop();
-  scene.add(mount);
-  socketUuids.forEach((uuid) => usedSockets.add(uuid));
-  addToInventory(type);
-  undoStack.push({ mount, socketUuids: [...socketUuids], type });
+  const entry = redoStack.pop();
+  const { mount, socketUuids, type, action } = entry;
+
+  if (action === "delete") {
+    // Redo a delete → remove the mount again
+    if (selectedMount === mount) {
+      restoreMeshEmissive(selectedMesh, selectedOrigEm);
+      selectedMesh = null;
+      selectedMount = null;
+    }
+    socketUuids.forEach((uuid) => usedSockets.delete(uuid));
+    scene.remove(mount);
+    removeFromInventory(type);
+  } else {
+    // Redo a place → add the mount back
+    scene.add(mount);
+    socketUuids.forEach((uuid) => usedSockets.add(uuid));
+    addToInventory(type);
+  }
+
+  undoStack.push(entry);
   rebuildSocketMarkers();
   updateWheelButtonState();
   updateSupportButtonState();
@@ -5672,12 +5709,34 @@ function executeDelete(mount) {
     hoveredMount = null;
   }
   const { socket, socketB, type } = mount.userData;
-  usedSockets.delete(socket?.uuid);
-  if (socketB) usedSockets.delete(socketB.uuid);
+
+  // Collect ALL socket UUIDs for this mount
+  const allSocketUuids = new Set();
+  if (socket?.uuid) allSocketUuids.add(socket.uuid);
+  if (socketB?.uuid) allSocketUuids.add(socketB.uuid);
   for (const entry of undoStack) {
     if (entry.mount === mount)
-      entry.socketUuids.forEach((uuid) => usedSockets.delete(uuid));
+      entry.socketUuids.forEach((uuid) => allSocketUuids.add(uuid));
   }
+
+  // Release sockets
+  allSocketUuids.forEach((uuid) => usedSockets.delete(uuid));
+
+  // Remove this mount's existing place entries from undoStack
+  const kept = undoStack.filter((e) => e.mount !== mount);
+  undoStack.length = 0;
+  kept.forEach((e) => undoStack.push(e));
+
+  // Push DELETE action so it can be undone
+  undoStack.push({
+    mount,
+    socketUuids: [...allSocketUuids],
+    type,
+    action: "delete",
+  });
+  if (undoStack.length > MAX_UNDO) undoStack.shift();
+  redoStack.length = 0;
+
   scene.remove(mount);
   removeFromInventory(type);
   rebuildSocketMarkers();
@@ -5685,9 +5744,9 @@ function executeDelete(mount) {
   updateSupportButtonState();
   applySocketHighlights();
   updateWeightDisplay();
+  updateUndoRedoButtons();
   showHudMessage(`DELETED: ${(PART_LABELS()[type] ?? type).toUpperCase()}`);
 }
-
 /* =========================================================
    RENDER LOOP
    ========================================================= */
@@ -6801,4 +6860,124 @@ function renderComponentPreview() {
   _cpRotY += 0.008;
   if (_cpModel) _cpModel.rotation.y = _cpRotY;
   _cpRenderer.render(_cpScene, _cpCamera);
+}
+/* =========================================================
+   RAZORPAY PAYMENT
+   ========================================================= */
+
+async function initiateRazorpayPayment({
+  savedOrder,
+  orderRef,
+  totalCost,
+  totalParts,
+  customerName,
+  customerPhone,
+  addrLines,
+}) {
+  const amountNum = parseFloat(String(totalCost).replace(/[^0-9.]/g, "")) || 0;
+
+  showHudMessage("CONNECTING TO PAYMENT GATEWAY...");
+
+  // ── Step 1: Create Razorpay order via Supabase Edge Function ─────
+  let razorpayOrderId;
+  try {
+    const rzpRes = await fetch("/api/create-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        amount: amountNum,
+        currency: "INR",
+        receipt: orderRef,
+      }),
+    });
+    const fnData = await rzpRes.json();
+    if (!rzpRes.ok) throw new Error(fnData?.error ?? "Razorpay API error");
+    if (!fnData?.id) throw new Error("No order ID returned from Razorpay");
+
+    razorpayOrderId = fnData.id;
+    showHudMessage("GATEWAY CONNECTED ✓");
+  } catch (err) {
+    showHudMessage("⚠ Payment init failed: " + err.message.slice(0, 60));
+
+    throw err;
+  }
+
+  // ── Step 2: Open Razorpay modal ───────────────────────────────────
+  return new Promise((resolve, reject) => {
+    const options = {
+      key: "rzp_test_SXNd70RUaa6CoG",
+      amount: Math.round(amountNum * 100),
+      currency: "INR",
+      name: "Robot Configurator",
+      description: `MK-1 Build · ${orderRef}`,
+      order_id: razorpayOrderId,
+      prefill: {
+        name: customerName,
+        contact: "+91" + customerPhone,
+      },
+      notes: {
+        order_ref: orderRef,
+        db_order_id: String(savedOrder.id),
+      },
+      theme: {
+        color: "#d05818",
+      },
+      modal: {
+        backdropclose: false,
+        escape: false,
+        confirm_close: true,
+        ondismiss: async () => {
+          showHudMessage("⚠ Payment cancelled");
+          await supabase.from("orders").delete().eq("id", savedOrder.id);
+          reject(new Error("Payment dismissed by user"));
+        },
+      },
+
+      handler: async function (response) {
+        showHudMessage("PAYMENT RECEIVED — CONFIRMING...");
+        console.log("[RAZORPAY] Payment response:", response);
+
+        try {
+          const { error: updateErr } = await supabase
+            .from("orders")
+            .update({
+              status: "paid",
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            })
+            .eq("id", savedOrder.id);
+          if (updateErr)
+            console.error("[RAZORPAY] DB update error:", updateErr);
+          else console.log("[RAZORPAY] DB updated successfully");
+        } catch (dbErr) {
+          console.error("[RAZORPAY] DB update failed:", dbErr);
+        }
+
+        showHudMessage("PAYMENT SUCCESSFUL ✓");
+
+        showOrderConfirmOverlay(
+          addrLines,
+          orderRef,
+          totalCost,
+          totalParts,
+          response,
+          savedOrder,
+        );
+
+        resolve(response);
+      },
+    };
+
+    const rzp = new window.Razorpay(options);
+
+    rzp.on("payment.failed", async (response) => {
+      const errDesc = response?.error?.description ?? "Payment failed";
+      showHudMessage("⚠ " + errDesc);
+      await supabase.from("orders").delete().eq("id", savedOrder.id);
+      reject(new Error(errDesc));
+    });
+
+    rzp.open();
+  });
 }
