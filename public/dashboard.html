@@ -1318,7 +1318,6 @@
           .update({
             delivered,
             delivered_at: delivered ? new Date().toISOString() : null,
-            status: delivered ? "paid" : "confirmed",
           })
           .eq("id", id);
         if (error) {
