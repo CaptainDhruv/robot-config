@@ -15,9 +15,8 @@ export default async function handler(req, res) {
     const { amount, currency, receipt } = req.body;
 
     // Hardcoded for testing — move to env vars before production
-    const KEY_ID = process.env.RAZORPAY_KEY_ID || "rzp_test_SXNd70RUaa6CoG";
-    const KEY_SECRET =
-      process.env.RAZORPAY_KEY_SECRET || "BefZwjVIIyIAI4o35DLJFxPj";
+    const KEY_ID = process.env.RAZORPAY_KEY_ID;
+    const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 
     const credentials = Buffer.from(`${KEY_ID}:${KEY_SECRET}`).toString(
       "base64",
@@ -39,8 +38,11 @@ export default async function handler(req, res) {
     const data = await response.json();
 
     if (!response.ok) {
+      // TEMP DEBUG
+      console.log("Razorpay error response:", JSON.stringify(data));
       return res.status(400).json({
         error: data?.error?.description ?? "Razorpay error",
+        full: data,
       });
     }
 

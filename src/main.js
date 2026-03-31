@@ -1465,12 +1465,14 @@ function bind(id, fn) {
    ========================================================= */
 
 function onFinalize() {
+  if (placementMode) clearGhost();
   printDesign();
 }
 
 function onEdit() {}
 
 function onProceedToPayment() {
+  if (placementMode) clearGhost();
   showAddressOverlay();
 }
 /* =========================================================
@@ -2668,8 +2670,7 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
     </div>
     <div class="print-meta">
       Generated: ${now}<br>
-      Parts: ${totalParts} · Weight: ${totalWeightDisp}<br>
-      <span class="status-badge ${isFinalized ? "status-final" : "status-draft"}">${isFinalized ? "✓ Finalized" : "⚠ Draft"}</span>
+     Parts: ${totalParts} · Weight: ${totalWeightDisp}
     </div>
   </div>
 
@@ -4416,8 +4417,7 @@ function onMouseMove(e) {
       }
     }
     setHoverMesh(hitMesh, hitMount);
-    if (hitMount) showTooltip(hitMount, e.clientX, e.clientY);
-    else hideTooltip();
+    hideTooltip();
     return;
   }
 
