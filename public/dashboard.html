@@ -925,6 +925,7 @@
             >📋 Orders</a
           >
           <a href="admin-config.html" class="nav-pill">⚙ Component Config</a>
+          <a href="deleted-orders.html" class="nav-pill">🗑 Bin</a>
         </nav>
         <div class="dash-user">
           <span class="realtime-dot"></span>
@@ -1377,15 +1378,46 @@
 
       async function deleteOrder(id) {
         if (selectedOrderId === id) closeDetail();
+
+        const order = allOrders.find((o) => o.id === id);
+        if (!order) return;
+
+        const { error: binErr } = await supabase.from("deleted_orders").insert({
+          id: order.id,
+          order_ref: order.order_ref,
+          customer_name: order.customer_name,
+          customer_phone: order.customer_phone,
+          address_line1: order.address_line1,
+          address_line2: order.address_line2,
+          address_line3: order.address_line3,
+          city: order.city,
+          state: order.state,
+          pin: order.pin,
+          total_amount: order.total_amount,
+          parts_count: order.parts_count,
+          status: order.order_status ?? order.status,
+          razorpay_order_id: order.razorpay_order_id,
+          razorpay_payment_id: order.razorpay_payment_id,
+          razorpay_signature: order.razorpay_signature,
+          created_at: order.created_at,
+          deleted_at: new Date().toISOString(),
+        });
+
+        if (binErr) {
+          showToast("⚠ Could not move to bin: " + binErr.message, "error");
+          return;
+        }
+
         const { error } = await supabase.from("orders").delete().eq("id", id);
         if (error) {
           showToast("⚠ Could not delete order: " + error.message, "error");
           return;
         }
+
         allOrders = allOrders.filter((o) => o.id !== id);
         applyFilters();
         updateStats(allOrders);
-        showToast("Order deleted", "info");
+        showToast("Order moved to bin (auto-deletes in 30 days)", "info");
       }
 
       function showToast(msg, type = "info") {

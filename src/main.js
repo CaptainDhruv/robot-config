@@ -6880,6 +6880,7 @@ async function initiateRazorpayPayment({
 
   // ── Step 1: Create Razorpay order via Supabase Edge Function ─────
   let razorpayOrderId;
+  let razorpayKey;
   try {
     const rzpRes = await fetch("/api/create-order", {
       method: "POST",
@@ -6895,7 +6896,7 @@ async function initiateRazorpayPayment({
     if (!fnData?.id) throw new Error("No order ID returned from Razorpay");
 
     razorpayOrderId = fnData.id;
-    const razorpayKey = fnData.key_id;
+    razorpayKey = fnData.key_id;
     showHudMessage("GATEWAY CONNECTED ✓");
   } catch (err) {
     showHudMessage("⚠ Payment init failed: " + err.message.slice(0, 60));

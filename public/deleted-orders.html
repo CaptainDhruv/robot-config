@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Deleted Orders — Bin</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap");
+      :root {
+        --accent: #d05818;
+        --bg: #f5f5f3;
+        --bg2: #ffffff;
+        --bg3: #fafaf8;
+        --border: rgba(0, 0, 0, 0.08);
+        --text: #1a1a1a;
+        --muted: #999;
+        --red: #cc2200;
+        --red-bg: rgba(204, 34, 0, 0.08);
+        --green: #1a8a3a;
+        --green-bg: rgba(26, 138, 58, 0.08);
+        --shadow: 0 1px 4px rgba(0, 0, 0, 0.07), 0 4px 16px rgba(0, 0, 0, 0.05);
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Montserrat", sans-serif;
+        min-height: 100vh;
+      }
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 32px;
+        height: 60px;
+        background: var(--bg2);
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
+      }
+      .logo {
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 0.12em;
+        color: var(--text);
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .logo::before {
+        content: "";
+        display: block;
+        width: 4px;
+        height: 20px;
+        background: var(--accent);
+        border-radius: 2px;
+      }
+      .nav-pill {
+        font-family: "Montserrat", sans-serif;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        padding: 7px 18px;
+        border: 1.5px solid var(--border);
+        background: transparent;
+        color: #555;
+        text-decoration: none;
+        border-radius: 2px;
+        transition: all 0.15s;
+      }
+      .nav-pill:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .nav-pill-active {
+        background: var(--red) !important;
+        color: #fff !important;
+        border-color: var(--red) !important;
+      }
+      .body {
+        padding: 32px;
+        max-width: 1380px;
+        margin: 0 auto;
+      }
+      .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+      }
+      .section-title {
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.22em;
+        color: var(--text);
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .section-title::before {
+        content: "";
+        display: block;
+        width: 3px;
+        height: 14px;
+        background: var(--red);
+        border-radius: 2px;
+      }
+      .table-wrap {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        overflow-x: auto;
+        box-shadow: var(--shadow);
+        border-radius: 2px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      thead th {
+        background: var(--bg3);
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        color: var(--muted);
+        text-transform: uppercase;
+        padding: 12px 16px;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+      }
+      tbody tr {
+        border-bottom: 1px solid var(--border);
+        transition: background 0.1s;
+      }
+      tbody tr:last-child {
+        border-bottom: none;
+      }
+      tbody tr:hover {
+        background: rgba(204, 34, 0, 0.04);
+      }
+      tbody td {
+        padding: 13px 16px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text);
+        white-space: nowrap;
+      }
+      .days-left {
+        display: inline-block;
+        padding: 3px 10px;
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        border-radius: 2px;
+        border: 1px solid;
+      }
+      .days-ok {
+        color: var(--green);
+        border-color: var(--green);
+        background: var(--green-bg);
+      }
+      .days-warn {
+        color: #b07800;
+        border-color: #b07800;
+        background: rgba(176, 120, 0, 0.08);
+      }
+      .days-crit {
+        color: var(--red);
+        border-color: var(--red);
+        background: var(--red-bg);
+      }
+      .restore-btn {
+        background: transparent;
+        border: 1px solid rgba(26, 138, 58, 0.4);
+        color: var(--green);
+        font-family: "Montserrat", sans-serif;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        padding: 4px 10px;
+        cursor: pointer;
+        border-radius: 2px;
+        text-transform: uppercase;
+        transition: all 0.12s;
+      }
+      .restore-btn:hover {
+        background: var(--green-bg);
+        border-color: var(--green);
+      }
+      .empty {
+        text-align: center;
+        padding: 48px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0.06em;
+      }
+      .info-bar {
+        background: rgba(204, 34, 0, 0.06);
+        border: 1px solid rgba(204, 34, 0, 0.2);
+        border-left: 3px solid var(--red);
+        padding: 12px 20px;
+        margin-bottom: 20px;
+        font-size: 11px;
+        font-weight: 500;
+        color: #555;
+        letter-spacing: 0.04em;
+        border-radius: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="topbar">
+      <div class="logo">
+        Robot Configurator &nbsp;<span
+          style="
+            font-size: 8px;
+            font-weight: 600;
+            letter-spacing: 0.22em;
+            color: var(--muted);
+          "
+          >◈ DELETED ORDERS BIN</span
+        >
+      </div>
+      <nav style="display: flex; gap: 8px">
+        <a href="dashboard.html" class="nav-pill">📋 Orders</a>
+        <a href="admin-config.html" class="nav-pill">⚙ Component Config</a>
+        <a href="deleted-orders.html" class="nav-pill nav-pill-active"
+          >🗑 Bin</a
+        >
+      </nav>
+    </div>
+
+    <div class="body">
+      <div class="info-bar">
+        🗑 Deleted orders are kept here for 30 days, then permanently removed.
+        You can restore an order within this window.
+      </div>
+      <div class="section-header">
+        <div class="section-title">Deleted Orders</div>
+        <button class="nav-pill" onclick="load()">⟳ Refresh</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Order Ref</th>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>City</th>
+              <th>Parts</th>
+              <th>Total</th>
+              <th>Deleted On</th>
+              <th>Deletes In</th>
+              <th>Restore</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr>
+              <td colspan="9" class="empty">Loading...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script type="module">
+      import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+      const SUPABASE_URL = "https://paxeivuabqbfodnjxfpw.supabase.co";
+      const SUPABASE_ANON_KEY =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBheGVpdnVhYnFiZm9kbmp4ZnB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNDQwMTAsImV4cCI6MjA4OTgyMDAxMH0.iit20CxI6S04wEJgsPRmEyf3oziSD4e9T2SjJGlHiVQ";
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = "dashboard.html";
+      }
+
+      window.load = load;
+      window.restore = restore;
+      load();
+
+      async function load() {
+        const { data, error } = await supabase
+          .from("deleted_orders")
+          .select("*")
+          .order("deleted_at", { ascending: false });
+
+        const tbody = document.getElementById("tbody");
+        if (error || !data?.length) {
+          tbody.innerHTML = `<tr><td colspan="9" class="empty">${error ? "Error: " + error.message : "Bin is empty"}</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = data
+          .map((o) => {
+            const deletedAt = new Date(o.deleted_at);
+            const expiresAt = new Date(deletedAt.getTime() + 30 * 86400000);
+            const daysLeft = Math.ceil((expiresAt - Date.now()) / 86400000);
+            const cls =
+              daysLeft > 14
+                ? "days-ok"
+                : daysLeft > 5
+                  ? "days-warn"
+                  : "days-crit";
+            const deletedStr = deletedAt.toLocaleString("en-IN", {
+              dateStyle: "short",
+              timeStyle: "short",
+            });
+
+            return `<tr>
+          <td style="font-weight:800;color:var(--red)">${o.order_ref}</td>
+          <td style="font-weight:600">${o.customer_name || "—"}</td>
+          <td style="color:#555">${o.customer_phone || "—"}</td>
+          <td style="color:#555">${o.city || "—"}</td>
+          <td style="text-align:center;font-weight:700">${o.parts_count}</td>
+          <td style="font-weight:700">₹${Number(o.total_amount).toLocaleString("en-IN")}</td>
+          <td style="color:var(--muted);font-size:10px">${deletedStr}</td>
+          <td><span class="days-left ${cls}">${daysLeft}d left</span></td>
+          <td><button class="restore-btn" onclick="restore('${o.id}', '${o.order_ref}')">↩ Restore</button></td>
+        </tr>`;
+          })
+          .join("");
+      }
+
+      async function restore(id, ref) {
+        const { data: row } = await supabase
+          .from("deleted_orders")
+          .select("*")
+          .eq("id", id)
+          .single();
+        if (!row) return;
+        const { deleted_at, ...orderData } = row;
+        const { error: insertErr } = await supabase.from("orders").insert({
+          ...orderData,
+          updated_at: new Date().toISOString(),
+          delivered: orderData.delivered ?? false,
+        });
+        if (insertErr) {
+          alert("Restore failed: " + insertErr.message);
+          return;
+        }
+        await supabase.from("deleted_orders").delete().eq("id", id);
+        alert(`Order ${ref} restored successfully!`);
+        load();
+      }
+    </script>
+  </body>
+</html>
