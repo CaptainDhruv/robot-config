@@ -6895,6 +6895,7 @@ async function initiateRazorpayPayment({
     if (!fnData?.id) throw new Error("No order ID returned from Razorpay");
 
     razorpayOrderId = fnData.id;
+    const razorpayKey = fnData.key_id;
     showHudMessage("GATEWAY CONNECTED ✓");
   } catch (err) {
     showHudMessage("⚠ Payment init failed: " + err.message.slice(0, 60));
@@ -6905,7 +6906,7 @@ async function initiateRazorpayPayment({
   // ── Step 2: Open Razorpay modal ───────────────────────────────────
   return new Promise((resolve, reject) => {
     const options = {
-      key: "rzp_test_SXNd70RUaa6CoG",
+      key: razorpayKey,
       amount: Math.round(amountNum * 100),
       currency: "INR",
       name: "Robot Configurator",

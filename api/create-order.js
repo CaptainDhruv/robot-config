@@ -46,8 +46,11 @@ export default async function handler(req, res) {
       });
     }
 
-    return res.status(200).json(data);
+    return res
+      .status(200)
+      .json({ ...data, key_id: process.env.RAZORPAY_KEY_ID });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
 }
+console.log("KEY_ID:", process.env.RAZORPAY_KEY_ID ? "SET" : "MISSING");
