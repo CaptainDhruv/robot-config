@@ -2880,8 +2880,8 @@ function addTechnicalOverlay(dataURL, viewLabel) {
 
         function dimArrow(x1, y1, x2, y2, label) {
           octx.save();
-          octx.strokeStyle = "rgba(200,50,0,0.92)";
-          octx.fillStyle = "rgba(200,50,0,0.92)";
+          octx.strokeStyle = "rgba(140,20,0,1)";
+          octx.fillStyle = "rgba(140,20,0,1)";
           octx.lineWidth = LW;
           octx.font = `bold ${FONT_SZ}px 'Courier New', monospace`;
           octx.textBaseline = "middle";
@@ -2937,7 +2937,7 @@ function addTechnicalOverlay(dataURL, viewLabel) {
             tw + LABEL_P * 2,
             LABEL_H,
           );
-          octx.fillStyle = "rgba(200,50,0,0.98)";
+          octx.fillStyle = "rgba(140,20,0,1)";
           octx.textAlign = "center";
           octx.fillText(label, mx, my + 1);
           octx.restore();

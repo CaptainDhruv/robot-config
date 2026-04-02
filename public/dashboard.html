@@ -1752,10 +1752,10 @@ thead th:nth-child(4){width:9%}
 thead th:nth-child(5){width:13%}
 thead th:nth-child(6){width:14%}
 thead th:nth-child(7){width:15%}
-tbody td{padding:8px 8px;border-bottom:1px solid #e0e0e0;color:#111;font-weight:500;overflow:hidden;text-overflow:ellipsis;word-break:break-word}
+tbody td{padding:8px 8px;border-bottom:1px solid #e0e0e0;color:#111;font-weight:600;overflow:hidden;text-overflow:ellipsis;word-break:break-word}
 tbody tr:last-child td{border-bottom:none}
 tbody tr:nth-child(even){background:#f8f8f8}
-tfoot td{padding:8px 8px;color:#111;word-break:break-word}
+tfoot td{padding:8px 8px;color:#111;font-weight:700;word-break:break-word}
 .total-bar{background:#d05818;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:12px 20px;margin-bottom:0}
 .total-bar-label{font-size:9px;font-weight:800;letter-spacing:0.2em;text-transform:uppercase;color:#fff}
 .total-bar-val{font-size:22px;font-weight:900;letter-spacing:0.04em;color:#fff}
@@ -1768,18 +1768,18 @@ tfoot td{padding:8px 8px;color:#111;word-break:break-word}
 .design-meta{text-align:right;font-family:'Share Tech Mono',monospace;font-size:10px;color:#333;line-height:1.7;word-break:break-all;max-width:240px}
 .main-view{width:100%;border:1.5px solid #ccc;background:#fff;overflow:hidden;margin-bottom:10px;position:relative;display:flex;justify-content:center;align-items:center;}
 .main-view img{max-width:100%;display:block;max-height:400px;object-fit:contain;margin:0 auto;}
-.view-label-badge{position:absolute;top:10px;left:12px;font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.2em;color:#fff;background:rgba(0,0,0,0.7);padding:3px 10px;text-transform:uppercase}
+.view-label-badge{position:absolute;top:10px;left:12px;font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.2em;color:#fff;background:rgba(0,0,0,0.92);padding:3px 10px;text-transform:uppercase}
 .views-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
 .view-card{border:1px solid #ccc;background:#fff;overflow:hidden;position:relative;display:flex;justify-content:center;align-items:center;}
 .view-card img{max-width:100%;display:block;max-height:200px;object-fit:contain;margin:0 auto;}
-.view-card-label{position:absolute;top:0;left:0;font-family:'Orbitron',sans-serif;font-size:7px;font-weight:700;letter-spacing:0.16em;color:#fff;background:rgba(0,0,0,0.7);padding:3px 9px;text-transform:uppercase;z-index:2}
+.view-card-label{position:absolute;top:0;left:0;font-family:'Orbitron',sans-serif;font-size:7px;font-weight:700;letter-spacing:0.16em;color:#fff;background:rgba(0,0,0,0.92);padding:3px 9px;text-transform:uppercase;z-index:2}
 
 .qc-section{border:1.5px solid #bbb;padding:16px 20px;margin-top:16px;margin-bottom:0}
 .qc-title{font-size:8px;font-weight:800;letter-spacing:0.22em;text-transform:uppercase;color:#d05818;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #ddd}
 .qc-check-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:18px}
 .qc-checkbox{width:18px;height:18px;border:2px solid #333;flex-shrink:0;margin-top:1px}
 .qc-check-text{font-size:13px;font-weight:700;color:#111;margin-bottom:3px}
-.qc-check-sub{font-size:10px;color:#555;letter-spacing:0.04em}
+.qc-check-sub{font-size:10px;color:#111;font-weight:600;letter-spacing:0.04em}
 .qc-sig-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px}
 .qc-sig-label{font-size:8px;font-weight:700;letter-spacing:0.18em;color:#555;text-transform:uppercase;margin-bottom:28px}
 .qc-sig-line{border-bottom:1.5px solid #333}
@@ -1809,8 +1809,10 @@ tfoot td{padding:8px 8px;color:#111;word-break:break-word}
   .qc-sig-label{color:#444 !important}
   .qc-sig-hint{color:#666 !important}
   .qc-check-sub{color:#444 !important}
-  .view-label-badge{color:#fff !important;background:rgba(0,0,0,0.7) !important}
-  .view-card-label{color:#fff !important;background:rgba(0,0,0,0.7) !important}
+  .view-label-badge{color:#fff !important;background:#000 !important}
+  .view-card-label{color:#fff !important;background:#000 !important}
+  .qc-check-sub{color:#111 !important;background:transparent !important}
+  .qc-check-text{color:#111 !important}
   .amount-words{color:#222 !important}
   tbody td{color:#111 !important;word-break:break-word !important;overflow-wrap:break-word !important}
   tfoot td{color:#111 !important}
@@ -1861,8 +1863,8 @@ tfoot td{padding:8px 8px;color:#111;word-break:break-word}
   <tbody>${partsRows}</tbody>
   <tfoot>
     <tr style="background:#f8f4f0;border-top:2px solid #d05818;">
-      <td style="font-size:9px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:#d05818;">Total</td>
-      <td style="text-align:center;font-weight:800;font-size:14px;color:#111">${order.parts_count}</td>
+      <td style="font-size:12px;font-weight:900;letter-spacing:0.14em;text-transform:uppercase;color:#d05818;">Total</td>
+      <td style="text-align:center;font-weight:900;font-size:16px;color:#111">${order.parts_count}</td>
       <td></td>
       <td></td>
       <td></td>
@@ -1964,7 +1966,12 @@ tfoot td{padding:8px 8px;color:#111;word-break:break-word}
         }
         win.document.write(combinedHTML);
         win.document.close();
-        setTimeout(() => win.print(), 800);
+        setTimeout(() => {
+          try {
+            win.getSelection()?.removeAllRanges();
+          } catch (_) {}
+          win.print();
+        }, 800);
       };
 
       function badgeHTML(status, kind) {

@@ -278,14 +278,12 @@
         background: var(--accent-softer);
       }
 
-      /* ── MAIN BODY ── */
+      /* ── MAIN ── */
       .main {
         padding: 32px;
         max-width: 1100px;
         margin: 0 auto;
       }
-
-      /* ── PAGE HEADER ── */
       .page-header {
         margin-bottom: 28px;
       }
@@ -385,8 +383,11 @@
       .component-card:hover {
         box-shadow: var(--shadow-lg);
       }
-      .component-card.is-dirty {
-        border-color: rgba(208, 88, 24, 0.3);
+      .component-card.is-editing {
+        border-color: rgba(208, 88, 24, 0.35);
+        box-shadow:
+          0 0 0 3px rgba(208, 88, 24, 0.08),
+          var(--shadow);
       }
       .component-card.is-saved {
         border-color: var(--green-border);
@@ -445,33 +446,48 @@
         border-radius: 50%;
         background: var(--muted);
       }
-      .status-dot.dirty {
+      .status-dot.editing {
         background: var(--accent);
       }
       .status-dot.saved {
         background: var(--green);
       }
+      .status-dot.locked {
+        background: #aaa;
+      }
       .status-text {
         color: var(--muted);
       }
-      .status-text.dirty {
+      .status-text.editing {
         color: var(--accent);
       }
       .status-text.saved {
         color: var(--green);
       }
 
+      /* ── CARD BODY ── */
       .card-body {
         padding: 20px;
         display: grid;
         grid-template-columns: 1fr 1fr 200px;
         gap: 20px;
         align-items: start;
+        position: relative;
       }
       @media (max-width: 768px) {
         .card-body {
           grid-template-columns: 1fr;
         }
+      }
+
+      /* Locked overlay */
+      .card-body.locked::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: rgba(250, 250, 248, 0.55);
+        pointer-events: none;
+        z-index: 1;
       }
 
       .field {
@@ -500,7 +516,8 @@
         border-radius: 2px;
         transition:
           border-color 0.15s,
-          box-shadow 0.15s;
+          box-shadow 0.15s,
+          background 0.15s;
         width: 100%;
       }
       .input::placeholder,
@@ -513,10 +530,13 @@
         box-shadow: 0 0 0 3px rgba(208, 88, 24, 0.1);
         background: var(--bg2);
       }
-      .input.changed,
-      .textarea.changed {
-        border-color: rgba(208, 88, 24, 0.4);
-        background: #fffbf5;
+      .input:read-only,
+      .textarea:read-only {
+        background: var(--bg3);
+        color: var(--text-secondary);
+        cursor: default;
+        border-color: transparent;
+        pointer-events: none;
       }
       .textarea {
         resize: vertical;
@@ -543,6 +563,7 @@
         font-weight: 700 !important;
       }
 
+      /* ── CARD FOOTER ── */
       .card-footer {
         padding: 14px 20px;
         border-top: 1px solid var(--border);
@@ -561,6 +582,31 @@
       .footer-hint span {
         color: var(--text-secondary);
         font-weight: 600;
+      }
+
+      /* Buttons */
+      .edit-btn {
+        background: transparent;
+        border: 1.5px solid var(--accent);
+        color: var(--accent);
+        font-family: "Montserrat", sans-serif;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        padding: 9px 22px;
+        cursor: pointer;
+        text-transform: uppercase;
+        transition: all 0.15s;
+        border-radius: 2px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .edit-btn:hover {
+        background: var(--accent);
+        color: #fff;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(208, 88, 24, 0.25);
       }
 
       .save-btn {
@@ -598,7 +644,7 @@
         background: var(--green);
       }
 
-      .reset-btn {
+      .cancel-btn {
         background: transparent;
         border: 1.5px solid var(--border);
         color: var(--muted);
@@ -612,13 +658,9 @@
         transition: all 0.15s;
         border-radius: 2px;
       }
-      .reset-btn:hover {
+      .cancel-btn:hover {
         border-color: var(--text-secondary);
         color: var(--text-secondary);
-      }
-      .reset-btn:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
       }
 
       /* ── SAVE ALL BAR ── */
@@ -700,7 +742,6 @@
         border-left: 3px solid;
       }
 
-      /* ── LOADING SKELETON ── */
       .skeleton {
         animation: shimmer 1.5s ease-in-out infinite;
       }
@@ -714,7 +755,6 @@
         }
       }
 
-      /* ── LIVE PREVIEW BADGE ── */
       .live-badge {
         display: inline-flex;
         align-items: center;
@@ -745,7 +785,6 @@
           opacity: 0.3;
         }
       }
-
       .realtime-dot {
         display: inline-block;
         width: 7px;
@@ -754,10 +793,62 @@
         background: var(--green);
         animation: blink 2s infinite;
       }
+
+      /* Edit mode highlight on inputs */
+      .card-body:not(.locked) .input:not(:read-only),
+      .card-body:not(.locked) .textarea:not(:read-only) {
+        background: var(--bg2);
+        border-color: var(--border);
+      }
+      .card-body:not(.locked) .input:not(:read-only):focus,
+      .card-body:not(.locked) .textarea:not(:read-only):focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(208, 88, 24, 0.1);
+      }
+
+      /* Lock icon badge */
+      .lock-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #aaa;
+        background: #f0f0ee;
+        border: 1px solid #ddd;
+        padding: 3px 10px;
+        border-radius: 2px;
+      }
+      .edit-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--accent);
+        background: var(--accent-soft);
+        border: 1px solid rgba(208, 88, 24, 0.25);
+        padding: 3px 10px;
+        border-radius: 2px;
+        animation: pulseEdit 2s ease-in-out infinite;
+      }
+      @keyframes pulseEdit {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.65;
+        }
+      }
     </style>
   </head>
   <body>
-    <!-- ── LOGIN ──────────────────────────────────────────────── -->
+    <!-- LOGIN -->
     <div id="login-screen">
       <div class="login-card">
         <div class="login-badge">◈ Robot Configurator</div>
@@ -787,9 +878,8 @@
       </div>
     </div>
 
-    <!-- ── APP ──────────────────────────────────────────────────── -->
+    <!-- APP -->
     <div id="app" style="display: none; flex-direction: column">
-      <!-- Topbar -->
       <div class="topbar">
         <div class="topbar-left">
           <div class="topbar-logo">
@@ -810,18 +900,15 @@
         </div>
       </div>
 
-      <!-- Main -->
       <div class="main">
-        <!-- Page header -->
         <div class="page-header">
           <div class="page-title">Component Configuration</div>
           <div class="page-subtitle">
-            Edit part labels, tooltip descriptions, and prices. Changes save to
-            the database and reflect live in the configurator.
+            Click <strong>Edit</strong> on a card to unlock and change values.
+            Click <strong>Save</strong> to confirm and lock.
           </div>
         </div>
 
-        <!-- SQL setup notice -->
         <div class="sql-notice">
           <div class="sql-notice-icon">🗄️</div>
           <div class="sql-notice-body">
@@ -838,30 +925,22 @@
             <code class="sql-code" id="sql-block" style="display: none"
               >-- Create table CREATE TABLE IF NOT EXISTS part_config (
               part_type TEXT PRIMARY KEY, label TEXT NOT NULL, description TEXT,
-              price INTEGER NOT NULL DEFAULT 0, updated_at TIMESTAMPTZ DEFAULT
-              now() ); -- Enable Row Level Security + allow anon reads, auth
-              writes ALTER TABLE part_config ENABLE ROW LEVEL SECURITY; CREATE
-              POLICY "public read" ON part_config FOR SELECT USING (true);
-              CREATE POLICY "auth write" ON part_config FOR ALL USING
-              (auth.role() = 'authenticated'); -- Seed default values INSERT
+              price INTEGER NOT NULL DEFAULT 0, gst_percent NUMERIC DEFAULT 18,
+              updated_at TIMESTAMPTZ DEFAULT now() ); ALTER TABLE part_config
+              ENABLE ROW LEVEL SECURITY; CREATE POLICY "public read" ON
+              part_config FOR SELECT USING (true); CREATE POLICY "auth write" ON
+              part_config FOR ALL USING (auth.role() = 'authenticated'); INSERT
               INTO part_config (part_type, label, description, price) VALUES
-              ('frame', 'Rectangular Frame', 'Structural base for the robot.
-              Connects to other frames via corner sockets. Each motor exposes
-              one wheel shaft.', 1200), ('motor', 'Motor Housing', 'Drive unit
-              for wheels. Mounts on motor sockets around the frame perimeter.
-              Each motor exposes one wheel shaft.', 2500), ('triangle_frame',
-              'Triangular Frame', 'Angular brace for added structural rigidity.
-              Required before placing Stress Bridges.', 650), ('support_frame',
-              'Stress Bridge', 'Cross-bridge connecting two triangular frames
-              for load distribution. Needs: 2 Triangular Frames.', 900),
-              ('wheel', 'Wheel', 'Motor-driven wheel assembly. Attaches to motor
-              housing output shaft. Needs: free motor socket on a frame.', 1100)
-              ON CONFLICT (part_type) DO NOTHING;</code
+              ('frame','Rectangular Frame','Structural base for the
+              robot.',1200), ('motor','Motor Housing','Drive unit for
+              wheels.',2500), ('triangle_frame','Triangular Frame','Angular
+              brace for rigidity.',650), ('support_frame','Stress
+              Bridge','Cross-bridge span.',900), ('wheel','Wheel','Motor-driven
+              wheel.',1100) ON CONFLICT (part_type) DO NOTHING;</code
             >
           </div>
         </div>
 
-        <!-- Component cards -->
         <div class="components-grid" id="components-grid">
           <div
             style="
@@ -878,10 +957,9 @@
         </div>
       </div>
 
-      <!-- Save all sticky bar -->
       <div class="save-all-bar" id="save-all-bar">
         <div class="save-all-hint">
-          You have <span id="dirty-count">0</span> unsaved change(s)
+          You have <span id="dirty-count">0</span> card(s) in edit mode
         </div>
         <div style="display: flex; gap: 10px; align-items: center">
           <div class="live-badge">
@@ -889,26 +967,22 @@
             Live sync to configurator
           </div>
           <button class="save-all-btn" id="save-all-btn">
-            ⬆ Save All Changes
+            ⬆ Save All Editing Cards
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Toast -->
     <div id="toast"></div>
 
     <script type="module">
       import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-      /* ── CONFIG ─────────────────────────────────────────────── */
       const SUPABASE_URL = "https://paxeivuabqbfodnjxfpw.supabase.co";
       const SUPABASE_ANON_KEY =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBheGVpdnVhYnFiZm9kbmp4ZnB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNDQwMTAsImV4cCI6MjA4OTgyMDAxMH0.iit20CxI6S04wEJgsPRmEyf3oziSD4e9T2SjJGlHiVQ";
-
       const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      /* ── PART META (glyphs, fallback values) ─────────────────── */
       const PART_GLYPHS = {
         frame: "▬",
         motor: "⬡",
@@ -916,7 +990,6 @@
         support_frame: "╬",
         wheel: "◉",
       };
-
       const PART_ORDER = [
         "frame",
         "motor",
@@ -924,47 +997,51 @@
         "support_frame",
         "wheel",
       ];
-
       const FALLBACK_CONFIGS = {
         frame: {
           label: "Rectangular Frame",
           description:
             "Structural base for the robot. Connects to other frames via corner sockets.",
           price: 1200,
+          gst_percent: 18,
         },
         motor: {
           label: "Motor Housing",
           description:
-            "Drive unit for wheels. Mounts on motor sockets around the frame perimeter. Each motor exposes one wheel shaft.",
+            "Drive unit for wheels. Mounts on motor sockets around the frame perimeter.",
           price: 2500,
+          gst_percent: 18,
         },
         triangle_frame: {
           label: "Triangular Frame",
           description:
             "Angular brace for added structural rigidity. Required before placing Stress Bridges.",
           price: 650,
+          gst_percent: 18,
         },
         support_frame: {
           label: "Stress Bridge",
           description:
-            "Cross-bridge connecting two triangular frames for load distribution. Needs: 2 Triangular Frames.",
+            "Cross-bridge connecting two triangular frames. Needs: 2 Triangular Frames.",
           price: 900,
+          gst_percent: 18,
         },
         wheel: {
           label: "Wheel",
           description:
-            "Motor-driven wheel assembly. Attaches to motor housing output shaft. Needs: free motor socket on a frame.",
+            "Motor-driven wheel assembly. Needs: free motor socket on a frame.",
           price: 1100,
+          gst_percent: 18,
         },
       };
 
-      /* ── STATE ───────────────────────────────────────────────── */
-      // dbValues[part_type] = { label, description, price }  — what's in DB
-      // editValues[part_type] = { label, description, price } — what's in inputs
-      let dbValues = {};
-      let editValues = {};
+      let dbValues = {}; // saved values from DB
+      let editValues = {}; // current input values
+      // editingState[pt] = true means card is unlocked
+      const editingState = {};
+      PART_ORDER.forEach((pt) => (editingState[pt] = false));
 
-      /* ── SESSION ─────────────────────────────────────────────── */
+      /* ── AUTH ── */
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -996,7 +1073,6 @@
         errEl.style.display = "none";
         btn.disabled = true;
         btn.textContent = "SIGNING IN...";
-
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -1020,29 +1096,18 @@
 
       function enterApp(user) {
         document.getElementById("login-screen").style.display = "none";
-        const appEl = document.getElementById("app");
-        appEl.style.display = "flex";
+        document.getElementById("app").style.display = "flex";
         document.getElementById("user-email").textContent = user.email;
         loadConfig();
       }
 
-      /* ── LOAD CONFIG ─────────────────────────────────────────── */
+      /* ── LOAD ── */
       async function loadConfig() {
-        const grid = document.getElementById("components-grid");
-
         const { data, error } = await supabase.from("part_config").select("*");
-
-        if (error || !data || data.length === 0) {
-          // Table may not exist yet — show fallback notice
-          if (error?.code === "42P01" || !data || data.length === 0) {
-            renderCards(null); // render with fallback defaults
-            return;
-          }
-          grid.innerHTML = `<div style="padding:48px;text-align:center;color:var(--red);font-size:12px;">Error loading config: ${error?.message}</div>`;
+        if (!data || data.length === 0) {
+          renderCards(null);
           return;
         }
-
-        // Map db rows into dbValues
         data.forEach((row) => {
           dbValues[row.part_type] = {
             label: row.label,
@@ -1051,17 +1116,14 @@
             gst_percent: row.gst_percent ?? 18,
           };
         });
-
         renderCards(dbValues);
       }
 
-      /* ── RENDER CARDS ────────────────────────────────────────── */
+      /* ── RENDER ── */
       function renderCards(values) {
         const grid = document.getElementById("components-grid");
         grid.innerHTML = "";
-
         editValues = {};
-
         for (const pt of PART_ORDER) {
           const fallback = FALLBACK_CONFIGS[pt];
           const db = values?.[pt] ?? {};
@@ -1071,89 +1133,84 @@
             price: db.price ?? fallback.price,
             gst_percent: db.gst_percent ?? 18,
           };
-
           editValues[pt] = { ...current };
-
-          const card = buildCard(pt, current);
-          grid.appendChild(card);
+          grid.appendChild(buildCard(pt, current));
         }
       }
 
-      /* ── BUILD SINGLE CARD ───────────────────────────────────── */
+      /* ── BUILD CARD ── */
       function buildCard(pt, current) {
         const card = document.createElement("div");
         card.className = "component-card";
         card.id = `card-${pt}`;
 
+        const inclPrice = Math.round(
+          current.price * (1 + current.gst_percent / 100),
+        );
+
         card.innerHTML = `
           <div class="card-header">
             <div class="card-glyph">${PART_GLYPHS[pt] ?? "◈"}</div>
             <div class="card-type-info">
-              <div class="card-type-key">${pt.replace(/_/g, "_")}</div>
+              <div class="card-type-key">${pt}</div>
               <div class="card-type-name" id="card-name-${pt}">${current.label}</div>
             </div>
             <div class="card-status" id="status-${pt}">
-              <div class="status-dot" id="status-dot-${pt}"></div>
-              <div class="status-text" id="status-text-${pt}">Unchanged</div>
+              <div class="status-dot locked" id="status-dot-${pt}"></div>
+              <div class="status-text" id="status-text-${pt}">Locked</div>
             </div>
           </div>
 
-          <div class="card-body">
-            <!-- Label -->
+          <div class="card-body locked" id="body-${pt}">
             <div class="field">
               <label class="field-lbl">Display Label</label>
-              <input class="input" id="label-${pt}" type="text" value="${esc(current.label)}" placeholder="Part name shown in UI" />
+              <input class="input" id="label-${pt}" type="text" value="${esc(current.label)}" placeholder="Part name" readonly />
               <div style="font-size:9px;color:var(--muted);margin-top:2px;">Shown in sidebar buttons &amp; inventory</div>
             </div>
-
-            <!-- Description -->
             <div class="field">
               <label class="field-lbl">Tooltip Description</label>
-              <textarea class="textarea" id="desc-${pt}" placeholder="Hover tooltip shown when user hovers the button…">${esc(current.description)}</textarea>
+              <textarea class="textarea" id="desc-${pt}" placeholder="Tooltip…" readonly>${esc(current.description)}</textarea>
               <div style="font-size:9px;color:var(--muted);margin-top:2px;">Shown on hover in the 3D configurator</div>
             </div>
-
-            <!-- Price + GST row -->
             <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
               <div class="field" style="flex:2;min-width:160px;">
                 <label class="field-lbl">Unit Price (₹)</label>
                 <div class="price-input-wrap">
                   <span class="price-prefix">₹</span>
-                  <input class="input price-input" id="price-${pt}" type="number" min="0" step="50" value="${current.price}" placeholder="0" />
+                  <input class="input price-input" id="price-${pt}" type="number" min="0" step="50" value="${current.price}" placeholder="0" readonly />
                 </div>
                 <div style="font-size:9px;color:var(--muted);margin-top:2px;">Base price before GST</div>
               </div>
               <div class="field" style="flex:1;min-width:100px;">
                 <label class="field-lbl">GST (%)</label>
-                <input class="input" id="gst-${pt}" type="number" min="0" max="100" step="1" value="${current.gst_percent}" placeholder="18" style="width:100%;" />
+                <input class="input" id="gst-${pt}" type="number" min="0" max="100" step="1" value="${current.gst_percent}" placeholder="18" style="width:100%;" readonly />
                 <div style="font-size:9px;color:var(--muted);margin-top:2px;">Tax rate</div>
               </div>
               <div style="flex:2;min-width:160px;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:2px;">
                 <label class="field-lbl">Price incl. GST</label>
                 <div id="price-gst-display-${pt}" style="font-size:22px;font-weight:800;color:var(--accent);font-family:'Montserrat',sans-serif;line-height:1.2;padding:8px 0 2px;">
-                  ₹${Math.round(current.price * (1 + current.gst_percent / 100)).toLocaleString("en-IN")}
+                  ₹${inclPrice.toLocaleString("en-IN")}
                 </div>
                 <div style="font-size:9px;color:var(--muted);">Shown in configurator &amp; orders</div>
               </div>
             </div>
           </div>
 
-          <div class="card-footer">
-            <div class="footer-hint" id="footer-hint-${pt}">No unsaved changes</div>
-            <div style="display:flex;gap:8px;">
-              <button class="reset-btn" id="reset-${pt}" disabled>Reset</button>
-              <button class="save-btn" id="save-${pt}" disabled>Save</button>
+          <div class="card-footer" id="footer-${pt}">
+            <div class="footer-hint" id="footer-hint-${pt}">
+              <span class="lock-badge">🔒 Locked — click Edit to change values</span>
+            </div>
+            <div style="display:flex;gap:8px;" id="btn-row-${pt}">
+              <button class="edit-btn" id="edit-btn-${pt}">✏ Edit</button>
             </div>
           </div>
         `;
 
-        // Wire input listeners
+        // Wire listeners
         const labelEl = card.querySelector(`#label-${pt}`);
         const descEl = card.querySelector(`#desc-${pt}`);
         const priceEl = card.querySelector(`#price-${pt}`);
         const gstEl = card.querySelector(`#gst-${pt}`);
-        const resetBtn = card.querySelector(`#reset-${pt}`);
-        const saveBtn = card.querySelector(`#save-${pt}`);
 
         const updateGSTDisplay = () => {
           const base = parseInt(priceEl.value) || 0;
@@ -1171,94 +1228,129 @@
             gst_percent: parseFloat(gstEl.value) || 0,
           };
           updateGSTDisplay();
-          updateCardState(pt);
-          updateSaveAllBar();
+          // live update card name
+          card.querySelector(`#card-name-${pt}`).textContent =
+            labelEl.value || editValues[pt].label;
         };
 
-        labelEl.addEventListener("input", onChange);
-        descEl.addEventListener("input", onChange);
-        priceEl.addEventListener("input", onChange);
-        gstEl.addEventListener("input", onChange);
+        [labelEl, descEl, priceEl, gstEl].forEach((el) =>
+          el.addEventListener("input", onChange),
+        );
 
-        resetBtn.addEventListener("click", () => {
-          const orig = dbValues[pt] ?? FALLBACK_CONFIGS[pt];
-          labelEl.value = orig.label;
-          descEl.value = orig.description;
-          priceEl.value = orig.price;
-          gstEl.value = orig.gst_percent ?? 18;
-          editValues[pt] = { ...orig };
-          updateGSTDisplay();
-          updateCardState(pt);
-          updateSaveAllBar();
-        });
-
-        saveBtn.addEventListener("click", () => savePart(pt));
+        // Edit button
+        card
+          .querySelector(`#edit-btn-${pt}`)
+          .addEventListener("click", () => enterEditMode(pt));
 
         return card;
       }
 
-      /* ── CARD STATE ──────────────────────────────────────────── */
-      function isDirty(pt) {
-        const orig = dbValues[pt] ?? FALLBACK_CONFIGS[pt];
-        const edit = editValues[pt];
-        if (!edit) return false;
-        return (
-          edit.label !== orig.label ||
-          edit.description !== (orig.description ?? "") ||
-          edit.price !== orig.price ||
-          (edit.gst_percent ?? 18) !== (orig.gst_percent ?? 18)
-        );
-      }
+      /* ── EDIT MODE ── */
+      function enterEditMode(pt) {
+        editingState[pt] = true;
 
-      function updateCardState(pt) {
-        const dirty = isDirty(pt);
+        const body = document.getElementById(`body-${pt}`);
         const card = document.getElementById(`card-${pt}`);
         const dot = document.getElementById(`status-dot-${pt}`);
         const text = document.getElementById(`status-text-${pt}`);
         const hint = document.getElementById(`footer-hint-${pt}`);
-        const nameEl = document.getElementById(`card-name-${pt}`);
-        const saveBtn = document.getElementById(`save-${pt}`);
-        const resetBtn = document.getElementById(`reset-${pt}`);
-        const labelEl = document.getElementById(`label-${pt}`);
+        const btnRow = document.getElementById(`btn-row-${pt}`);
 
-        card.classList.toggle("is-dirty", dirty);
+        // Unlock inputs
+        body.classList.remove("locked");
+        card.classList.add("is-editing");
+        [`label-${pt}`, `desc-${pt}`, `price-${pt}`, `gst-${pt}`].forEach(
+          (id) => {
+            const el = document.getElementById(id);
+            el.removeAttribute("readonly");
+          },
+        );
+
+        dot.className = "status-dot editing";
+        text.className = "status-text editing";
+        text.textContent = "Editing";
+
+        hint.innerHTML = `<span class="edit-badge">✏ Editing — save to lock values</span>`;
+
+        btnRow.innerHTML = `
+          <button class="cancel-btn" id="cancel-btn-${pt}">Cancel</button>
+          <button class="save-btn" id="save-btn-${pt}">💾 Save & Lock</button>
+        `;
+
+        document
+          .getElementById(`cancel-btn-${pt}`)
+          .addEventListener("click", () => cancelEdit(pt));
+        document
+          .getElementById(`save-btn-${pt}`)
+          .addEventListener("click", () => savePart(pt));
+
+        updateSaveAllBar();
+
+        // Focus first field
+        setTimeout(() => document.getElementById(`label-${pt}`)?.focus(), 50);
+      }
+
+      /* ── CANCEL EDIT ── */
+      function cancelEdit(pt) {
+        editingState[pt] = false;
+
+        const orig = dbValues[pt] ?? FALLBACK_CONFIGS[pt];
+        // Restore values
+        document.getElementById(`label-${pt}`).value = orig.label;
+        document.getElementById(`desc-${pt}`).value = orig.description || "";
+        document.getElementById(`price-${pt}`).value = orig.price;
+        document.getElementById(`gst-${pt}`).value = orig.gst_percent ?? 18;
+        editValues[pt] = { ...orig };
+
+        // Update GST display
+        const inclPrice = Math.round(
+          orig.price * (1 + (orig.gst_percent ?? 18) / 100),
+        );
+        const gstDisp = document.getElementById(`price-gst-display-${pt}`);
+        if (gstDisp)
+          gstDisp.textContent = "₹" + inclPrice.toLocaleString("en-IN");
+
+        // Update card name
+        document.getElementById(`card-name-${pt}`).textContent = orig.label;
+
+        lockCard(pt);
+        updateSaveAllBar();
+      }
+
+      /* ── LOCK CARD ── */
+      function lockCard(pt) {
+        const body = document.getElementById(`body-${pt}`);
+        const card = document.getElementById(`card-${pt}`);
+        const dot = document.getElementById(`status-dot-${pt}`);
+        const text = document.getElementById(`status-text-${pt}`);
+        const hint = document.getElementById(`footer-hint-${pt}`);
+        const btnRow = document.getElementById(`btn-row-${pt}`);
+
+        body.classList.add("locked");
+        card.classList.remove("is-editing");
         card.classList.remove("is-saved");
 
-        dot.className = "status-dot" + (dirty ? " dirty" : "");
-        text.className = "status-text" + (dirty ? " dirty" : "");
-        text.textContent = dirty ? "Unsaved changes" : "Unchanged";
+        [`label-${pt}`, `desc-${pt}`, `price-${pt}`, `gst-${pt}`].forEach(
+          (id) => {
+            document.getElementById(id)?.setAttribute("readonly", "");
+          },
+        );
 
-        hint.innerHTML = dirty
-          ? `<span style="color:var(--accent);font-weight:700">⚠</span> You have unsaved changes`
-          : "No unsaved changes";
+        dot.className = "status-dot locked";
+        text.className = "status-text";
+        text.textContent = "Locked";
 
-        saveBtn.disabled = !dirty;
-        resetBtn.disabled = !dirty;
-
-        // Live update card name
-        if (labelEl)
-          nameEl.textContent = labelEl.value || editValues[pt]?.label || "";
+        hint.innerHTML = `<span class="lock-badge">🔒 Locked — click Edit to change values</span>`;
+        btnRow.innerHTML = `<button class="edit-btn" id="edit-btn-${pt}">✏ Edit</button>`;
+        document
+          .getElementById(`edit-btn-${pt}`)
+          .addEventListener("click", () => enterEditMode(pt));
       }
 
-      function updateSaveAllBar() {
-        const dirtyParts = PART_ORDER.filter((pt) => isDirty(pt));
-        const bar = document.getElementById("save-all-bar");
-        const count = document.getElementById("dirty-count");
-        const saveAllBtn = document.getElementById("save-all-btn");
-
-        count.textContent = dirtyParts.length;
-        saveAllBtn.disabled = dirtyParts.length === 0;
-        bar.classList.toggle("visible", dirtyParts.length > 0);
-      }
-
-      /* ── SAVE SINGLE PART ────────────────────────────────────── */
+      /* ── SAVE ── */
       async function savePart(pt) {
-        const saveBtn = document.getElementById(`save-${pt}`);
+        const saveBtn = document.getElementById(`save-btn-${pt}`);
         const card = document.getElementById(`card-${pt}`);
-        const dot = document.getElementById(`status-dot-${pt}`);
-        const text = document.getElementById(`status-text-${pt}`);
-        const hint = document.getElementById(`footer-hint-${pt}`);
-
         const vals = editValues[pt];
         if (!vals) return;
 
@@ -1266,99 +1358,77 @@
         saveBtn.textContent = "Saving…";
         saveBtn.className = "save-btn saving";
 
-        const { error } = await supabase.from("part_config").upsert(
-          {
-            part_type: pt,
-            label: vals.label,
-            description: vals.description,
-            price: vals.price,
-            gst_percent: vals.gst_percent ?? 18,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "part_type" },
-        );
+        const { error } = await supabase
+          .from("part_config")
+          .upsert(
+            {
+              part_type: pt,
+              label: vals.label,
+              description: vals.description,
+              price: vals.price,
+              gst_percent: vals.gst_percent ?? 18,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "part_type" },
+          );
 
         if (error) {
           showToast(`⚠ Save failed: ${error.message}`, "error");
           saveBtn.disabled = false;
-          saveBtn.textContent = "Save";
+          saveBtn.textContent = "💾 Save & Lock";
           saveBtn.className = "save-btn";
           return;
         }
 
-        // Update dbValues so dirty check resets
         dbValues[pt] = { ...vals };
+        editingState[pt] = false;
 
-        saveBtn.textContent = "✓ Saved";
-        saveBtn.className = "save-btn saved-ok";
-        saveBtn.disabled = true;
-
-        card.classList.remove("is-dirty");
+        // Brief saved flash
         card.classList.add("is-saved");
+        const dot = document.getElementById(`status-dot-${pt}`);
+        const text = document.getElementById(`status-text-${pt}`);
         dot.className = "status-dot saved";
         text.className = "status-text saved";
-        text.textContent = "Saved";
-        hint.innerHTML = `<span style="color:var(--green);font-weight:700">✓</span> Saved to database`;
+        text.textContent = "Saved ✓";
 
-        document.getElementById(`reset-${pt}`).disabled = true;
+        showToast(`✓ ${vals.label} saved & locked`, "success");
 
         setTimeout(() => {
-          saveBtn.textContent = "Save";
-          saveBtn.className = "save-btn";
-          card.classList.remove("is-saved");
-          dot.className = "status-dot";
-          text.className = "status-text";
-          text.textContent = "Unchanged";
-          hint.innerHTML = "No unsaved changes";
-        }, 3000);
+          lockCard(pt);
+          updateSaveAllBar();
+        }, 1200);
 
-        showToast(`✓ ${vals.label} saved`, "success");
         updateSaveAllBar();
       }
 
-      /* ── SAVE ALL ────────────────────────────────────────────── */
+      /* ── SAVE ALL ── */
       document
         .getElementById("save-all-btn")
         .addEventListener("click", async () => {
           const btn = document.getElementById("save-all-btn");
           btn.disabled = true;
           btn.textContent = "Saving…";
-
-          const dirtyParts = PART_ORDER.filter((pt) => isDirty(pt));
-          const upsertRows = dirtyParts.map((pt) => ({
-            part_type: pt,
-            label: editValues[pt].label,
-            description: editValues[pt].description,
-            price: editValues[pt].price,
-            gst_percent: editValues[pt].gst_percent ?? 18,
-            updated_at: new Date().toISOString(),
-          }));
-
-          const { error } = await supabase
-            .from("part_config")
-            .upsert(upsertRows, { onConflict: "part_type" });
-
-          if (error) {
-            showToast(`⚠ Save all failed: ${error.message}`, "error");
-            btn.disabled = false;
-            btn.textContent = "⬆ Save All Changes";
-            return;
+          const editingParts = PART_ORDER.filter((pt) => editingState[pt]);
+          for (const pt of editingParts) {
+            await savePart(pt);
+            await new Promise((r) => setTimeout(r, 200));
           }
-
-          dirtyParts.forEach((pt) => {
-            dbValues[pt] = { ...editValues[pt] };
-            updateCardState(pt);
-          });
-
-          btn.textContent = "⬆ Save All Changes";
-          showToast(
-            `✓ All changes saved (${dirtyParts.length} component${dirtyParts.length !== 1 ? "s" : ""})`,
-            "success",
-          );
+          btn.textContent = "⬆ Save All Editing Cards";
           updateSaveAllBar();
         });
 
-      /* ── SQL TOGGLE ──────────────────────────────────────────── */
+      /* ── SAVE ALL BAR ── */
+      function updateSaveAllBar() {
+        const editing = PART_ORDER.filter((pt) => editingState[pt]);
+        const bar = document.getElementById("save-all-bar");
+        const count = document.getElementById("dirty-count");
+        const btn = document.getElementById("save-all-btn");
+        count.textContent = editing.length;
+        btn.disabled = editing.length === 0;
+        bar.classList.toggle("visible", editing.length > 0);
+      }
+
+      /* ── SQL TOGGLE ── */
       window.toggleSQL = function () {
         const block = document.getElementById("sql-block");
         const btn = document.getElementById("sql-toggle");
@@ -1367,7 +1437,7 @@
         btn.textContent = visible ? "▶ Show SQL" : "▼ Hide SQL";
       };
 
-      /* ── TOAST ───────────────────────────────────────────────── */
+      /* ── TOAST ── */
       function showToast(msg, type = "info") {
         const el = document.getElementById("toast");
         const colors = {
@@ -1382,7 +1452,6 @@
         el.textContent = msg;
         el.style.display = "block";
         el.style.opacity = "1";
-
         clearTimeout(el._t);
         el._t = setTimeout(() => {
           el.style.transition = "opacity 0.4s";
@@ -1394,7 +1463,7 @@
         }, 3000);
       }
 
-      /* ── HELPER ──────────────────────────────────────────────── */
+      /* ── HELPER ── */
       function esc(str) {
         return String(str ?? "")
           .replace(/&/g, "&amp;")
