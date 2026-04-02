@@ -345,9 +345,9 @@ body::after {
 }
 .section-toggle .chevron {
   margin-left: auto;
-  font-size: 9px;
+  font-size: 14px;
   transition: transform 0.25s ease;
-  color: var(--text-lo);
+  color: #d05818;
 }
 .section-toggle.collapsed .chevron {
   transform: rotate(-90deg);
@@ -966,8 +966,8 @@ canvas#app {
   letter-spacing: 0.06em;
 }
 #cost-chevron {
-  font-size: 9px;
-  color: #384858;
+  font-size: 14px;
+  color: #d05818;
   transition:
     transform 0.2s ease,
     color 0.12s;

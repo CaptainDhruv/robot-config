@@ -5792,7 +5792,7 @@ function initWeightSection() {
       #weight-section-header:hover{background:rgba(208,88,24,0.05)}
       #weight-section-title{font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:#d05818;display:flex;align-items:center;gap:7px}
       #weight-total-badge{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;color:#d8e8f4;letter-spacing:0.06em}
-      #weight-chevron{font-size:9px;color:#384858;transition:transform 0.2s ease,color 0.12s;font-family:'Share Tech Mono',monospace;margin-left:8px}
+     #weight-chevron{font-size:14px;color:#d05818;transition:transform 0.2s ease,color 0.12s;font-family:'Share Tech Mono',monospace;margin-left:8px}
       #weight-section-header:hover #weight-chevron{color:#d05818}
       #weight-body{overflow:hidden;transition:max-height 0.25s ease,opacity 0.2s ease;max-height:300px;opacity:1}
       #weight-body.collapsed{max-height:0;opacity:0}
@@ -6537,7 +6537,7 @@ function initComponentPreview() {
         position: absolute;
         top: 18px;
         left: 18px;
-        width: 150px;
+        width: 180px;
         background: rgba(6,11,20,0.97);
         border: 1.5px solid rgba(208,88,24,0.5);
         border-left: 3px solid #d05818;
@@ -6571,7 +6571,7 @@ function initComponentPreview() {
       }
       #comp-preview-name {
         font-family: 'Oswald', sans-serif;
-        font-size: 11px;
+        font-size: 12px;
         font-weight: 600;
         letter-spacing: 0.1em;
         text-transform: uppercase;
@@ -6580,7 +6580,7 @@ function initComponentPreview() {
       }
       #comp-preview-sub {
         font-family: 'Oswald', sans-serif;
-        font-size: 9px;
+        font-size: 10px;
         font-weight: 400;
         letter-spacing: 0.08em;
         text-transform: uppercase;
@@ -6588,8 +6588,8 @@ function initComponentPreview() {
         margin-top: 2px;
       }
       #comp-preview-canvas-wrap {
-        width: 150px;
-        height: 100px;
+        width: 180px;
+        height: 120px;
         position: relative;
         display: flex;
         align-items: center;
@@ -6621,7 +6621,7 @@ function initComponentPreview() {
       }
       #comp-preview-weight-value {
         font-family: 'Oswald', sans-serif;
-        font-size: 13px;
+        font-size: 14px;
         font-weight: 600;
         letter-spacing: 0.06em;
         color: #e8f4ff;
@@ -6736,7 +6736,7 @@ function initComponentPreview() {
 
   _cpRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
   _cpRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  _cpRenderer.setSize(150, 100);
+  _cpRenderer.setSize(180, 120);
   _cpRenderer.setClearColor(0x1e2d3d, 1);
   _cpRenderer.outputColorSpace = THREE.SRGBColorSpace;
   _cpRenderer.toneMapping = THREE.ACESFilmicToneMapping;
