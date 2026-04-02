@@ -2000,7 +2000,6 @@ function showAddressOverlay() {
           customerPhone: fPhone.inp.value.replace(/\D/g, "").slice(-10),
           addrLines,
         });
-        uploadPrintReport(savedOrder.id, orderRef);
       } catch (payErr) {
         console.warn("[PAYMENT]", payErr.message);
       }
@@ -6955,6 +6954,9 @@ async function initiateRazorpayPayment({
         } catch (dbErr) {
           console.error("[RAZORPAY] DB update failed:", dbErr);
         }
+
+        showHudMessage("GENERATING DESIGN REPORT...");
+        await uploadPrintReport(savedOrder.id, orderRef);
 
         showHudMessage("PAYMENT SUCCESSFUL ✓");
 
