@@ -76,6 +76,8 @@ let supportFirstMarker = null;
 
 // ── Frame-on-support rotation ─────────────────────────────────────────────────
 let frameOnSupportRotationSteps = 0;
+let frameOnSupportAutoYaw = 0;
+let currentHoveredSupportSocket = null;
 
 // ── Tracks which socket type the ghost is currently hovering ─────────────────
 let frameHoverType = "frame";
@@ -675,7 +677,121 @@ function computeMotorAutoYaw(socket) {
   const euler = new THREE.Euler().setFromQuaternion(socketWorldQuat, "YXZ");
   return euler.y + Math.PI;
 }
+/* =========================================================
+   FRAME-ON-SUPPORT AUTO-ORIENTATION HELPER
+   ========================================================= */
 
+function computeFrameOnSupportSnap(socket, rotSteps) {
+  scene.updateMatrixWorld(true);
+  socket.updateMatrixWorld(true);
+
+  const posSupA = new THREE.Vector3();
+  socket.getWorldPosition(posSupA);
+
+  let parentMount = socket.parent;
+  while (parentMount && !parentMount.userData?.isMount)
+    parentMount = parentMount.parent;
+
+  let posSupB = null;
+  if (parentMount) {
+    parentMount.updateMatrixWorld(true);
+    let bestDist = -1;
+    parentMount.traverse((o) => {
+      if (!o.name?.startsWith("SOCKET_FRAME_SUPPORT") || o.uuid === socket.uuid)
+        return;
+      const wp = new THREE.Vector3();
+      o.getWorldPosition(wp);
+      const d = wp.distanceTo(posSupA);
+      if (d > bestDist) {
+        bestDist = d;
+        posSupB = wp.clone();
+      }
+    });
+  }
+
+  const frame = frameTemplate.clone(true);
+  frame.position.set(0, 0, 0);
+  frame.rotation.set(0, 0, 0);
+  frame.scale.set(1, 1, 1);
+  frame.updateMatrixWorld(true);
+
+  const rectConnectors = [];
+  frame.traverse((o) => {
+    if (!o.name) return;
+    if (o.name.toUpperCase().startsWith("SOCKET_FRAME_SUPPORT")) {
+      const wp = new THREE.Vector3();
+      o.getWorldPosition(wp);
+      rectConnectors.push({ x: wp.x, y: wp.y, z: wp.z });
+    }
+  });
+
+  if (rectConnectors.length === 0) {
+    const localY = getFrameSupportSocketLocalY();
+    return {
+      position: new THREE.Vector3(
+        posSupA.x,
+        posSupA.y - localY + FRAME_ON_SUPPORT_Y_OFFSET,
+        posSupA.z,
+      ),
+      rotation: rotSteps * (Math.PI / 2),
+    };
+  }
+
+  const candidateAngles = [];
+  if (posSupB) {
+    const axisAngle = Math.atan2(posSupB.x - posSupA.x, posSupB.z - posSupA.z);
+    for (let i = 0; i < 4; i++)
+      candidateAngles.push(axisAngle + (i * Math.PI) / 2);
+  } else {
+    for (let i = 0; i < 4; i++) candidateAngles.push((i * Math.PI) / 2);
+  }
+
+  let bestError = Infinity,
+    bestAngle = 0,
+    bestSnapConn = rectConnectors[0];
+  for (const snapConn of rectConnectors) {
+    for (const angle of candidateAngles) {
+      const cos = Math.cos(angle),
+        sin = Math.sin(angle);
+      const rsX = cos * snapConn.x + sin * snapConn.z;
+      const rsZ = -sin * snapConn.x + cos * snapConn.z;
+      const mX = posSupA.x - rsX,
+        mZ = posSupA.z - rsZ;
+      let error = 0;
+      if (posSupB) {
+        let minDist = Infinity;
+        for (const c2 of rectConnectors) {
+          if (c2 === snapConn) continue;
+          const c2wX = mX + cos * c2.x + sin * c2.z;
+          const c2wZ = mZ + (-sin * c2.x + cos * c2.z);
+          const d = Math.hypot(c2wX - posSupB.x, c2wZ - posSupB.z);
+          if (d < minDist) minDist = d;
+        }
+        error = minDist;
+      }
+      if (error < bestError) {
+        bestError = error;
+        bestAngle = angle;
+        bestSnapConn = snapConn;
+      }
+    }
+  }
+
+  const finalAngle = bestAngle + rotSteps * (Math.PI / 2);
+  const cos = Math.cos(finalAngle),
+    sin = Math.sin(finalAngle);
+  const rsX = cos * bestSnapConn.x + sin * bestSnapConn.z;
+  const rsZ = -sin * bestSnapConn.x + cos * bestSnapConn.z;
+
+  return {
+    position: new THREE.Vector3(
+      posSupA.x - rsX,
+      posSupA.y - bestSnapConn.y + FRAME_ON_SUPPORT_Y_OFFSET,
+      posSupA.z - rsZ,
+    ),
+    rotation: finalAngle,
+  };
+}
 /* =========================================================
    TRIANGLE AUTO-ORIENTATION HELPER
    ========================================================= */
@@ -1394,8 +1510,17 @@ function bindUI() {
       const deg = (((frameOnSupportRotationSteps % 4) + 4) % 4) * 90;
       showHudMessage(`Frame rotation on support: ${deg}°`);
       updateShortcutBar();
-      if (ghost && frameHoverType === "support") {
-        ghost.rotation.set(0, frameOnSupportRotationSteps * (Math.PI / 2), 0);
+      if (
+        ghost &&
+        frameHoverType === "support" &&
+        currentHoveredSupportSocket
+      ) {
+        const snap = computeFrameOnSupportSnap(
+          currentHoveredSupportSocket,
+          frameOnSupportRotationSteps,
+        );
+        ghost.position.copy(snap.position);
+        ghost.rotation.set(0, snap.rotation, 0);
       }
     }
   }
@@ -3421,7 +3546,9 @@ function clearGhost() {
   document.body.classList.remove("placement-mode");
   applySocketHighlights();
   frameOnSupportRotationSteps = 0;
+  frameOnSupportAutoYaw = 0;
   frameHoverType = "frame";
+  currentHoveredSupportSocket = null;
   motorAutoBaseYaw = 0;
   motorManualRotSteps = 0;
   supportManualRotSteps = 0;
@@ -4429,16 +4556,13 @@ function onMouseMove(e) {
     if (supportHit) {
       frameHoverType = "support";
       const socket = supportHit.object.userData.socket;
-      socket.updateMatrixWorld(true);
-      const pos = new THREE.Vector3();
-      socket.getWorldPosition(pos);
-      const localY = getFrameSupportSocketLocalY();
-      ghost.position.set(
-        pos.x,
-        pos.y - localY + FRAME_ON_SUPPORT_Y_OFFSET,
-        pos.z,
+      currentHoveredSupportSocket = socket;
+      const snap = computeFrameOnSupportSnap(
+        socket,
+        frameOnSupportRotationSteps,
       );
-      ghost.rotation.set(0, frameOnSupportRotationSteps * (Math.PI / 2), 0);
+      ghost.position.copy(snap.position);
+      ghost.rotation.set(0, snap.rotation, 0);
       return;
     }
     if (frameHoverType === "support") frameHoverType = "frame";
@@ -5432,8 +5556,18 @@ function onKeyDown(e) {
       const deg = (((frameOnSupportRotationSteps % 4) + 4) % 4) * 90;
       showHudMessage(`Frame rotation on support: ${deg}°`);
       updateShortcutBar();
-      if (ghost && frameHoverType === "support")
-        ghost.rotation.set(0, frameOnSupportRotationSteps * (Math.PI / 2), 0);
+      if (
+        ghost &&
+        frameHoverType === "support" &&
+        currentHoveredSupportSocket
+      ) {
+        const snap = computeFrameOnSupportSnap(
+          currentHoveredSupportSocket,
+          frameOnSupportRotationSteps,
+        );
+        ghost.position.copy(snap.position);
+        ghost.rotation.set(0, snap.rotation, 0);
+      }
     }
   }
   if (e.key === "Numpad1" || (e.key === "1" && e.altKey))
