@@ -227,7 +227,6 @@ body::after {
   box-shadow: inset -1px 0 0 rgba(208, 88, 24, 0.05);
 }
 
-/* ── KEY CHANGE: right panel is a fixed flex column ── */
 .panel-right {
   background: linear-gradient(160deg, #1a2236 0%, #161e2c 100%);
   border-left: 1px solid var(--border);
@@ -395,7 +394,6 @@ body::after {
   display: block;
   width: 100%;
 }
-
 .btn {
   width: 100%;
   margin-bottom: clamp(3px, 0.4vh, 6px);
@@ -505,7 +503,6 @@ body::after {
   animation: pulse-ring 1.2s ease-out infinite;
 }
 
-/* ── MOTOR ── */
 .btn-motor .btn-inner {
   background: #1e1800;
   border-color: #f9b100;
@@ -548,7 +545,6 @@ body::after {
   color: #0e0c00;
 }
 
-/* ── FRAME ── */
 .btn-frame .btn-inner {
   background: #111314;
   border-color: #797979;
@@ -585,7 +581,6 @@ body::after {
   color: #0a0a0a;
 }
 
-/* ── TRIANGLE ── */
 .btn-triangle .btn-inner {
   background: #18161a;
   border-color: #ada7ab;
@@ -622,7 +617,6 @@ body::after {
   color: #0a0a0a;
 }
 
-/* ── SUPPORT ── */
 .btn-support .btn-inner {
   background: #1e0e00;
   border-color: #ff770e;
@@ -659,7 +653,6 @@ body::after {
   color: #0e0800;
 }
 
-/* ── WHEEL ── */
 .btn-wheel .btn-inner {
   background: #0a0e10;
   border-color: #36454f;
@@ -738,7 +731,6 @@ body::after {
   text-transform: uppercase;
 }
 
-/* ── PRIMARY ── */
 .btn-primary .btn-inner {
   background: var(--amb);
   border: 2px solid var(--amb);
@@ -756,7 +748,6 @@ body::after {
   transform: translate(4px, 4px);
 }
 
-/* ── SECONDARY ── */
 .btn-secondary .btn-inner {
   background: #18202e;
   border: 2px solid #344858;
@@ -770,7 +761,6 @@ body::after {
   box-shadow: 7px 7px 0 #1a2838;
 }
 
-/* ── VIEWPORT ── */
 .viewport {
   position: relative;
   background: #2a3a52;
@@ -813,7 +803,6 @@ canvas#app {
   z-index: 1;
 }
 
-/* ── CAMERA ── */
 .panel-section-camera {
   border-bottom: none;
   flex-shrink: 0;
@@ -849,14 +838,14 @@ canvas#app {
 .sidebar-cam-btn:hover {
   background: rgba(255, 255, 255, 0.07);
   border-color: rgba(255, 255, 255, 0.55);
-  color: #ffffff;
+  color: #fff;
   transform: translate(-2px, -2px);
   box-shadow: 5px 5px 0 #111820;
 }
 .sidebar-cam-btn.active {
   background: transparent;
-  border: 2px solid #ffffff;
-  color: #ffffff;
+  border: 2px solid #fff;
+  color: #fff;
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.15),
     3px 3px 0 #111820;
@@ -869,7 +858,7 @@ canvas#app {
 .sidebar-cam-icon {
   font-size: clamp(13px, 1.3vw, 17px);
   line-height: 1;
-  color: #ffffff;
+  color: #fff;
 }
 .sidebar-cam-label {
   font-family: var(--font-hud);
@@ -890,10 +879,7 @@ canvas#app {
   border-top: 1px solid var(--border);
 }
 
-/* ═══════════════════════════════════════════════════
-   REQUISITION MASTER HEADER
-   ═══════════════════════════════════════════════════ */
-
+/* ── REQUISITION HEADER ── */
 .requisition-header {
   padding: clamp(10px, 1.4vh, 18px) clamp(10px, 1.2vw, 18px)
     clamp(8px, 1.1vh, 14px) clamp(12px, 1.5vw, 20px);
@@ -927,14 +913,38 @@ canvas#app {
   text-transform: uppercase;
 }
 
-/* ═══════════════════════════════════════════════════
-   COST SECTION — collapsible tab
-   ═══════════════════════════════════════════════════ */
-
-#cost-section {
-  border-bottom: 1px solid rgba(208, 88, 24, 0.18);
-  flex-shrink: 0;
+/* ── SCROLLABLE AREA ── */
+.requisition-scroll-area {
+  flex: 1 1 0;
+  overflow-y: auto;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-hi) transparent;
+  padding: 8px 8px 0;
 }
+.requisition-scroll-area::-webkit-scrollbar {
+  width: 3px;
+}
+.requisition-scroll-area::-webkit-scrollbar-thumb {
+  background: var(--border-hi);
+}
+
+/* ── COMBINED COST + WEIGHT CARD ── */
+.req-combined-panel {
+  border: 1px solid rgba(208, 88, 24, 0.2);
+  border-left: 2px solid rgba(208, 88, 24, 0.45);
+  background: rgba(14, 20, 32, 0.5);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.req-combined-panel #cost-section {
+  border-bottom: 1px solid rgba(208, 88, 24, 0.15);
+}
+.req-combined-panel #weight-section {
+  border-top: none;
+}
+
+/* ── COST SECTION ── */
 #cost-section-header {
   display: flex;
   align-items: center;
@@ -966,16 +976,11 @@ canvas#app {
   letter-spacing: 0.06em;
 }
 #cost-chevron {
-  font-size: 14px;
+  font-size: 20px;
   color: #d05818;
-  transition:
-    transform 0.2s ease,
-    color 0.12s;
+  transition: transform 0.2s ease;
   font-family: "Share Tech Mono", monospace;
   margin-left: 8px;
-}
-#cost-section-header:hover #cost-chevron {
-  color: #d05818;
 }
 #cost-body {
   overflow-y: auto;
@@ -990,22 +995,15 @@ canvas#app {
   opacity: 0;
 }
 
-/* ═══════════════════════════════════════════════════
-   BASKET / REQUISITION ROWS
-   ═══════════════════════════════════════════════════ */
-
+/* ── BASKET ── */
 .basket-section {
   padding: clamp(6px, 0.9vh, 12px) clamp(8px, 0.9vw, 14px);
-  overflow-y: auto;
-  min-height: 0;
 }
 .basket-items {
   display: flex;
   flex-direction: column;
   gap: clamp(2px, 0.3vh, 4px);
 }
-
-/* ── Main basket row ── */
 .basket-items > * {
   font-family: var(--font-display);
   font-size: clamp(12px, 1.05vw, 14px);
@@ -1025,7 +1023,6 @@ canvas#app {
 .basket-items > *:hover {
   background: #243448;
 }
-
 .basket-items > [data-part-type="frame"] {
   border-left-color: #797979 !important;
 }
@@ -1042,7 +1039,7 @@ canvas#app {
   border-left-color: #36454f !important;
 }
 
-/* ── BASKET FOOTER — pinned via margin-top:auto ── */
+/* ── FOOTER + BUTTONS — pinned ── */
 .basket-footer {
   padding: clamp(8px, 1.1vh, 14px) clamp(10px, 1.2vw, 18px);
   border-top: 1px solid var(--border-amb);
@@ -1056,14 +1053,13 @@ canvas#app {
   text-transform: uppercase;
   color: #8aacbf;
   flex-shrink: 0;
-  margin-top: auto;
+  margin-top: 0;
 }
 .basket-footer span[style*="font-size: 8px"],
 .basket-footer span[style*="font-size:8px"] {
   font-size: 10px !important;
   color: #7a9ab8 !important;
 }
-
 .price {
   font-family: var(--font-hud);
   font-size: clamp(16px, 1.6vw, 24px);
@@ -1073,7 +1069,6 @@ canvas#app {
   letter-spacing: 0.06em;
 }
 
-/* ── SAVE-PRINT SECTION ── */
 .save-print-section {
   padding: clamp(6px, 0.8vh, 10px) clamp(8px, 0.9vw, 14px)
     clamp(8px, 1.1vh, 14px);
@@ -1082,6 +1077,7 @@ canvas#app {
   flex-direction: column;
   gap: clamp(4px, 0.5vh, 7px);
   flex-shrink: 0;
+  margin-top: 0;
 }
 .save-print-section .btn {
   margin-bottom: 0;
@@ -1123,7 +1119,6 @@ canvas#app {
   pointer-events: none;
   font-family: var(--font-mono) !important;
 }
-
 @keyframes hudMsgIn {
   from {
     opacity: 0;
@@ -1165,7 +1160,6 @@ canvas#app {
     opacity: 0.5;
   }
 }
-
 .color-legend {
   position: absolute;
   bottom: 48px;
@@ -1535,7 +1529,7 @@ canvas#app {
   margin-top: 3px;
 }
 
-/* ── ARROW KEY CLUSTER ── */
+/* ── ARROW KEYS ── */
 #viewport-rot-controls {
   position: fixed;
   bottom: 80px;
@@ -1645,11 +1639,11 @@ canvas#app {
 }
 
 #addWheelBtn[disabled],
-#addWheelBtn[disabled] * {
+#addWheelBtn[disabled]* {
   cursor: not-allowed !important;
 }
 
-/* ── UNDO / REDO ── */
+/* ── UNDO/REDO ── */
 .undo-redo-section {
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
@@ -1723,7 +1717,7 @@ canvas#app {
   white-space: nowrap;
 }
 
-/* ── COMPONENT BUTTON TOOLTIPS ── */
+/* ── COMPONENT TOOLTIPS ── */
 .comp-tooltip {
   position: fixed;
   z-index: 99990;
@@ -1806,19 +1800,14 @@ canvas#app {
   display: none;
 }
 
-/* ═══════════════════════════════════════════════════
-   WEIGHT SECTION
-   ═══════════════════════════════════════════════════ */
-
+/* ── WEIGHT SECTION ── */
 #weight-section {
-  border-top: 1px solid rgba(208, 88, 24, 0.18);
-  flex-shrink: 0;
+  border-top: none;
 }
 #weight-body {
   max-height: 240px;
   overflow-y: auto;
 }
-
 #weight-rows .weight-row {
   font-size: 11px !important;
   padding: 7px 10px !important;
@@ -1850,7 +1839,6 @@ canvas#app {
   color: #6a8098 !important;
   font-size: 10px !important;
 }
-
 #weight-rows .weight-row[data-part-type="frame"] {
   border-left-color: #797979 !important;
   border-left-width: 3px !important;
@@ -1871,7 +1859,6 @@ canvas#app {
   border-left-color: #36454f !important;
   border-left-width: 3px !important;
 }
-
 #weight-total-row {
   padding: 9px 12px !important;
 }
@@ -1897,6 +1884,14 @@ canvas#app {
 #weight-rows > div[style*="color: #2a3848"] {
   color: #5a7a8a !important;
   font-size: 10px !important;
+}
+
+/* ── MINIMAP DIMS ── */
+#minimap-dims-bar .dim-val {
+  color: #ffffff;
+  font-weight: 700;
+  font-family: "Orbitron", sans-serif;
+  font-size: 11px;
 }
 
 /* ── RESPONSIVE ── */

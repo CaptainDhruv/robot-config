@@ -17,7 +17,7 @@
   </head>
   <body>
     <div class="app-shell">
-      <!-- ═══════ LEFT PANEL ═══════ -->
+      <!-- LEFT PANEL -->
       <aside class="panel panel-left">
         <div class="logo-header">
           <h1 class="logo">Robot Configurator</h1>
@@ -26,39 +26,35 @@
           </div>
         </div>
 
-        <!-- COMPONENTS — collapsible -->
         <section class="panel-section">
           <button class="section-toggle" data-target="sec-components">
-            COMPONENTS
-            <span class="chevron">▼</span>
+            COMPONENTS <span class="chevron">▼</span>
           </button>
           <div class="section-body" id="sec-components">
             <div class="btn-tip-wrap" data-tip="addFrame">
               <button id="addFrame" class="btn btn-frame">
                 <div class="btn-inner">
                   <span class="btn-glyph">▬</span>
-                  <span class="btn-body">
-                    <span class="btn-label">Rect. Frame</span>
-                    <span class="btn-desc">Structural base</span>
-                  </span>
+                  <span class="btn-body"
+                    ><span class="btn-label">Rect. Frame</span
+                    ><span class="btn-desc">Structural base</span></span
+                  >
                   <span class="btn-tag">FRM</span>
                 </div>
               </button>
             </div>
-
             <div class="btn-tip-wrap" data-tip="addMotor">
               <button id="addMotor" class="btn btn-motor">
                 <div class="btn-inner">
                   <span class="btn-glyph">⬡</span>
-                  <span class="btn-body">
-                    <span class="btn-label">Add Motor</span>
-                    <span class="btn-desc">Drive unit housing</span>
-                  </span>
+                  <span class="btn-body"
+                    ><span class="btn-label">Add Motor</span
+                    ><span class="btn-desc">Drive unit housing</span></span
+                  >
                   <span class="btn-tag">MOT</span>
                 </div>
               </button>
             </div>
-
             <div class="btn-tip-wrap" data-tip="addWheelBtn">
               <button
                 id="addWheelBtn"
@@ -69,36 +65,34 @@
               >
                 <div class="btn-inner">
                   <span class="btn-glyph">◉</span>
-                  <span class="btn-body">
-                    <span class="btn-label">Add Wheel</span>
-                    <span class="btn-desc">Motor-driven wheel</span>
-                  </span>
+                  <span class="btn-body"
+                    ><span class="btn-label">Add Wheel</span
+                    ><span class="btn-desc">Motor-driven wheel</span></span
+                  >
                   <span class="btn-tag">WHL</span>
                 </div>
               </button>
             </div>
-
             <div class="btn-tip-wrap" data-tip="addTriangle">
               <button id="addTriangle" class="btn btn-triangle">
                 <div class="btn-inner">
                   <span class="btn-glyph">▲</span>
-                  <span class="btn-body">
-                    <span class="btn-label">Tri. Frame</span>
-                    <span class="btn-desc">Angular brace</span>
-                  </span>
+                  <span class="btn-body"
+                    ><span class="btn-label">Tri. Frame</span
+                    ><span class="btn-desc">Angular brace</span></span
+                  >
                   <span class="btn-tag">TRI</span>
                 </div>
               </button>
             </div>
-
             <div class="btn-tip-wrap" data-tip="addSupportFrame">
               <button id="addSupportFrame" class="btn btn-support">
                 <div class="btn-inner">
                   <span class="btn-glyph">╬</span>
-                  <span class="btn-body">
-                    <span class="btn-label">Stress Bridge</span>
-                    <span class="btn-desc">Cross-bridge span</span>
-                  </span>
+                  <span class="btn-body"
+                    ><span class="btn-label">Stress Bridge</span
+                    ><span class="btn-desc">Cross-bridge span</span></span
+                  >
                   <span class="btn-tag">SUP</span>
                 </div>
               </button>
@@ -106,11 +100,9 @@
           </div>
         </section>
 
-        <!-- CAMERA PRESETS -->
         <section class="panel-section panel-section-camera">
           <button class="section-toggle" data-target="sec-camera">
-            CAMERA PRESETS
-            <span class="chevron">▼</span>
+            CAMERA PRESETS <span class="chevron">▼</span>
           </button>
           <div class="section-body" id="sec-camera">
             <div class="sidebar-cam-grid">
@@ -119,46 +111,45 @@
                 data-cam="front"
                 title="Front View"
               >
-                <span class="sidebar-cam-icon">⬛</span>
-                <span class="sidebar-cam-label">FRONT</span>
+                <span class="sidebar-cam-icon">⬛</span
+                ><span class="sidebar-cam-label">FRONT</span>
               </button>
               <button class="sidebar-cam-btn" data-cam="back" title="Back View">
-                <span class="sidebar-cam-icon">⬛</span>
-                <span class="sidebar-cam-label">BACK</span>
+                <span class="sidebar-cam-icon">⬛</span
+                ><span class="sidebar-cam-label">BACK</span>
               </button>
               <button class="sidebar-cam-btn" data-cam="top" title="Top View">
-                <span class="sidebar-cam-icon">⊡</span>
-                <span class="sidebar-cam-label">TOP</span>
+                <span class="sidebar-cam-icon">⊡</span
+                ><span class="sidebar-cam-label">TOP</span>
               </button>
               <button
                 class="sidebar-cam-btn"
                 data-cam="left"
                 title="Left Side View"
               >
-                <span class="sidebar-cam-icon">◁</span>
-                <span class="sidebar-cam-label">LEFT</span>
+                <span class="sidebar-cam-icon">◁</span
+                ><span class="sidebar-cam-label">LEFT</span>
               </button>
               <button
                 class="sidebar-cam-btn"
                 data-cam="right"
                 title="Right Side View"
               >
-                <span class="sidebar-cam-icon">▷</span>
-                <span class="sidebar-cam-label">RIGHT</span>
+                <span class="sidebar-cam-icon">▷</span
+                ><span class="sidebar-cam-label">RIGHT</span>
               </button>
               <button
                 class="sidebar-cam-btn"
                 data-cam="iso"
                 title="Isometric View"
               >
-                <span class="sidebar-cam-icon">⬡</span>
-                <span class="sidebar-cam-label">ISO</span>
+                <span class="sidebar-cam-icon">⬡</span
+                ><span class="sidebar-cam-label">ISO</span>
               </button>
             </div>
           </div>
         </section>
 
-        <!-- UNDO / REDO -->
         <section class="panel-section undo-redo-section">
           <div class="undo-redo-row">
             <button
@@ -168,9 +159,8 @@
               style="opacity: 0.35; pointer-events: none"
               title="Undo (Ctrl+Z)"
             >
-              <span class="ur-icon">↩</span>
-              <span class="ur-label">UNDO</span>
-              <span class="ur-kbd">Ctrl Z</span>
+              <span class="ur-icon">↩</span><span class="ur-label">UNDO</span
+              ><span class="ur-kbd">Ctrl Z</span>
             </button>
             <button
               id="redoBtn"
@@ -179,71 +169,75 @@
               style="opacity: 0.35; pointer-events: none"
               title="Redo (Ctrl+Y)"
             >
-              <span class="ur-icon">↪</span>
-              <span class="ur-label">REDO</span>
-              <span class="ur-kbd">Ctrl Y</span>
+              <span class="ur-icon">↪</span><span class="ur-label">REDO</span
+              ><span class="ur-kbd">Ctrl Y</span>
             </button>
           </div>
         </section>
       </aside>
 
-      <!-- ═══════ VIEWPORT ═══════ -->
+      <!-- VIEWPORT -->
       <main class="viewport">
         <canvas id="app"></canvas>
         <div id="idle-arrows"></div>
-
         <div id="viewport-rot-controls" style="display: none">
           <div class="arrow-key-row">
             <button
               class="arrow-key arrow-key-active arrow-key-labeled"
               id="arrowKeyLeft"
-              title="Rotate left (← Arrow)"
+              title="Rotate left"
             >
-              <span class="arrow-key-label">Rotate L</span>
-              <span class="arrow-key-glyph">←</span>
+              <span class="arrow-key-label">Rotate L</span
+              ><span class="arrow-key-glyph">←</span>
             </button>
             <button
               class="arrow-key arrow-key-active arrow-key-labeled"
               id="arrowKeyRight"
-              title="Rotate right (→ Arrow)"
+              title="Rotate right"
             >
-              <span class="arrow-key-glyph">→</span>
-              <span class="arrow-key-label">Rotate R</span>
+              <span class="arrow-key-glyph">→</span
+              ><span class="arrow-key-label">Rotate R</span>
             </button>
           </div>
         </div>
       </main>
 
-      <!-- ═══════ RIGHT PANEL ═══════ -->
+      <!-- RIGHT PANEL -->
       <aside class="panel panel-right">
-        <!-- ── REQUISITION MASTER HEADER ── -->
+        <!-- Header -->
         <div class="requisition-header">
           <span class="requisition-title">REQUISITION</span>
         </div>
 
-        <!-- ── COST — collapsible tab ── -->
-        <div id="cost-section">
-          <div id="cost-section-header">
-            <div id="cost-section-title">
-              <span style="color: #384858; font-size: 11px">⊕</span>
-              COST
+        <!-- Scrollable cost + weight as one unified card -->
+        <div class="requisition-scroll-area">
+          <div class="req-combined-panel">
+            <!-- COST -->
+            <div id="cost-section">
+              <div id="cost-section-header">
+                <div id="cost-section-title">
+                  <span style="color: #384858; font-size: 11px">⊕</span> COST
+                </div>
+                <div style="display: flex; align-items: center; gap: 0">
+                  <div id="cost-total-badge">₹0</div>
+                  <div id="cost-chevron">▾</div>
+                </div>
+              </div>
+              <div id="cost-body">
+                <div class="basket-section">
+                  <div id="basketItems" class="basket-items"></div>
+                </div>
+              </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 0">
-              <div id="cost-total-badge">₹0</div>
-              <div id="cost-chevron">▾</div>
-            </div>
+
+            <!-- WEIGHT (injected by JS) -->
+            <div id="weight-section-placeholder"></div>
           </div>
-          <div id="cost-body">
-            <div class="basket-section">
-              <div id="basketItems" class="basket-items"></div>
-            </div>
-          </div>
+          <!-- end .req-combined-panel -->
         </div>
+        <!-- end .requisition-scroll-area -->
 
-        <!-- ── WEIGHT — collapsible tab (injected by JS, placeholder here) ── -->
-        <div id="weight-section-placeholder"></div>
-
-        <!-- ── TOTAL COST FOOTER ── -->
+        <!-- Total cost footer — pinned -->
         <div class="basket-footer">
           <div style="display: flex; flex-direction: column; gap: 2px">
             <span>Total Cost</span>
@@ -261,18 +255,18 @@
           <span class="price">&#8377;<span id="totalPrice">0</span></span>
         </div>
 
-        <!-- SAVE DESIGN + PROCEED TO PAYMENT -->
+        <!-- Buttons — pinned -->
         <div class="save-print-section">
           <button id="finalizeBtn" class="btn btn-primary btn-finalize-large">
             <div class="btn-inner">
-              <span class="btn-icon">▤</span>
-              <span class="btn-action-label">Save Design</span>
+              <span class="btn-icon">▤</span
+              ><span class="btn-action-label">Save Design</span>
             </div>
           </button>
           <button id="proceedPaymentBtn" class="btn btn-primary">
             <div class="btn-inner">
-              <span class="btn-icon">▶▶</span>
-              <span class="btn-action-label">Proceed to Payment</span>
+              <span class="btn-icon">▶▶</span
+              ><span class="btn-action-label">Proceed to Payment</span>
             </div>
           </button>
         </div>
@@ -280,7 +274,6 @@
     </div>
 
     <script>
-      // ── Collapsible sections (left panel) ────────────────────────
       document.querySelectorAll(".section-toggle").forEach((toggle) => {
         const targetId = toggle.dataset.target;
         const body = document.getElementById(targetId);
@@ -298,7 +291,6 @@
         });
       });
 
-      // ── Cost section collapsible ──────────────────────────────────
       const costHeader = document.getElementById("cost-section-header");
       const costBody = document.getElementById("cost-body");
       const costChevron = document.getElementById("cost-chevron");
@@ -309,10 +301,9 @@
         costChevron.style.transform = costCollapsed
           ? "rotate(-90deg)"
           : "rotate(0deg)";
-        costChevron.style.color = costCollapsed ? "#d05818" : "#384858";
+        costChevron.style.color = "#d05818";
       });
     </script>
-
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

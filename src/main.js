@@ -192,6 +192,7 @@ function injectChainToastKeyframe() {
 /* =========================================================
    PART WEIGHTS (stays static — not in DB)
    ========================================================= */
+const WORLD_TO_CM = 10.07;
 
 const PART_WEIGHTS = {
   frame: 450,
@@ -1068,6 +1069,7 @@ function performCascadeDelete(targetMount, directDependents) {
   toDelete.add(targetMount);
 
   for (const mount of toDelete) {
+    if (mount.userData?.isBase) continue;
     if (selectedMount === mount) {
       restoreMeshEmissive(selectedMesh, selectedOrigEm);
       selectedMesh = null;
@@ -1252,7 +1254,7 @@ async function init() {
   baseFrameModel.scale.set(1, 1, 1);
 
   const baseMount = new THREE.Group();
-  baseMount.userData = { isMount: true, type: "frame" };
+  baseMount.userData = { isMount: true, type: "frame", isBase: true };
   baseMount.position.set(0, 0.6, 0);
   baseMount.add(baseFrameModel);
   scene.add(baseMount);
@@ -4771,10 +4773,24 @@ function onMouseMove(e) {
   const socketWorldPos = new THREE.Vector3();
   socket.getWorldPosition(socketWorldPos);
   const finalYaw = triangleAutoBaseYaw + triangleManualRotSteps * Math.PI;
-  ghost.position.copy(socketWorldPos);
   ghost.rotation.set(0, finalYaw, 0);
-  ghost.position.y = socketWorldPos.y + TRIANGLE_FRAME_Y_OFFSET;
+  ghost.position.set(0, 0, 0);
   ghost.scale.set(1, 1, 1);
+  ghost.updateMatrixWorld(true);
+  let _triConn = null;
+  ghost.traverse((o) => {
+    if (o.name === "SOCKET_FRAME_CONNECTOR") _triConn = o;
+  });
+  if (_triConn) {
+    const _cWP = new THREE.Vector3();
+    _triConn.getWorldPosition(_cWP);
+    ghost.position.x += socketWorldPos.x - _cWP.x;
+    ghost.position.y = socketWorldPos.y + TRIANGLE_FRAME_Y_OFFSET;
+    ghost.position.z += socketWorldPos.z - _cWP.z;
+  } else {
+    ghost.position.copy(socketWorldPos);
+    ghost.position.y = socketWorldPos.y + TRIANGLE_FRAME_Y_OFFSET;
+  }
 }
 
 /* =========================================================
@@ -5581,6 +5597,10 @@ function onKeyDown(e) {
   if (e.key === "Numpad0" || (e.key === "0" && e.altKey))
     applyCameraPreset("perspective");
   if ((e.key === "Delete" || e.key === "Backspace") && selectedMount) {
+    if (selectedMount.userData?.isBase) {
+      showHudMessage("⚠ BASE FRAME CANNOT BE DELETED");
+      return;
+    }
     const result = checkDeletionAllowed(selectedMount);
     if (!result.ok) showDependencyBlockedPopup(selectedMount, result);
     else executeDelete(selectedMount);
@@ -5723,17 +5743,28 @@ function buildContextMenu(mount, screenX, screenY) {
     }),
   );
   items.appendChild(makeSep());
+  const isBase = mount.userData?.isBase ?? false;
   const deleteItem = makeCtxItem({
     icon: "✕",
-    label: depCount > 0 ? `Delete All (${depCount + 1} parts)` : "Delete Part",
-    hint:
-      depCount > 0
+    label: isBase
+      ? "Base Frame (Permanent)"
+      : depCount > 0
+        ? `Delete All (${depCount + 1} parts)`
+        : "Delete Part",
+    hint: isBase
+      ? "The base frame cannot be removed"
+      : depCount > 0
         ? `Will also remove ${depCount} dependent part${depCount !== 1 ? "s" : ""}`
         : undefined,
-    kbd: "Del",
-    danger: true,
+    kbd: isBase ? undefined : "Del",
+    danger: !isBase,
+    disabled: isBase,
     onClick: () => {
       destroyContextMenu();
+      if (isBase) {
+        showHudMessage("⚠ BASE FRAME CANNOT BE DELETED");
+        return;
+      }
       if (depCount > 0) showDependencyBlockedPopup(mount, delResult);
       else executeDelete(mount);
     },
@@ -5831,6 +5862,10 @@ function onContextMenu(e) {
 }
 
 function executeDelete(mount) {
+  if (mount.userData?.isBase) {
+    showHudMessage("⚠ BASE FRAME CANNOT BE DELETED");
+    return;
+  }
   if (selectedMount === mount) {
     restoreMeshEmissive(selectedMesh, selectedOrigEm);
     selectedMesh = null;
@@ -5926,7 +5961,7 @@ function initWeightSection() {
       #weight-section-header:hover{background:rgba(208,88,24,0.05)}
       #weight-section-title{font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:#d05818;display:flex;align-items:center;gap:7px}
       #weight-total-badge{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;color:#d8e8f4;letter-spacing:0.06em}
-     #weight-chevron{font-size:14px;color:#d05818;transition:transform 0.2s ease,color 0.12s;font-family:'Share Tech Mono',monospace;margin-left:8px}
+    #weight-chevron{font-size:20px;color:#d05818;transition:transform 0.2s ease,color 0.12s;font-family:'Share Tech Mono',monospace;margin-left:8px}
       #weight-section-header:hover #weight-chevron{color:#d05818}
       #weight-body{overflow:hidden;transition:max-height 0.25s ease,opacity 0.2s ease;max-height:300px;opacity:1}
       #weight-body.collapsed{max-height:0;opacity:0}
@@ -5956,7 +5991,7 @@ function initWeightSection() {
       chev = document.getElementById("weight-chevron");
     const collapsed = body.classList.toggle("collapsed");
     chev.style.transform = collapsed ? "rotate(-90deg)" : "rotate(0deg)";
-    chev.style.color = collapsed ? "#d05818" : "#384858";
+    chev.style.color = "#d05818";
   });
   section.appendChild(header);
   const body = document.createElement("div");
@@ -6127,7 +6162,7 @@ function initMinimap() {
       #minimap-canvas-wrap canvas{display:block;position:absolute;top:0;left:0}
       #minimap-dims-bar{width:${MINIMAP_SIZE}px;margin:0 auto;padding:5px 10px;background:#0a1420;border:1px solid rgba(208,88,24,0.3);border-top:1px solid rgba(208,88,24,0.15);display:flex;justify-content:space-between;align-items:center;gap:6px}
       #minimap-dims-bar span{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:0.1em;color:#8aacbf;text-transform:uppercase}
-      #minimap-dims-bar .dim-val{color:#d8e8f4;font-weight:700;font-family:'Orbitron',sans-serif;font-size:9px}
+    #minimap-dims-bar .dim-val{color:#ffffff;font-weight:700;font-family:'Orbitron',sans-serif;font-size:11px}
       #minimap-hint{text-align:center;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:0.12em;color:#4a6878;padding:5px 14px 8px;text-transform:uppercase}
       @keyframes minimapIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
       #minimap-section{animation:minimapIn 0.35s ease 0.5s both}
@@ -6386,14 +6421,14 @@ function drawMinimapOverlay() {
     ctx.restore();
 
     // ── Dimension arrows (width along bottom, depth along right) ────
-    const MARGIN = 14,
-      AH = 5,
+    const MARGIN = 18,
+      AH = 7,
       FONT = "bold 8px 'Orbitron',sans-serif";
     const worldW = bmax.x - bmin.x,
       worldD = bmax.z - bmin.z,
       worldH = bmax.y - bmin.y;
-    const wStr = worldW.toFixed(2) + "m",
-      dStr = worldD.toFixed(2) + "m";
+    const wStr = (worldW * WORLD_TO_CM).toFixed(1) + "cm",
+      dStr = (worldD * WORLD_TO_CM).toFixed(1) + "cm";
 
     ctx.save();
     ctx.font = FONT;
@@ -6433,9 +6468,10 @@ function drawMinimapOverlay() {
       });
       // label
       const lx = (x0 + x1) / 2;
-      ctx.fillStyle = "rgba(8,16,28,0.85)";
-      ctx.fillRect(lx - 18, arrowY - 7, 36, 14);
-      ctx.fillStyle = "#a8d4f0";
+      ctx.fillStyle = "rgba(8,16,28,0.92)";
+      const wtw = ctx.measureText(wStr).width;
+      ctx.fillRect(lx - wtw / 2 - 5, arrowY - 9, wtw + 10, 18);
+      ctx.fillStyle = "#ffffff";
       ctx.fillText(wStr, lx, arrowY);
     }
 
@@ -6471,9 +6507,10 @@ function drawMinimapOverlay() {
       ctx.save();
       ctx.translate(arrowX, ly);
       ctx.rotate(-Math.PI / 2);
-      ctx.fillStyle = "rgba(8,16,28,0.85)";
-      ctx.fillRect(-18, -7, 36, 14);
-      ctx.fillStyle = "#c8e8a0";
+      ctx.fillStyle = "rgba(8,16,28,0.92)";
+      const dtw = ctx.measureText(dStr).width;
+      ctx.fillRect(-dtw / 2 - 5, -9, dtw + 10, 18);
+      ctx.fillStyle = "#ffffff";
       ctx.fillText(dStr, 0, 0);
       ctx.restore();
     }
@@ -6483,9 +6520,9 @@ function drawMinimapOverlay() {
     const wEl = document.getElementById("mm-dim-w");
     const dEl = document.getElementById("mm-dim-d");
     const hEl = document.getElementById("mm-dim-h");
-    if (wEl) wEl.textContent = worldW.toFixed(2) + "m";
-    if (dEl) dEl.textContent = worldD.toFixed(2) + "m";
-    if (hEl) hEl.textContent = worldH.toFixed(2) + "m";
+    if (wEl) wEl.textContent = (worldW * WORLD_TO_CM).toFixed(1) + "cm";
+    if (dEl) dEl.textContent = (worldD * WORLD_TO_CM).toFixed(1) + "cm";
+    if (hEl) hEl.textContent = (worldH * WORLD_TO_CM).toFixed(1) + "cm";
   }
 
   // ── Selected mount ring ──────────────────────────────────────────
