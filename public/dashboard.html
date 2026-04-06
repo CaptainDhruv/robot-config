@@ -16,7 +16,6 @@
         --bg2: #ffffff;
         --bg3: #fafaf8;
         --border: rgba(0, 0, 0, 0.08);
-        --border-accent: rgba(208, 88, 24, 0.25);
         --text: #1a1a1a;
         --text-secondary: #555555;
         --muted: #999999;
@@ -37,7 +36,6 @@
         margin: 0;
         padding: 0;
       }
-
       body {
         background: var(--bg);
         color: var(--text);
@@ -84,7 +82,6 @@
       .login-title {
         font-size: 22px;
         font-weight: 800;
-        letter-spacing: -0.01em;
         color: var(--text);
         margin-bottom: 32px;
         line-height: 1.25;
@@ -112,7 +109,6 @@
         font-family: "Montserrat", sans-serif;
         font-size: 13px;
         font-weight: 500;
-        letter-spacing: 0.01em;
         padding: 11px 14px;
         transition:
           border-color 0.15s,
@@ -132,7 +128,7 @@
         width: 100%;
         background: var(--accent);
         border: none;
-        color: #ffffff;
+        color: #fff;
         font-family: "Montserrat", sans-serif;
         font-size: 11px;
         font-weight: 700;
@@ -511,7 +507,6 @@
         text-align: right;
         word-break: break-all;
       }
-
       .parts-mini-table {
         width: 100%;
         border-collapse: collapse;
@@ -531,7 +526,6 @@
         text-transform: uppercase;
         background: var(--bg3);
       }
-
       .report-btn {
         display: inline-flex;
         align-items: center;
@@ -539,7 +533,7 @@
         margin-top: 16px;
         background: var(--accent);
         border: none;
-        color: #ffffff;
+        color: #fff;
         font-family: "Montserrat", sans-serif;
         font-size: 9px;
         font-weight: 700;
@@ -556,15 +550,6 @@
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(208, 88, 24, 0.25);
       }
-      .report-btn.disabled {
-        background: var(--bg3);
-        border: 1px solid var(--border);
-        color: var(--muted);
-        cursor: not-allowed;
-        box-shadow: none;
-        transform: none;
-      }
-
       .loading-row td {
         text-align: center;
         padding: 48px;
@@ -573,7 +558,6 @@
         font-weight: 500;
         letter-spacing: 0.06em;
       }
-
       .delivered-check {
         width: 16px;
         height: 16px;
@@ -595,7 +579,6 @@
       .delivered-label.not-delivered {
         color: var(--muted);
       }
-
       .action-btn {
         background: transparent;
         border: 1px solid;
@@ -619,7 +602,6 @@
         color: var(--red);
         background: var(--red-bg);
       }
-
       .realtime-dot {
         display: inline-block;
         width: 7px;
@@ -720,7 +702,7 @@
       .confirm-btn-delete {
         background: var(--red);
         border: 1.5px solid var(--red);
-        color: #ffffff;
+        color: #fff;
       }
       .confirm-btn-delete:hover {
         background: #aa1a00;
@@ -781,7 +763,6 @@
         transition:
           border-color 0.15s,
           box-shadow 0.15s;
-        letter-spacing: 0.01em;
       }
       .search-input::placeholder {
         color: var(--muted);
@@ -848,7 +829,6 @@
         color: var(--accent);
         font-weight: 800;
       }
-
       .nav-pill-active {
         background: var(--accent) !important;
         color: #fff !important;
@@ -875,7 +855,6 @@
     </style>
   </head>
   <body>
-    <!-- LOGIN -->
     <div id="login-screen">
       <div class="login-card">
         <div class="login-badge">◈ Robot Configurator</div>
@@ -907,7 +886,6 @@
       </div>
     </div>
 
-    <!-- DASHBOARD -->
     <div id="dashboard">
       <div class="dash-topbar">
         <div class="dash-logo">
@@ -949,12 +927,10 @@
             <div class="stat-label">Total Revenue</div>
           </div>
         </div>
-
         <div class="section-header">
           <div class="section-title">All Orders</div>
           <button class="refresh-btn" onclick="loadOrders()">⟳ Refresh</button>
         </div>
-
         <div class="search-filter-bar">
           <div class="search-wrap">
             <span class="search-icon">🔍</span>
@@ -1012,7 +988,6 @@
           </div>
           <div class="results-count" id="results-count"></div>
         </div>
-
         <div class="orders-table-wrap">
           <table>
             <thead>
@@ -1038,7 +1013,6 @@
             </tbody>
           </table>
         </div>
-
         <div id="order-detail">
           <div class="detail-header">
             <div class="detail-title" id="detail-title">ORDER DETAILS</div>
@@ -1055,7 +1029,7 @@
             </div>
             <div>
               <div class="detail-section-title">Parts Breakdown</div>
-              <table class="parts-mini-table" id="detail-parts-table">
+              <table class="parts-mini-table">
                 <thead>
                   <tr>
                     <td>Part</td>
@@ -1075,7 +1049,6 @@
       </div>
     </div>
 
-    <!-- CONFIRM DELETE -->
     <div id="confirm-dialog">
       <div class="confirm-card">
         <div class="confirm-icon">⚠</div>
@@ -1104,18 +1077,15 @@
 
     <script type="module">
       import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-
       const SUPABASE_URL = "https://paxeivuabqbfodnjxfpw.supabase.co";
       const SUPABASE_ANON_KEY =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBheGVpdnVhYnFiZm9kbmp4ZnB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNDQwMTAsImV4cCI6MjA4OTgyMDAxMH0.iit20CxI6S04wEJgsPRmEyf3oziSD4e9T2SjJGlHiVQ";
-
       const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      let allOrders = [];
-      let selectedOrderId = null;
-      let realtimeChannel = null;
-      let activeDateDays = "all";
-
+      let allOrders = [],
+        selectedOrderId = null,
+        realtimeChannel = null,
+        activeDateDays = "all";
       window.handleLogin = handleLogin;
       window.handleLogout = handleLogout;
       window.loadOrders = loadOrders;
@@ -1150,7 +1120,6 @@
         }
         enterDashboard(data.user);
       }
-
       document
         .getElementById("login-password")
         .addEventListener("keydown", (e) => {
@@ -1170,7 +1139,6 @@
         document.getElementById("login-screen").style.display = "flex";
         document.getElementById("login-password").value = "";
       }
-
       function enterDashboard(user) {
         document.getElementById("login-screen").style.display = "none";
         document.getElementById("dashboard").style.display = "block";
@@ -1178,7 +1146,6 @@
         loadOrders();
         subscribeRealtime();
       }
-
       async function loadOrders() {
         document.getElementById("orders-tbody").innerHTML =
           '<tr class="loading-row"><td colspan="12">Loading...</td></tr>';
@@ -1195,7 +1162,6 @@
         applyFilters();
         updateStats(allOrders);
       }
-
       function setDateFilter(btn) {
         document
           .querySelectorAll(".filter-pill")
@@ -1204,21 +1170,19 @@
         activeDateDays = btn.dataset.days;
         applyFilters();
       }
-
       function clearSearch() {
         document.getElementById("search-input").value = "";
         document.getElementById("search-clear").style.display = "none";
         applyFilters();
       }
-
       function applyFilters() {
         const raw = (document.getElementById("search-input")?.value || "")
           .trim()
           .toLowerCase();
         const clearBtn = document.getElementById("search-clear");
         if (clearBtn) clearBtn.style.display = raw ? "block" : "none";
-        const now = Date.now();
-        const dayMs = 86400000;
+        const now = Date.now(),
+          dayMs = 86400000;
         let filtered = allOrders.filter((o) => {
           if (activeDateDays !== "all") {
             const created = new Date(o.created_at).getTime();
@@ -1248,14 +1212,12 @@
         });
         renderTable(filtered);
         const countEl = document.getElementById("results-count");
-        if (countEl) {
+        if (countEl)
           countEl.innerHTML =
             raw || activeDateDays !== "all"
               ? `<span>${filtered.length}</span> of ${allOrders.length} orders`
               : "";
-        }
       }
-
       function renderTable(orders) {
         const tbody = document.getElementById("orders-tbody");
         if (orders.length === 0) {
@@ -1269,8 +1231,6 @@
               dateStyle: "short",
               timeStyle: "short",
             });
-            const orderBadge = badgeHTML(o.order_status, "order");
-            const payBadge = badgeHTML(o.payment_status || "none", "pay");
             const payId = o.razorpay_payment_id
               ? `<span title="${o.razorpay_payment_id}" style="color:var(--text-secondary)">${o.razorpay_payment_id.slice(0, 18)}…</span>`
               : '<span style="color:var(--muted)">—</span>';
@@ -1285,12 +1245,11 @@
             <td style="color:var(--text-secondary)">${o.city || "—"}</td>
             <td style="text-align:center;font-weight:700">${o.parts_count}</td>
             <td style="font-weight:700">₹${Number(o.total_amount).toLocaleString("en-IN")}</td>
-            <td>${orderBadge}</td>
-            <td>${payBadge}</td>
+            <td>${badgeHTML(o.order_status, "order")}</td>
+            <td>${badgeHTML(o.payment_status || "none", "pay")}</td>
             <td style="font-size:10px;color:var(--text-secondary)">${payId}</td>
             <td style="color:var(--muted);font-size:10px">${date}</td>
-            ${deliveredCell}
-            ${actionsCell}
+            ${deliveredCell}${actionsCell}
           </tr>`;
           })
           .join("");
@@ -1309,7 +1268,7 @@
           .update({
             delivered,
             delivered_at: delivered ? new Date().toISOString() : null,
-            status: delivered ? "paid" : "paid",
+            status: "paid",
           })
           .eq("id", id);
         if (error) {
@@ -1321,7 +1280,6 @@
         if (order) {
           order.delivered = delivered;
           order.delivered_at = delivered ? new Date().toISOString() : null;
-          order.order_status = delivered ? "paid" : "confirmed";
         }
         applyFilters();
         updateStats(allOrders);
@@ -1332,20 +1290,17 @@
       }
 
       let pendingDeleteId = null;
-
       function confirmDelete(id, orderRef) {
         pendingDeleteId = id;
         document.getElementById("confirm-order-ref").textContent = orderRef;
         document.getElementById("confirm-dialog").classList.add("visible");
       }
-
       document
         .getElementById("confirm-cancel-btn")
         .addEventListener("click", () => {
           pendingDeleteId = null;
           document.getElementById("confirm-dialog").classList.remove("visible");
         });
-
       document
         .getElementById("confirm-delete-btn")
         .addEventListener("click", async () => {
@@ -1355,7 +1310,6 @@
           document.getElementById("confirm-dialog").classList.remove("visible");
           await deleteOrder(id);
         });
-
       document
         .getElementById("confirm-dialog")
         .addEventListener("click", (e) => {
@@ -1371,26 +1325,28 @@
         if (selectedOrderId === id) closeDetail();
         const order = allOrders.find((o) => o.id === id);
         if (!order) return;
-        const { error: binErr } = await supabase.from("deleted_orders").insert({
-          id: order.id,
-          order_ref: order.order_ref,
-          customer_name: order.customer_name,
-          customer_phone: order.customer_phone,
-          address_line1: order.address_line1,
-          address_line2: order.address_line2,
-          address_line3: order.address_line3,
-          city: order.city,
-          state: order.state,
-          pin: order.pin,
-          total_amount: order.total_amount,
-          parts_count: order.parts_count,
-          status: order.order_status ?? order.status,
-          razorpay_order_id: order.razorpay_order_id,
-          razorpay_payment_id: order.razorpay_payment_id,
-          razorpay_signature: order.razorpay_signature,
-          created_at: order.created_at,
-          deleted_at: new Date().toISOString(),
-        });
+        const { error: binErr } = await supabase
+          .from("deleted_orders")
+          .insert({
+            id: order.id,
+            order_ref: order.order_ref,
+            customer_name: order.customer_name,
+            customer_phone: order.customer_phone,
+            address_line1: order.address_line1,
+            address_line2: order.address_line2,
+            address_line3: order.address_line3,
+            city: order.city,
+            state: order.state,
+            pin: order.pin,
+            total_amount: order.total_amount,
+            parts_count: order.parts_count,
+            status: order.order_status ?? order.status,
+            razorpay_order_id: order.razorpay_order_id,
+            razorpay_payment_id: order.razorpay_payment_id,
+            razorpay_signature: order.razorpay_signature,
+            created_at: order.created_at,
+            deleted_at: new Date().toISOString(),
+          });
         if (binErr) {
           showToast("⚠ Could not move to bin: " + binErr.message, "error");
           return;
@@ -1425,7 +1381,7 @@
           border: `1px solid ${colors[type] || colors.info}`,
           borderLeft: `3px solid ${colors[type] || colors.info}`,
           color: colors[type] || colors.info,
-          fontFamily: "'Montserrat', sans-serif",
+          fontFamily: "'Montserrat',sans-serif",
           fontSize: "11px",
           fontWeight: "600",
           letterSpacing: "0.06em",
@@ -1494,7 +1450,6 @@
               `<div class="detail-row"><span class="detail-key">${k}</span><span class="detail-val">${v}</span></div>`,
           )
           .join("");
-
         const { data: parts } = await supabase
           .from("order_parts")
           .select("*")
@@ -1507,51 +1462,35 @@
         (configRows || []).forEach((r) => {
           gstMap[r.part_type] = r.gst_percent ?? 18;
         });
-
         const partsBody = document.getElementById("detail-parts");
         if (parts && parts.length > 0) {
           partsBody.innerHTML =
             parts
               .map((p) => {
-                const gstPct = gstMap[p.part_type] ?? 18;
-                const unitIncl = Number(p.unit_cost);
-                const unitBase = Math.round(unitIncl / (1 + gstPct / 100));
-                const gstAmt = unitIncl - unitBase;
-                const total = Number(p.total_cost);
-                return `<tr>
-              <td>${p.part_label}</td>
-              <td style="text-align:center;font-weight:700">${p.quantity}</td>
-              <td style="text-align:right;color:var(--text-secondary)">₹${unitBase.toLocaleString("en-IN")}</td>
-              <td style="text-align:right;color:var(--muted);font-size:10px">${gstPct}%<br><span style="color:var(--text-secondary)">+₹${gstAmt.toLocaleString("en-IN")}</span></td>
-              <td style="text-align:right">₹${unitIncl.toLocaleString("en-IN")}</td>
-              <td style="text-align:right;font-weight:700">₹${total.toLocaleString("en-IN")}</td>
-            </tr>`;
+                const gstPct = gstMap[p.part_type] ?? 18,
+                  unitIncl = Number(p.unit_cost),
+                  unitBase = Math.round(unitIncl / (1 + gstPct / 100)),
+                  gstAmt = unitIncl - unitBase,
+                  total = Number(p.total_cost);
+                return `<tr><td>${p.part_label}</td><td style="text-align:center;font-weight:700">${p.quantity}</td><td style="text-align:right;color:var(--text-secondary)">₹${unitBase.toLocaleString("en-IN")}</td><td style="text-align:right;color:var(--muted);font-size:10px">${gstPct}%<br><span>+₹${gstAmt.toLocaleString("en-IN")}</span></td><td style="text-align:right">₹${unitIncl.toLocaleString("en-IN")}</td><td style="text-align:right;font-weight:700">₹${total.toLocaleString("en-IN")}</td></tr>`;
               })
               .join("") +
             `<tr style="border-top:2px solid var(--accent);background:var(--accent-softer)"><td colspan="5" style="font-size:8px;font-weight:800;letter-spacing:0.16em;color:var(--muted);text-transform:uppercase">Total</td><td style="text-align:right;font-weight:800;color:var(--accent)">₹${Number(order.total_amount).toLocaleString("en-IN")}</td></tr>`;
         } else {
           partsBody.innerHTML = `<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">No parts data</td></tr>`;
         }
-
-        const reportSection = document.getElementById("detail-report-section");
         const hasReport = Boolean(order.report_url);
-        reportSection.innerHTML = `<div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <button class="report-btn" onclick="printDispatchReport('${order.id}', ${hasReport ? `'${order.report_url}'` : "null"})">
-            🖨 &nbsp; PRINT DISPATCH REPORT
-          </button>
-          ${!hasReport ? `<span style="font-size:10px;color:var(--muted);align-self:center;letter-spacing:0.06em;">⚠ Design images not yet generated — bill only</span>` : ""}
-        </div>`;
+        document.getElementById("detail-report-section").innerHTML =
+          `<div style="display:flex;gap:10px;flex-wrap:wrap;"><button class="report-btn" onclick="printDispatchReport('${order.id}', ${hasReport ? `'${order.report_url}'` : "null"})">🖨 &nbsp; PRINT DISPATCH REPORT</button>${!hasReport ? `<span style="font-size:10px;color:var(--muted);align-self:center;letter-spacing:0.06em;">⚠ Design images not yet generated — bill only</span>` : ""}</div>`;
         document
           .getElementById("order-detail")
           .scrollIntoView({ behavior: "smooth", block: "start" });
       }
-
       function closeDetail() {
         selectedOrderId = null;
         document.getElementById("order-detail").style.display = "none";
         applyFilters();
       }
-
       function updateStats(orders) {
         document.getElementById("stat-total").textContent = orders.length;
         document.getElementById("stat-confirmed").textContent = orders.filter(
@@ -1566,7 +1505,6 @@
         document.getElementById("stat-revenue").textContent =
           revenue > 0 ? `₹${revenue.toLocaleString("en-IN")}` : "₹0";
       }
-
       function subscribeRealtime() {
         realtimeChannel = supabase
           .channel("orders-changes")
@@ -1578,7 +1516,6 @@
           .subscribe();
       }
 
-      // ── Amount in Words helper ──────────────────────────────────────
       function numberToWords(amount) {
         const ones = [
           "",
@@ -1633,8 +1570,7 @@
             convert(Math.floor(n / 10000000)) + "Crore " + convert(n % 10000000)
           );
         }
-        const result = convert(Math.floor(amount)).trim();
-        return result || "Zero";
+        return convert(Math.floor(amount)).trim() || "Zero";
       }
 
       window.printDispatchReport = async function printDispatchReport(
@@ -1644,7 +1580,6 @@
         const order = allOrders.find((o) => o.id === orderId);
         if (!order) return;
         showToast("Preparing dispatch report...", "info");
-
         const { data: parts } = await supabase
           .from("order_parts")
           .select("*")
@@ -1657,7 +1592,6 @@
         (configRows || []).forEach((r) => {
           gstMap[r.part_type] = r.gst_percent ?? 18;
         });
-
         const addr = [
           order.address_line1,
           order.address_line2,
@@ -1668,34 +1602,19 @@
           .join("<br>");
         const now = new Date().toLocaleString("en-IN");
         const placed = new Date(order.created_at).toLocaleString("en-IN");
-        let partsRows = "",
-          grandBase = 0,
-          grandGst = 0,
-          grandTotal = 0;
+        let partsRows = "";
         (parts || []).forEach((p) => {
-          const gstPct = gstMap[p.part_type] ?? 18;
-          const unitIncl = Number(p.unit_cost);
-          const unitBase = Math.round(unitIncl / (1 + gstPct / 100));
-          const gstAmt = unitIncl - unitBase;
-          const lineBase = unitBase * p.quantity,
-            lineGst = gstAmt * p.quantity,
+          const gstPct = gstMap[p.part_type] ?? 18,
+            unitIncl = Number(p.unit_cost),
+            unitBase = Math.round(unitIncl / (1 + gstPct / 100)),
+            gstAmt = unitIncl - unitBase,
             lineTotal = Number(p.total_cost);
-          grandBase += lineBase;
-          grandGst += lineGst;
-          grandTotal += lineTotal;
-          partsRows += `<tr>
-            <td>${p.part_label}</td>
-            <td style="text-align:center">${p.quantity}</td>
-            <td style="text-align:right">₹${unitBase.toLocaleString("en-IN")}</td>
-            <td style="text-align:center">${gstPct}%</td>
-            <td style="text-align:right">₹${gstAmt.toLocaleString("en-IN")}</td>
-            <td style="text-align:right">₹${unitIncl.toLocaleString("en-IN")}</td>
-            <td style="text-align:right;font-weight:700">₹${lineTotal.toLocaleString("en-IN")}</td>
-          </tr>`;
+          partsRows += `<tr><td>${p.part_label}</td><td style="text-align:center">${p.quantity}</td><td style="text-align:center">₹${unitBase.toLocaleString("en-IN")}</td><td style="text-align:center">${gstPct}%</td><td style="text-align:center">₹${gstAmt.toLocaleString("en-IN")}</td><td style="text-align:center">₹${unitIncl.toLocaleString("en-IN")}</td><td style="text-align:center;font-weight:700">₹${lineTotal.toLocaleString("en-IN")}</td></tr>`;
         });
 
-        let mainImgSrc = null;
-        let viewImgs = [];
+        let mainImgSrc = null,
+          viewImgs = [],
+          dimensionsText = null;
         if (reportUrl) {
           try {
             const res = await fetch(reportUrl);
@@ -1705,46 +1624,51 @@
               const mainImg = doc.querySelector(".main-view-wrap img");
               if (mainImg) mainImgSrc = mainImg.getAttribute("src");
               doc.querySelectorAll(".angle-card").forEach((card) => {
-                const labelEl = card.querySelector(".angle-label");
-                const imgEl = card.querySelector("img");
+                const labelEl = card.querySelector(".angle-label"),
+                  imgEl = card.querySelector("img");
                 if (imgEl)
                   viewImgs.push({
                     label: labelEl?.textContent?.trim() ?? "",
                     src: imgEl.getAttribute("src"),
                   });
               });
+              const metaEl = doc.querySelector(".print-meta");
+              if (metaEl) {
+                const dimMatch = metaEl.textContent.match(/Dimensions:\s*(.+)/);
+                if (dimMatch) dimensionsText = dimMatch[1].trim();
+              }
             }
-          } catch (_) {
-            /* silently skip */
-          }
+          } catch (_) {}
         }
 
         const hasImages = mainImgSrc || viewImgs.length > 0;
         const amountInWords = numberToWords(Number(order.total_amount));
 
         const combinedHTML = `<!DOCTYPE html>
-<html><head><meta charset="UTF-8"/>
-<title>Dispatch Report — ${order.order_ref}</title>
+<html><head><meta charset="UTF-8"/><title>Dispatch Report — ${order.order_ref}</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Montserrat',sans-serif;background:#fff;color:#111;padding:20px 28px;font-size:12px}
+body{font-family:'Montserrat',sans-serif;background:#fff;color:#111;padding:20px 28px;font-size:13px}
 
-.bill-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #d05818;padding-bottom:14px;margin-bottom:18px}
-.bill-brand{font-size:18px;font-weight:900;letter-spacing:0.1em;text-transform:uppercase;color:#111}
+.bill-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #d05818;padding-bottom:16px;margin-bottom:20px}
+.bill-brand{font-size:28px;font-weight:900;letter-spacing:0.1em;text-transform:uppercase;color:#111}
 .bill-brand span{color:#d05818}
-.bill-brand-sub{font-size:8px;font-weight:700;letter-spacing:0.25em;color:#555;margin-top:3px;text-transform:uppercase}
-.bill-meta{text-align:right;font-size:11px;color:#333;line-height:1.8;max-width:260px;word-break:break-all}
-.bill-meta strong{color:#111;font-weight:700}
-.sec-title{font-size:8px;font-weight:800;letter-spacing:0.22em;text-transform:uppercase;color:#d05818;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid #ccc}
-.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
-.info-row{display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;border-bottom:1px solid #e0e0e0;font-size:11px;gap:8px}
+.bill-brand-sub{font-size:12px;font-weight:700;letter-spacing:0.25em;color:#555;margin-top:5px;text-transform:uppercase}
+.bill-meta{text-align:right;font-size:13px;color:#333;line-height:2;max-width:300px;word-break:break-all}
+.bill-meta strong{color:#111;font-weight:800;font-size:14px}
+
+.sec-title{font-size:12px;font-weight:800;letter-spacing:0.22em;text-transform:uppercase;color:#d05818;margin-bottom:10px;padding-bottom:6px;border-bottom:1.5px solid #ccc}
+
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.info-row{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid #e0e0e0;font-size:13px;gap:8px}
 .info-row:last-child{border-bottom:none}
-.info-key{color:#555;font-weight:600;flex-shrink:0;min-width:70px}
-.info-val{color:#111;font-weight:700;text-align:right;word-break:break-all;overflow-wrap:break-word;max-width:200px}
-table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:11px;table-layout:fixed}
-thead th{background:#1a1a1a;color:#fff;font-size:7.5px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;padding:8px 8px;text-align:left;overflow:hidden}
-thead th.r{text-align:right} thead th.c{text-align:center}
+.info-key{color:#555;font-weight:600;flex-shrink:0;min-width:80px}
+.info-val{color:#111;font-weight:700;text-align:right;word-break:break-all;overflow-wrap:break-word;max-width:220px}
+
+table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:13px;table-layout:fixed}
+thead th{background:#1a1a1a;color:#fff;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;padding:10px 8px;text-align:center}
+thead th:first-child{text-align:left}
 thead th:nth-child(1){width:28%}
 thead th:nth-child(2){width:8%}
 thead th:nth-child(3){width:13%}
@@ -1752,77 +1676,69 @@ thead th:nth-child(4){width:9%}
 thead th:nth-child(5){width:13%}
 thead th:nth-child(6){width:14%}
 thead th:nth-child(7){width:15%}
-tbody td{padding:8px 8px;border-bottom:1px solid #e0e0e0;color:#111;font-weight:600;overflow:hidden;text-overflow:ellipsis;word-break:break-word}
+tbody td{padding:9px 8px;border-bottom:1px solid #e0e0e0;color:#111;font-weight:600;word-break:break-word;text-align:center}
+tbody td:first-child{text-align:left}
 tbody tr:last-child td{border-bottom:none}
 tbody tr:nth-child(even){background:#f8f8f8}
-tfoot td{padding:8px 8px;color:#111;font-weight:700;word-break:break-word}
-.total-bar{background:#d05818;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:12px 20px;margin-bottom:0}
-.total-bar-label{font-size:9px;font-weight:800;letter-spacing:0.2em;text-transform:uppercase;color:#fff}
-.total-bar-val{font-size:22px;font-weight:900;letter-spacing:0.04em;color:#fff}
-.amount-words{text-align:right;padding:8px 20px 14px;font-size:11px;font-weight:600;color:#333;letter-spacing:0.03em;border-bottom:2px solid #ddd;margin-bottom:8px;font-style:italic}
+tfoot td{padding:9px 8px;color:#111;font-weight:700;word-break:break-word;text-align:center}
+tfoot td:first-child{text-align:left}
+
+.total-bar{background:#d05818;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:14px 22px}
+.total-bar-label{font-size:13px;font-weight:800;letter-spacing:0.2em;text-transform:uppercase;color:#fff}
+.total-bar-val{font-size:26px;font-weight:900;letter-spacing:0.04em;color:#fff}
+.amount-words{text-align:right;padding:10px 22px 16px;font-size:13px;font-weight:600;color:#333;letter-spacing:0.03em;border-bottom:2px solid #ddd;margin-bottom:8px;font-style:italic}
 
 .page-break{page-break-before:always;padding-top:20px}
-.design-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:12px;border-bottom:3px solid #1a1a1a;margin-bottom:16px}
-.design-title{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:900;letter-spacing:0.1em;color:#111}
-.design-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:#444;letter-spacing:0.14em;text-transform:uppercase;margin-top:4px}
-.design-meta{text-align:right;font-family:'Share Tech Mono',monospace;font-size:10px;color:#333;line-height:1.7;word-break:break-all;max-width:240px}
-.main-view{width:100%;border:1.5px solid #ccc;background:#fff;overflow:hidden;margin-bottom:10px;position:relative;display:flex;justify-content:center;align-items:center;}
-.main-view img{max-width:100%;display:block;max-height:400px;object-fit:contain;margin:0 auto;}
-.view-label-badge{position:absolute;top:10px;left:12px;font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.2em;color:#fff;background:rgba(0,0,0,0.92);padding:3px 10px;text-transform:uppercase}
-.views-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
-.view-card{border:1px solid #ccc;background:#fff;overflow:hidden;position:relative;display:flex;justify-content:center;align-items:center;}
-.view-card img{max-width:100%;display:block;max-height:200px;object-fit:contain;margin:0 auto;}
-.view-card-label{position:absolute;top:0;left:0;font-family:'Orbitron',sans-serif;font-size:7px;font-weight:700;letter-spacing:0.16em;color:#fff;background:rgba(0,0,0,0.92);padding:3px 9px;text-transform:uppercase;z-index:2}
+.design-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px;border-bottom:3px solid #1a1a1a;margin-bottom:18px}
+.design-title{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;letter-spacing:0.1em;color:#111}
+.design-sub{font-family:'Share Tech Mono',monospace;font-size:12px;color:#444;letter-spacing:0.14em;text-transform:uppercase;margin-top:5px}
+.design-meta{text-align:right;font-family:'Share Tech Mono',monospace;font-size:13px;color:#333;line-height:1.8;word-break:break-all;max-width:260px}
 
-.qc-section{border:1.5px solid #bbb;padding:16px 20px;margin-top:16px;margin-bottom:0}
-.qc-title{font-size:8px;font-weight:800;letter-spacing:0.22em;text-transform:uppercase;color:#d05818;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #ddd}
-.qc-check-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:18px}
-.qc-checkbox{width:18px;height:18px;border:2px solid #333;flex-shrink:0;margin-top:1px}
-.qc-check-text{font-size:13px;font-weight:700;color:#111;margin-bottom:3px}
-.qc-check-sub{font-size:10px;color:#111;font-weight:600;letter-spacing:0.04em}
-.qc-sig-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px}
-.qc-sig-label{font-size:8px;font-weight:700;letter-spacing:0.18em;color:#555;text-transform:uppercase;margin-bottom:28px}
+.main-view{width:100%;border:1.5px solid #ccc;background:#fff;overflow:hidden;margin-bottom:12px;position:relative;display:flex;justify-content:center;align-items:center}
+.main-view img{max-width:100%;display:block;max-height:400px;object-fit:contain;margin:0 auto}
+.view-label-badge{position:absolute;top:10px;left:12px;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.2em;color:#fff;background:rgba(0,0,0,0.92);padding:5px 14px;text-transform:uppercase}
+
+.views-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
+.view-card{border:1px solid #ccc;background:#fff;overflow:hidden;position:relative;display:flex;justify-content:center;align-items:center}
+.view-card img{max-width:100%;display:block;max-height:220px;object-fit:contain;margin:0 auto}
+.view-card-label{position:absolute;top:0;left:0;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.16em;color:#fff;background:rgba(0,0,0,0.92);padding:4px 12px;text-transform:uppercase;z-index:2}
+.dim-bar{text-align:center;font-family:'Montserrat',sans-serif;font-size:16px;font-weight:700;color:#222;letter-spacing:0.1em;padding:10px 0 16px;border-bottom:1px solid #ddd;margin-bottom:16px}
+
+.qc-section{border:1.5px solid #bbb;padding:20px 24px;margin-top:18px}
+.qc-title{font-size:13px;font-weight:800;letter-spacing:0.22em;text-transform:uppercase;color:#d05818;margin-bottom:16px;padding-bottom:10px;border-bottom:1.5px solid #ddd}
+.qc-check-row{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px}
+.qc-checkbox{width:22px;height:22px;border:2px solid #333;flex-shrink:0;margin-top:2px}
+.qc-check-text{font-size:16px;font-weight:700;color:#111;margin-bottom:5px}
+.qc-check-sub{font-size:13px;color:#111;font-weight:600;letter-spacing:0.04em}
+.qc-sig-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px}
+.qc-sig-label{font-size:12px;font-weight:700;letter-spacing:0.18em;color:#555;text-transform:uppercase;margin-bottom:32px}
 .qc-sig-line{border-bottom:1.5px solid #333}
-.qc-sig-hint{font-size:8px;color:#888;margin-top:4px;letter-spacing:0.1em}
-
-.doc-footer{border-top:1px solid #ccc;padding-top:10px;display:flex;justify-content:space-between;font-size:9px;color:#555;letter-spacing:0.08em;text-transform:uppercase;margin-top:16px;flex-wrap:wrap;gap:6px}
+.qc-sig-hint{font-size:11px;color:#888;margin-top:6px;letter-spacing:0.1em}
+.doc-footer{border-top:1px solid #ccc;padding-top:12px;display:flex;justify-content:space-between;font-size:12px;color:#555;letter-spacing:0.08em;text-transform:uppercase;margin-top:18px;flex-wrap:wrap;gap:6px}
 
 @media print{
-  body{padding:10px 14px;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:11px}
+  body{padding:10px 14px;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:12px}
   .page-break{padding-top:0}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .total-bar{background:#d05818 !important;color:#fff !important}
-  .total-bar-label{color:#fff !important}
-  .total-bar-val{color:#fff !important}
+  .total-bar-label,.total-bar-val{color:#fff !important}
   thead th{background:#1a1a1a !important;color:#fff !important}
   .bill-brand{color:#111 !important}
-  .bill-brand span{color:#d05818 !important}
-  .sec-title{color:#d05818 !important}
-  .qc-title{color:#d05818 !important}
+  .bill-brand span,.sec-title,.qc-title{color:#d05818 !important}
   .info-key{color:#333 !important}
-  .info-val{color:#111 !important;word-break:break-all !important;overflow-wrap:break-word !important}
-  .bill-meta{color:#222 !important;word-break:break-all !important}
-  .bill-meta div{color:#222 !important}
-  .design-sub{color:#333 !important}
-  .design-meta{color:#222 !important;word-break:break-all !important}
-  .doc-footer{color:#444 !important}
+  .info-val,.bill-meta,.bill-meta div,.design-meta{color:#111 !important;word-break:break-all !important}
+  .design-sub,.doc-footer{color:#333 !important}
   .qc-sig-label{color:#444 !important}
   .qc-sig-hint{color:#666 !important}
-  .qc-check-sub{color:#444 !important}
-  .view-label-badge{color:#fff !important;background:#000 !important}
-  .view-card-label{color:#fff !important;background:#000 !important}
-  .qc-check-sub{color:#111 !important;background:transparent !important}
-  .qc-check-text{color:#111 !important}
-  .amount-words{color:#222 !important}
-  tbody td{color:#111 !important;word-break:break-word !important;overflow-wrap:break-word !important}
-  tfoot td{color:#111 !important}
+  .qc-check-text,.qc-check-sub{color:#111 !important}
+  .view-label-badge,.view-card-label{color:#fff !important;background:#000 !important}
+  .amount-words,.dim-bar{color:#222 !important}
+  tbody td,tfoot td{color:#111 !important;word-break:break-word !important}
   table{table-layout:fixed !important;width:100% !important}
   .info-grid{grid-template-columns:1fr 1fr !important}
 }
-</style>
-</head><body>
+</style></head><body>
 
-<!-- PAGE 1: BILL -->
 <div class="bill-header">
   <div>
     <div class="bill-brand">Robot <span>Configurator</span></div>
@@ -1840,7 +1756,7 @@ tfoot td{padding:8px 8px;color:#111;font-weight:700;word-break:break-word}
     <div class="sec-title">Bill To</div>
     <div class="info-row"><span class="info-key">Name</span><span class="info-val">${order.customer_name || "—"}</span></div>
     <div class="info-row"><span class="info-key">Phone</span><span class="info-val">${order.customer_phone || "—"}</span></div>
-    <div class="info-row"><span class="info-key">Address</span><span class="info-val" style="max-width:220px;text-align:right;line-height:1.5">${addr}</span></div>
+    <div class="info-row"><span class="info-key">Address</span><span class="info-val" style="max-width:220px;text-align:right;line-height:1.6">${addr}</span></div>
   </div>
   <div>
     <div class="sec-title">Order Info</div>
@@ -1855,21 +1771,17 @@ tfoot td{padding:8px 8px;color:#111;font-weight:700;word-break:break-word}
 <table>
   <thead>
     <tr>
-      <th>Component</th><th class="c">Qty</th><th class="r">Unit (Base)</th>
-      <th class="c">GST %</th><th class="r">GST Amt</th>
-      <th class="r">Unit (Incl.)</th><th class="r">Line Total</th>
+      <th style="text-align:left">Component</th>
+      <th>Qty</th><th>Unit (Base)</th><th>GST %</th><th>GST Amt</th><th>Unit (Incl.)</th><th>Line Total</th>
     </tr>
   </thead>
   <tbody>${partsRows}</tbody>
   <tfoot>
-    <tr style="background:#f8f4f0;border-top:2px solid #d05818;">
-      <td style="font-size:12px;font-weight:900;letter-spacing:0.14em;text-transform:uppercase;color:#d05818;">Total</td>
-      <td style="text-align:center;font-weight:900;font-size:16px;color:#111">${order.parts_count}</td>
-      <td></td>
-      <td></td>
-      <td></td>
-      <td></td>
-      <td style="text-align:right;font-weight:800;font-size:16px;color:#d05818;">₹${Number(order.total_amount).toLocaleString("en-IN")}</td>
+    <tr style="background:#f8f4f0;border-top:2px solid #d05818">
+      <td style="font-size:14px;font-weight:900;letter-spacing:0.14em;text-transform:uppercase;color:#d05818;text-align:left">Total</td>
+      <td style="font-weight:900;font-size:18px;color:#111;text-align:center">${order.parts_count}</td>
+      <td></td><td></td><td></td><td></td>
+      <td style="text-align:center;font-weight:800;font-size:18px;color:#d05818">₹${Number(order.total_amount).toLocaleString("en-IN")}</td>
     </tr>
   </tfoot>
 </table>
@@ -1878,11 +1790,8 @@ tfoot td{padding:8px 8px;color:#111;font-weight:700;word-break:break-word}
   <span class="total-bar-label">Total Amount Payable (Incl. GST)</span>
   <span class="total-bar-val">₹${Number(order.total_amount).toLocaleString("en-IN")}</span>
 </div>
-<div class="amount-words">
-  Rupees ${amountInWords} Only
-</div>
+<div class="amount-words">Rupees ${amountInWords} Only</div>
 
-<!-- PAGE 2: DESIGN VIEWS + QC -->
 <div class="page-break">
   <div class="design-header">
     <div>
@@ -1892,38 +1801,16 @@ tfoot td{padding:8px 8px;color:#111;font-weight:700;word-break:break-word}
     <div class="design-meta">Generated: ${now}<br>Order Ref: ${order.order_ref}</div>
   </div>
 
-  ${
-    mainImgSrc
-      ? `
-  <div class="main-view">
-    <div class="view-label-badge">◈ Isometric View</div>
-    <img src="${mainImgSrc}" alt="Isometric View"/>
-  </div>`
-      : ""
-  }
+  ${mainImgSrc ? `<div class="main-view"><div class="view-label-badge">◈ Isometric View</div><img src="${mainImgSrc}" alt="Isometric View"/></div>` : ""}
 
   ${
     viewImgs.length > 0
       ? `
-  <div style="font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.2em;color:#111;text-transform:uppercase;border-left:4px solid #cc2200;padding-left:10px;margin:14px 0 10px">
-    ◼ ORTHOGRAPHIC VIEWS WITH DIMENSIONS
-  </div>
-  <div class="views-row">
-    ${viewImgs
-      .map(
-        (v) => `
-    <div class="view-card">
-      <div class="view-card-label">${v.label}</div>
-      <img src="${v.src}" alt="${v.label}"/>
-    </div>`,
-      )
-      .join("")}
-  </div>`
+  <div style="font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.2em;color:#111;text-transform:uppercase;border-left:4px solid #cc2200;padding-left:10px;margin:16px 0 12px">◼ ORTHOGRAPHIC VIEWS WITH DIMENSIONS</div>
+  <div class="views-row">${viewImgs.map((v) => `<div class="view-card"><div class="view-card-label">${v.label}</div><img src="${v.src}" alt="${v.label}"/></div>`).join("")}</div>
+  ${dimensionsText ? `<div class="dim-bar">⟷ &nbsp; ${dimensionsText}</div>` : ""}`
       : !hasImages
-        ? `
-  <div style="text-align:center;padding:40px;color:#777;font-size:12px;border:1.5px dashed #ccc;margin-bottom:20px;">
-    Design views not available for this order
-  </div>`
+        ? `<div style="text-align:center;padding:40px;color:#777;font-size:13px;border:1.5px dashed #ccc;margin-bottom:20px">Design views not available for this order</div>`
         : ""
   }
 
@@ -1937,16 +1824,8 @@ tfoot td{padding:8px 8px;color:#111;font-weight:700;word-break:break-word}
       </div>
     </div>
     <div class="qc-sig-grid">
-      <div>
-        <div class="qc-sig-label">Checked By (Name)</div>
-        <div class="qc-sig-line"></div>
-        <div class="qc-sig-hint">Print Name</div>
-      </div>
-      <div>
-        <div class="qc-sig-label">Date</div>
-        <div class="qc-sig-line"></div>
-        <div class="qc-sig-hint">DD / MM / YYYY</div>
-      </div>
+      <div><div class="qc-sig-label">Checked By (Name)</div><div class="qc-sig-line"></div><div class="qc-sig-hint">Print Name</div></div>
+      <div><div class="qc-sig-label">Date</div><div class="qc-sig-line"></div><div class="qc-sig-hint">DD / MM / YYYY</div></div>
     </div>
   </div>
 
@@ -1956,7 +1835,6 @@ tfoot td{padding:8px 8px;color:#111;font-weight:700;word-break:break-word}
     <span>Ref: ${order.order_ref}</span>
   </div>
 </div>
-
 </body></html>`;
 
         const win = window.open("", "_blank", "width=1100,height=900");

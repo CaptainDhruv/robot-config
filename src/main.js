@@ -2423,10 +2423,31 @@ async function uploadPrintReport(orderId, orderRef) {
       front: "Front View",
     };
 
+    const _dimBox = new THREE.Box3();
+    scene.traverse((o) => {
+      if (o.userData?.isMount) _dimBox.union(new THREE.Box3().setFromObject(o));
+    });
+    const _sz = _dimBox.isEmpty()
+      ? new THREE.Vector3(1, 1, 1)
+      : _dimBox.getSize(new THREE.Vector3());
+    const _W = (_sz.x * WORLD_TO_CM).toFixed(1) + "cm";
+    const _D = (_sz.z * WORLD_TO_CM).toFixed(1) + "cm";
+    const _H = (_sz.y * WORLD_TO_CM).toFixed(1) + "cm";
+    const viewDims = {
+      iso: null,
+      top: { horizCm: _W, vertCm: _D },
+      left: { horizCm: _D, vertCm: _H },
+      front: { horizCm: _W, vertCm: _H },
+    };
+
     const screenshots = {};
     for (const key of captureKeys) {
       const raw = captureFromAngle(key);
-      screenshots[key] = await addTechnicalOverlay(raw, overlayLabels[key]);
+      screenshots[key] = await addTechnicalOverlay(
+        raw,
+        overlayLabels[key],
+        viewDims[key] ?? null,
+      );
     }
 
     const reportHTML = buildFullReportHTML(screenshots, angleLabels, orderRef);
@@ -2881,7 +2902,7 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
    TECHNICAL OVERLAY
    ========================================================= */
 
-function addTechnicalOverlay(dataURL, viewLabel) {
+function addTechnicalOverlay(dataURL, viewLabel, dims = null) {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
@@ -3014,9 +3035,9 @@ function addTechnicalOverlay(dataURL, viewLabel) {
         const LW = Math.max(1.5, cropW / 600);
         const AH = Math.max(7, cropW / 110);
         const TICK = Math.max(5, cropW / 160);
-        const FONT_SZ = Math.max(13, cropW / 70);
-        const LABEL_H = FONT_SZ + 6;
-        const LABEL_P = Math.round(FONT_SZ * 0.35);
+        const FONT_SZ = Math.max(22, cropW / 35);
+        const LABEL_H = FONT_SZ + 10;
+        const LABEL_P = Math.round(FONT_SZ * 0.5);
 
         function dimArrow(x1, y1, x2, y2, label) {
           octx.save();
@@ -3084,9 +3105,9 @@ function addTechnicalOverlay(dataURL, viewLabel) {
         }
 
         const widthY = Math.min(mY1 + PAD, cropH - LABEL_H - 4);
-        dimArrow(mX0, widthY, mX1, widthY, "WIDTH");
+        dimArrow(mX0, widthY, mX1, widthY, dims?.horizCm ?? "WIDTH");
         const heightX = Math.min(mX1 + PAD, cropW - LABEL_H - 4);
-        dimArrow(heightX, mY0, heightX, mY1, "HEIGHT");
+        dimArrow(heightX, mY0, heightX, mY1, dims?.vertCm ?? "HEIGHT");
       }
 
       resolve(out.toDataURL("image/png"));
@@ -3120,11 +3141,29 @@ async function printDesign() {
 
     const rawScreenshots = {};
     for (const key of captureKeys) rawScreenshots[key] = captureFromAngle(key);
+    const _dimBox = new THREE.Box3();
+    scene.traverse((o) => {
+      if (o.userData?.isMount) _dimBox.union(new THREE.Box3().setFromObject(o));
+    });
+    const _sz = _dimBox.isEmpty()
+      ? new THREE.Vector3(1, 1, 1)
+      : _dimBox.getSize(new THREE.Vector3());
+    const _W = (_sz.x * WORLD_TO_CM).toFixed(1) + "cm";
+    const _D = (_sz.z * WORLD_TO_CM).toFixed(1) + "cm";
+    const _H = (_sz.y * WORLD_TO_CM).toFixed(1) + "cm";
+    const viewDims = {
+      iso: null,
+      top: { horizCm: _W, vertCm: _D },
+      left: { horizCm: _D, vertCm: _H },
+      front: { horizCm: _W, vertCm: _H },
+    };
+
     const screenshots = {};
     for (const key of captureKeys)
       screenshots[key] = await addTechnicalOverlay(
         rawScreenshots[key],
         overlayLabels[key],
+        viewDims[key] ?? null,
       );
 
     const printHTML = buildFullReportHTML(
