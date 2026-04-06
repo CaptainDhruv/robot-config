@@ -2360,7 +2360,7 @@ async function saveOrderToSupabase({
       pin: fPin.inp.value.trim(),
       total_amount: amountNum,
       parts_count: totalParts,
-      status: "confirmed",
+      status: "pending",
     })
     .select()
     .single();
@@ -2465,6 +2465,18 @@ async function uploadPrintReport(orderId, orderRef) {
     console.error("[REPORT UPLOAD ERROR]", err);
     showHudMessage("⚠ Report upload failed: " + err.message);
   }
+}
+function _getDimensions() {
+  const box = new THREE.Box3();
+  scene.traverse((o) => {
+    if (o.userData?.isMount) box.union(new THREE.Box3().setFromObject(o));
+  });
+  if (box.isEmpty()) return "—";
+  const size = box.getSize(new THREE.Vector3());
+  const W = (size.x * WORLD_TO_CM).toFixed(1);
+  const D = (size.z * WORLD_TO_CM).toFixed(1);
+  const H = (size.y * WORLD_TO_CM).toFixed(1);
+  return `W ${W}cm × D ${D}cm × H ${H}cm`;
 }
 
 function buildFullReportHTML(screenshots, angleLabels, orderRef) {
@@ -2794,9 +2806,10 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
       <div class="print-title">ROBOT CONFIGURATOR</div>
       <div class="print-subtitle">Design Report · MK-1 Unit · ${orderRef}</div>
     </div>
-    <div class="print-meta">
+<div class="print-meta">
       Generated: ${now}<br>
-     Parts: ${totalParts} · Weight: ${totalWeightDisp}
+      Parts: ${totalParts} · Weight: ${totalWeightDisp}<br>
+      Dimensions: ${_getDimensions()}
     </div>
   </div>
 
@@ -2872,6 +2885,7 @@ function addTechnicalOverlay(dataURL, viewLabel) {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
+      AC;
       const W = img.naturalWidth || 1200;
       const H = img.naturalHeight || 600;
 
@@ -7035,6 +7049,17 @@ function renderComponentPreview() {
    RAZORPAY PAYMENT
    ========================================================= */
 
+async function loadRazorpayScript() {
+  if (window.Razorpay) return;
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = resolve;
+    script.onerror = () => reject(new Error("Failed to load Razorpay script"));
+    document.head.appendChild(script);
+  });
+}
+
 async function initiateRazorpayPayment({
   savedOrder,
   orderRef,
@@ -7044,11 +7069,12 @@ async function initiateRazorpayPayment({
   customerPhone,
   addrLines,
 }) {
+  await loadRazorpayScript();
+
   const amountNum = parseFloat(String(totalCost).replace(/[^0-9.]/g, "")) || 0;
 
   showHudMessage("CONNECTING TO PAYMENT GATEWAY...");
 
-  // ── Step 1: Create Razorpay order via Supabase Edge Function ─────
   let razorpayOrderId;
   let razorpayKey;
   try {
@@ -7070,11 +7096,9 @@ async function initiateRazorpayPayment({
     showHudMessage("GATEWAY CONNECTED ✓");
   } catch (err) {
     showHudMessage("⚠ Payment init failed: " + err.message.slice(0, 60));
-
     throw err;
   }
 
-  // ── Step 2: Open Razorpay modal ───────────────────────────────────
   return new Promise((resolve, reject) => {
     const options = {
       key: razorpayKey,
