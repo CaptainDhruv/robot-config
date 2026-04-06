@@ -1302,28 +1302,26 @@
         if (selectedOrderId === id) closeDetail();
         const order = allOrders.find((o) => o.id === id);
         if (!order) return;
-        const { error: binErr } = await supabase
-          .from("deleted_orders")
-          .insert({
-            id: order.id,
-            order_ref: order.order_ref,
-            customer_name: order.customer_name,
-            customer_phone: order.customer_phone,
-            address_line1: order.address_line1,
-            address_line2: order.address_line2,
-            address_line3: order.address_line3,
-            city: order.city,
-            state: order.state,
-            pin: order.pin,
-            total_amount: order.total_amount,
-            parts_count: order.parts_count,
-            status: order.order_status ?? order.status,
-            razorpay_order_id: order.razorpay_order_id,
-            razorpay_payment_id: order.razorpay_payment_id,
-            razorpay_signature: order.razorpay_signature,
-            created_at: order.created_at,
-            deleted_at: new Date().toISOString(),
-          });
+        const { error: binErr } = await supabase.from("deleted_orders").insert({
+          id: order.id,
+          order_ref: order.order_ref,
+          customer_name: order.customer_name,
+          customer_phone: order.customer_phone,
+          address_line1: order.address_line1,
+          address_line2: order.address_line2,
+          address_line3: order.address_line3,
+          city: order.city,
+          state: order.state,
+          pin: order.pin,
+          total_amount: order.total_amount,
+          parts_count: order.parts_count,
+          status: order.order_status ?? order.status,
+          razorpay_order_id: order.razorpay_order_id,
+          razorpay_payment_id: order.razorpay_payment_id,
+          razorpay_signature: order.razorpay_signature,
+          created_at: order.created_at,
+          deleted_at: new Date().toISOString(),
+        });
         if (binErr) {
           showToast("⚠ Could not move to bin: " + binErr.message, "error");
           return;
@@ -1661,7 +1659,7 @@ tfoot td:first-child{text-align:left}
 .view-card{border:1px solid #ccc;background:#fff;overflow:hidden;position:relative;display:flex;justify-content:center;align-items:center}
 .view-card img{max-width:100%;display:block;max-height:220px;object-fit:contain;margin:0 auto}
 .view-card-label{position:absolute;top:0;left:0;font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.16em;color:#fff;background:rgba(0,0,0,0.92);padding:4px 12px;text-transform:uppercase;z-index:2}
-.dim-bar{text-align:center;font-family:'Montserrat',sans-serif;font-size:16px;font-weight:700;color:#222;letter-spacing:0.1em;padding:10px 0 16px;border-bottom:1px solid #ddd;margin-bottom:16px}
+.dim-bar{text-align:center;font-family:'Montserrat',sans-serif;font-size:16px;font-weight:700;color:#000;letter-spacing:0.1em;padding:10px 0 16px;border-bottom:1px solid #ddd;margin-bottom:16px}
 .qc-section{border:1.5px solid #bbb;padding:20px 24px;margin-top:18px}
 .qc-title{font-size:13px;font-weight:800;letter-spacing:0.22em;text-transform:uppercase;color:#d05818;margin-bottom:16px;padding-bottom:10px;border-bottom:1.5px solid #ddd}
 .qc-check-row{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px}
@@ -1671,8 +1669,8 @@ tfoot td:first-child{text-align:left}
 .qc-sig-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px}
 .qc-sig-label{font-size:12px;font-weight:700;letter-spacing:0.18em;color:#555;text-transform:uppercase;margin-bottom:32px}
 .qc-sig-line{border-bottom:1.5px solid #333}
-.qc-sig-hint{font-size:11px;color:#222;margin-top:6px;letter-spacing:0.1em}
-.doc-footer{border-top:1px solid #ccc;padding-top:12px;display:flex;justify-content:space-between;font-size:12px;color:#222;letter-spacing:0.08em;text-transform:uppercase;margin-top:18px;flex-wrap:wrap;gap:6px}
+.qc-sig-hint{font-size:11px;color:#000;margin-top:6px;letter-spacing:0.1em}
+.doc-footer{border-top:1px solid #ccc;padding-top:12px;display:flex;justify-content:space-between;font-size:12px;color:#000;letter-spacing:0.08em;text-transform:uppercase;margin-top:18px;flex-wrap:wrap;gap:6px}
 @media print{
   body{padding:10px 14px;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:12px}
   .page-break{padding-top:0}
@@ -1686,11 +1684,11 @@ tfoot td:first-child{text-align:left}
   .info-val,.bill-meta,.bill-meta div,.design-meta{color:#111 !important;word-break:break-all !important}
   .design-sub{color:#333 !important}
   .qc-sig-label{color:#444 !important}
-  .qc-sig-hint{color:#111 !important}
+  .qc-sig-hint{color:#000 !important}
   .qc-check-text,.qc-check-sub{color:#111 !important}
   .view-label-badge,.view-card-label{color:#fff !important;background:#000 !important}
-  .amount-words,.dim-bar{color:#222 !important}
-  .doc-footer{color:#111 !important}
+  .amount-words,.dim-bar{color:#000 !important}
+  .doc-footer{color:#000 !important}
   tbody td,tfoot td{color:#111 !important;word-break:break-word !important}
   table{table-layout:fixed !important;width:100% !important}
   .info-grid{grid-template-columns:1fr 1fr !important}
@@ -1727,7 +1725,7 @@ tfoot td:first-child{text-align:left}
       <td style="font-size:14px;font-weight:900;letter-spacing:0.14em;text-transform:uppercase;color:#d05818;text-align:left">Total</td>
       <td style="font-weight:900;font-size:18px;color:#111;text-align:center">${order.parts_count}</td>
       <td></td><td></td><td></td><td></td>
-      <td style="text-align:center;font-weight:800;font-size:18px;color:#d05818">₹${Number(order.total_amount).toLocaleString("en-IN")}</td>
+      <td style="text-align:center;font-weight:800;font-size:18px;color:#000">₹${Number(order.total_amount).toLocaleString("en-IN")}</td>
     </tr>
   </tfoot>
 </table>
