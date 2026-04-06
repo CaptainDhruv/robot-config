@@ -1704,6 +1704,8 @@ function showAddressOverlay() {
       .addr-row-1   { grid-template-columns:1fr; }
       .addr-row-2   { grid-template-columns:1fr 1fr; }
       .addr-row-211 { grid-template-columns:1fr 1fr 110px; }
+      .addr-row-3 { grid-template-columns:1fr 1fr 1fr; }
+      .addr-phone-row { grid-template-columns:140px 1fr; }
       .addr-phone-row { grid-template-columns:130px 1fr; }
       .addr-btn {
         font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700;
@@ -1933,6 +1935,16 @@ function showAddressOverlay() {
     "First & last name · letters and spaces only",
   );
   fName.inp.autocomplete = "name";
+
+  const fPin = mkField(
+    "PIN Code",
+    "560001",
+    true,
+    "text",
+    "Enter 6-digit PIN to auto-fill address",
+  );
+  fPin.inp.autocomplete = "postal-code";
+
   const fLine1 = mkField(
     "Address Line 1",
     "House / Flat No., Building Name",
@@ -1941,6 +1953,7 @@ function showAddressOverlay() {
     "At least 5 characters",
   );
   fLine1.inp.autocomplete = "address-line1";
+
   const fLine2 = mkField(
     "Address Line 2",
     "Street, Area, Landmark",
@@ -1949,6 +1962,7 @@ function showAddressOverlay() {
     "Optional",
   );
   fLine2.inp.autocomplete = "address-line2";
+
   const fLine3 = mkField(
     "Address Line 3",
     "Locality / Neighbourhood",
@@ -1957,23 +1971,66 @@ function showAddressOverlay() {
     "Optional",
   );
   fLine3.inp.autocomplete = "address-line3";
+
   const fCity = mkField(
     "City",
-    "e.g. Bengaluru",
+    "Auto-filled from PIN",
     true,
     "text",
-    "Letters and spaces only",
+    "Auto-filled from PIN",
   );
   fCity.inp.autocomplete = "address-level2";
-  const fState = mkSelect(
-    "State",
-    INDIAN_STATES,
+
+  const fDistrict = mkField(
+    "District",
+    "Auto-filled from PIN",
     true,
-    "Select your state from the list",
+    "text",
+    "Auto-filled from PIN",
   );
+
+  const fState = mkSelect("State", INDIAN_STATES, true, "Auto-filled from PIN");
   fState.inp.autocomplete = "address-level1";
-  const fPin = mkField("PIN Code", "560001", true, "text", "Exactly 6 digits");
-  fPin.inp.autocomplete = "postal-code";
+
+  const fCountryCode = mkSelect(
+    "Country Code",
+    [
+      "+91 India",
+      "+1 USA/Canada",
+      "+44 UK",
+      "+61 Australia",
+      "+971 UAE",
+      "+65 Singapore",
+      "+60 Malaysia",
+      "+64 New Zealand",
+      "+49 Germany",
+      "+33 France",
+      "+81 Japan",
+      "+82 Korea",
+      "+86 China",
+      "+55 Brazil",
+      "+27 South Africa",
+      "+234 Nigeria",
+      "+254 Kenya",
+      "+92 Pakistan",
+      "+880 Bangladesh",
+      "+94 Sri Lanka",
+      "+977 Nepal",
+    ],
+    true,
+    "Select country code",
+  );
+
+  const fPhoneNum = mkField(
+    "Phone Number",
+    "98765 43210",
+    true,
+    "tel",
+    "Digits only",
+  );
+  fPhoneNum.inp.autocomplete = "tel";
+
+  const fPhone = { inp: fPhoneNum.inp };
 
   fPin.inp.addEventListener("input", async () => {
     const pin = fPin.inp.value.trim();
@@ -1986,12 +2043,15 @@ function showAddressOverlay() {
       const data = await res.json();
       if (data[0].Status === "Success") {
         const offices = data[0].PostOffice;
-        fCity.inp.value = offices[0].District;
+        fCity.inp.value =
+          offices[0].Block !== "NA" ? offices[0].Block : offices[0].Division;
+        fDistrict.inp.value = offices[0].District;
         const stateVal = offices[0].State;
         Array.from(fState.inp.options).forEach((opt) => {
           if (opt.value === stateVal) fState.inp.value = stateVal;
         });
         fCity.inp.classList.remove("addr-err");
+        fDistrict.inp.classList.remove("addr-err");
         fState.inp.classList.remove("addr-err");
         showHudMessage(`✓ ${offices[0].District}, ${offices[0].State}`);
         if (offices.length > 0) {
@@ -2039,7 +2099,8 @@ function showAddressOverlay() {
             opt.onmouseout = () => (opt.style.background = "transparent");
             opt.onclick = () => {
               fLine3.inp.value = po.Name;
-              fCity.inp.value = po.District;
+              fCity.inp.value = po.Block !== "NA" ? po.Block : po.Division;
+              fDistrict.inp.value = po.District;
               Array.from(fState.inp.options).forEach((o) => {
                 if (o.value === po.State) fState.inp.value = po.State;
               });
@@ -2066,53 +2127,13 @@ function showAddressOverlay() {
       showHudMessage("⚠ Could not fetch PIN data");
     }
   });
-  // Country code selector
-  const fCountryCode = mkSelect(
-    "Country Code",
-    [
-      "+91 India",
-      "+1 USA/Canada",
-      "+44 UK",
-      "+61 Australia",
-      "+971 UAE",
-      "+65 Singapore",
-      "+60 Malaysia",
-      "+64 New Zealand",
-      "+49 Germany",
-      "+33 France",
-      "+81 Japan",
-      "+82 Korea",
-      "+86 China",
-      "+55 Brazil",
-      "+27 South Africa",
-      "+234 Nigeria",
-      "+254 Kenya",
-      "+92 Pakistan",
-      "+880 Bangladesh",
-      "+94 Sri Lanka",
-      "+977 Nepal",
-    ],
-    true,
-    "Select your country code",
-  );
-
-  const fPhoneNum = mkField(
-    "Phone Number",
-    "98765 43210",
-    true,
-    "tel",
-    "Digits only",
-  );
-  fPhoneNum.inp.autocomplete = "tel";
-
-  // Combine into one row
-  const fPhone = { inp: fPhoneNum.inp };
 
   body.appendChild(mkRow("addr-row-1", fName));
+  body.appendChild(mkRow("addr-row-1", fPin));
   body.appendChild(mkRow("addr-row-1", fLine1));
   body.appendChild(mkRow("addr-row-1", fLine2));
   body.appendChild(mkRow("addr-row-1", fLine3));
-  body.appendChild(mkRow("addr-row-211", fCity, fState, fPin));
+  body.appendChild(mkRow("addr-row-3", fCity, fDistrict, fState));
   body.appendChild(mkRow("addr-phone-row", fCountryCode, fPhoneNum));
 
   const divider2 = document.createElement("div");
@@ -2175,12 +2196,17 @@ function showAddressOverlay() {
 
     // City: required, letters+spaces only
     const cityVal = fCity.inp.value.trim();
-    if (!cityVal || !/^[a-zA-Z\s]+$/.test(cityVal)) {
+    if (!cityVal) {
       fCity.inp.classList.add("addr-err");
       valid = false;
-      errors.push(
-        !cityVal ? "City is required" : "City must contain letters only",
-      );
+      errors.push("City is required");
+    }
+
+    const districtVal = fDistrict.inp.value.trim();
+    if (!districtVal) {
+      fDistrict.inp.classList.add("addr-err");
+      valid = false;
+      errors.push("District is required");
     }
 
     // State: required
