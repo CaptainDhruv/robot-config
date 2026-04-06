@@ -2885,7 +2885,6 @@ function addTechnicalOverlay(dataURL, viewLabel) {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
-      AC;
       const W = img.naturalWidth || 1200;
       const H = img.naturalHeight || 600;
 
