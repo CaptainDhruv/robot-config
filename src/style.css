@@ -230,7 +230,7 @@ body::after {
 .panel-right {
   background: linear-gradient(160deg, #1a2236 0%, #161e2c 100%);
   border-left: 1px solid var(--border);
-  clip-path: polygon(12px 0, 100% 0, 100% 100%, 0 100%, 0 12px);
+  clip-path: none;
   box-shadow: inset 1px 0 0 rgba(208, 88, 24, 0.05);
   display: flex;
   flex-direction: column;
@@ -455,33 +455,10 @@ body::after {
   text-overflow: ellipsis;
 }
 .btn-desc {
-  font-family: var(--font-mono);
-  font-size: clamp(8px, 0.68vw, 10px);
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  opacity: 0.6;
-  line-height: 1;
-  white-space: nowrap;
-  text-transform: uppercase;
+  display: none;
 }
 .btn-tag {
-  font-family: var(--font-hud);
-  font-size: clamp(7px, 0.62vw, 9px);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  writing-mode: vertical-rl;
-  padding: clamp(4px, 0.6vh, 8px) clamp(3px, 0.4vw, 6px);
-  flex-shrink: 0;
-  align-self: stretch;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-left: 2px solid;
-  position: relative;
-  z-index: 1;
-  transition:
-    background 0.1s,
-    color 0.1s;
+  display: none;
 }
 .btn:hover {
   transform: translate(-3px, -3px);
@@ -959,11 +936,11 @@ canvas#app {
 }
 #cost-section-title {
   font-family: "Orbitron", sans-serif;
-  font-size: 8px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: #d05818;
+  color: #6a8098;
   display: flex;
   align-items: center;
   gap: 7px;
@@ -983,11 +960,10 @@ canvas#app {
   margin-left: 8px;
 }
 #cost-body {
-  overflow-y: auto;
   transition:
     max-height 0.25s ease,
     opacity 0.2s ease;
-  max-height: 240px;
+  max-height: none;
   opacity: 1;
 }
 #cost-body.collapsed {
@@ -1016,7 +992,6 @@ canvas#app {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
   letter-spacing: 0.04em;
   transition: background 0.15s;
 }
@@ -1889,9 +1864,11 @@ canvas#app {
 /* ── MINIMAP DIMS ── */
 #minimap-dims-bar .dim-val {
   color: #ffffff;
-  font-weight: 700;
+  font-weight: 900;
   font-family: "Orbitron", sans-serif;
-  font-size: 11px;
+  font-size: 14px;
+  text-shadow: none;
+  letter-spacing: 0.06em;
 }
 
 /* ── RESPONSIVE ── */

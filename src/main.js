@@ -1355,8 +1355,7 @@ function updateBasketTotals() {
         </span>
         <span style="text-align:right;flex-shrink:0;margin-left:8px;">
          <span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;letter-spacing:0.06em;color:#ffffff;display:block;">₹${subtotal.toLocaleString("en-IN")}</span>
-        <span style="font-family:'Oswald',sans-serif;font-size:8px;font-weight:300;letter-spacing:0.08em;color:#6a8098;display:block;">₹${price.toLocaleString("en-IN")} EACH</span>
-        </span>
+<span style="font-family:'Oswald',sans-serif;font-size:8px;font-weight:300;letter-spacing:0.08em;color:#6a8098;display:block;">₹${price.toLocaleString("en-IN")} each</span>        </span>
       `;
       basketEl.appendChild(row);
     }
@@ -1666,13 +1665,13 @@ function showAddressOverlay() {
       @keyframes addrFadeIn  { from{opacity:0} to{opacity:1} }
       @keyframes addrCardIn  { from{opacity:0;transform:translate(-50%,-47%)} to{opacity:1;transform:translate(-50%,-50%)} }
       .addr-input, .addr-select {
-        background:#111820; border:1.5px solid #2a3848; color:#d8e8f4;
+        background:#111820; border:1.5px solid #2a3848; color:#ffffff;
         font-family:'Share Tech Mono',monospace; font-size:13px; letter-spacing:0.04em;
         padding:10px 14px; width:100%; border-radius:0;
         box-shadow:inset 0 2px 4px rgba(0,0,0,0.3);
         transition:border-color .15s,box-shadow .15s; appearance:none; -webkit-appearance:none;
       }
-      .addr-input::placeholder { color:#4a6078; }
+      .addr-input::placeholder { color:#8aacbf; }
       .addr-input:focus, .addr-select:focus {
         outline:none; border-color:#d05818;
         box-shadow:0 0 0 2px rgba(208,88,24,0.18),inset 0 2px 4px rgba(0,0,0,0.3);
@@ -1684,17 +1683,17 @@ function showAddressOverlay() {
       .addr-select-wrap { position:relative; }
       .addr-select-wrap::after {
         content:"▾"; position:absolute; right:12px; top:50%; transform:translateY(-50%);
-        color:#8aacbf; font-size:14px; pointer-events:none;
+        color:#ffffff; font-size:14px; pointer-events:none;
       }
-      .addr-select option { background:#18202e; color:#d8e8f4; }
+      .addr-select option { background:#18202e; color:#ffffff; }
       .addr-label {
-        font-family:'Orbitron',sans-serif; font-size:8px; font-weight:700;
-        letter-spacing:0.22em; text-transform:uppercase; color:#a8c4d8;
+        font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700;
+        letter-spacing:0.22em; text-transform:uppercase; color:#ffffff;
         display:block; margin-bottom:6px;
       }
       .addr-rule-hint {
         font-family:'Share Tech Mono',monospace; font-size:9px; letter-spacing:0.06em;
-        color:#4a6078; margin-top:4px; display:block; line-height:1.4;
+        color:#8aacbf; margin-top:4px; display:block; line-height:1.4;
         transition:color 0.15s;
       }
       .addr-input.addr-err ~ .addr-rule-hint,
@@ -1705,18 +1704,19 @@ function showAddressOverlay() {
       .addr-row-1   { grid-template-columns:1fr; }
       .addr-row-2   { grid-template-columns:1fr 1fr; }
       .addr-row-211 { grid-template-columns:1fr 1fr 110px; }
+      .addr-phone-row { grid-template-columns:130px 1fr; }
       .addr-btn {
         font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700;
         letter-spacing:0.2em; text-transform:uppercase; padding:11px 26px;
         border:1.5px solid; cursor:pointer; transition:all .12s ease;
         display:flex; align-items:center; gap:8px;
       }
-      .addr-btn-cancel { background:transparent; border-color:#2a3848; color:#8aacbf; box-shadow:3px 3px 0 #0e1420; }
-      .addr-btn-cancel:hover { background:#1e2838; border-color:#8aacbf; color:#d8e8f4; box-shadow:5px 5px 0 #0e1420; transform:translate(-2px,-2px); }
+      .addr-btn-cancel { background:transparent; border-color:#2a3848; color:#ffffff; box-shadow:3px 3px 0 #0e1420; }
+      .addr-btn-cancel:hover { background:#1e2838; border-color:#ffffff; color:#ffffff; box-shadow:5px 5px 0 #0e1420; transform:translate(-2px,-2px); }
       .addr-btn-submit { background:transparent; border-color:#d05818; color:#d05818; box-shadow:4px 4px 0 #5a2008; }
       .addr-btn-submit:hover { background:#d05818; color:#0e1018; box-shadow:6px 6px 0 #5a2008; transform:translate(-2px,-2px); }
       @media(max-width:540px){
-        .addr-row-2,.addr-row-211{ grid-template-columns:1fr; }
+        .addr-row-2,.addr-row-211,.addr-phone-row{ grid-template-columns:1fr; }
       }
     `;
     document.head.appendChild(s);
@@ -1744,7 +1744,7 @@ function showAddressOverlay() {
     background: "#18202e",
     border: "1.5px solid rgba(208,88,24,0.3)",
     borderLeft: "3px solid #d05818",
-    clipPath: "polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%)",
+    clipPath: "none",
     boxShadow: "0 0 60px rgba(0,0,0,0.7),0 0 30px rgba(208,88,24,0.07)",
     animation: "addrCardIn 0.3s ease both",
   });
@@ -1792,19 +1792,19 @@ function showAddressOverlay() {
     v.textContent = val;
     Object.assign(v.style, {
       fontFamily: "'Orbitron',sans-serif",
-      fontSize: "15px",
-      fontWeight: "700",
-      color: accent ? "#d05818" : "#d8e8f4",
+      fontSize: "18px",
+      fontWeight: "900",
+      color: "#ffffff",
       letterSpacing: "0.06em",
       lineHeight: "1",
     });
     const l = document.createElement("div");
     l.textContent = lbl;
     Object.assign(l.style, {
-      fontFamily: "'Share Tech Mono',monospace",
-      fontSize: "8px",
+      fontFamily: "'Orbitron',monospace",
+      fontSize: "10px",
       letterSpacing: "0.12em",
-      color: "#384858",
+      color: "#ffffff",
       marginTop: "3px",
       textTransform: "uppercase",
     });
@@ -1974,21 +1974,146 @@ function showAddressOverlay() {
   fState.inp.autocomplete = "address-level1";
   const fPin = mkField("PIN Code", "560001", true, "text", "Exactly 6 digits");
   fPin.inp.autocomplete = "postal-code";
-  const fPhone = mkField(
+
+  fPin.inp.addEventListener("input", async () => {
+    const pin = fPin.inp.value.trim();
+    const existing = document.getElementById("pin-suggestions");
+    if (existing) existing.remove();
+    if (pin.length !== 6 || !/^\d{6}$/.test(pin)) return;
+    try {
+      showHudMessage("Looking up PIN code...");
+      const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+      const data = await res.json();
+      if (data[0].Status === "Success") {
+        const offices = data[0].PostOffice;
+        fCity.inp.value = offices[0].District;
+        const stateVal = offices[0].State;
+        Array.from(fState.inp.options).forEach((opt) => {
+          if (opt.value === stateVal) fState.inp.value = stateVal;
+        });
+        fCity.inp.classList.remove("addr-err");
+        fState.inp.classList.remove("addr-err");
+        showHudMessage(`✓ ${offices[0].District}, ${offices[0].State}`);
+        if (offices.length > 0) {
+          const dropdown = document.createElement("div");
+          dropdown.id = "pin-suggestions";
+          Object.assign(dropdown.style, {
+            position: "fixed",
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: "420px",
+            background: "#111820",
+            border: "1px solid #d05818",
+            zIndex: "999999",
+            maxHeight: "260px",
+            overflowY: "auto",
+            fontFamily: "'Orbitron', sans-serif",
+            fontSize: "12px",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.8)",
+          });
+          const header = document.createElement("div");
+          header.textContent = `${offices.length} areas found — click to select`;
+          Object.assign(header.style, {
+            padding: "6px 10px",
+            color: "#d05818",
+            fontSize: "9px",
+            letterSpacing: "0.1em",
+            borderBottom: "1px solid #2a3848",
+            fontFamily: "'Orbitron', sans-serif",
+          });
+          dropdown.appendChild(header);
+          offices.forEach((po) => {
+            const opt = document.createElement("div");
+            opt.textContent = `${po.Name} — ${po.District}, ${po.State}`;
+            Object.assign(opt.style, {
+              padding: "12px 16px",
+              cursor: "pointer",
+              color: "#ffffff",
+              borderBottom: "1px solid #2a3848",
+              transition: "background 0.1s",
+              fontSize: "12px",
+              letterSpacing: "0.05em",
+              lineHeight: "1.5",
+            });
+            opt.onmouseover = () => (opt.style.background = "#1e2838");
+            opt.onmouseout = () => (opt.style.background = "transparent");
+            opt.onclick = () => {
+              fLine3.inp.value = po.Name;
+              fCity.inp.value = po.District;
+              Array.from(fState.inp.options).forEach((o) => {
+                if (o.value === po.State) fState.inp.value = po.State;
+              });
+              dropdown.remove();
+              showHudMessage(`✓ Selected: ${po.Name}`);
+            };
+            dropdown.appendChild(opt);
+          });
+          fPin.inp.closest(".addr-field").style.position = "relative";
+          fPin.inp.closest(".addr-field").appendChild(dropdown);
+          setTimeout(() => {
+            document.addEventListener("click", function handler(e) {
+              if (!dropdown.contains(e.target)) {
+                dropdown.remove();
+                document.removeEventListener("click", handler);
+              }
+            });
+          }, 100);
+        }
+      } else {
+        showHudMessage("⚠ PIN code not found");
+      }
+    } catch (e) {
+      showHudMessage("⚠ Could not fetch PIN data");
+    }
+  });
+  // Country code selector
+  const fCountryCode = mkSelect(
+    "Country Code",
+    [
+      "+91 India",
+      "+1 USA/Canada",
+      "+44 UK",
+      "+61 Australia",
+      "+971 UAE",
+      "+65 Singapore",
+      "+60 Malaysia",
+      "+64 New Zealand",
+      "+49 Germany",
+      "+33 France",
+      "+81 Japan",
+      "+82 Korea",
+      "+86 China",
+      "+55 Brazil",
+      "+27 South Africa",
+      "+234 Nigeria",
+      "+254 Kenya",
+      "+92 Pakistan",
+      "+880 Bangladesh",
+      "+94 Sri Lanka",
+      "+977 Nepal",
+    ],
+    true,
+    "Select your country code",
+  );
+
+  const fPhoneNum = mkField(
     "Phone Number",
-    "+91 98765 43210",
+    "98765 43210",
     true,
     "tel",
-    "10-digit mobile number · digits only",
+    "Digits only",
   );
-  fPhone.inp.autocomplete = "tel";
+  fPhoneNum.inp.autocomplete = "tel";
+
+  // Combine into one row
+  const fPhone = { inp: fPhoneNum.inp };
 
   body.appendChild(mkRow("addr-row-1", fName));
   body.appendChild(mkRow("addr-row-1", fLine1));
   body.appendChild(mkRow("addr-row-1", fLine2));
   body.appendChild(mkRow("addr-row-1", fLine3));
   body.appendChild(mkRow("addr-row-211", fCity, fState, fPin));
-  body.appendChild(mkRow("addr-row-1", fPhone));
+  body.appendChild(mkRow("addr-phone-row", fCountryCode, fPhoneNum));
 
   const divider2 = document.createElement("div");
   Object.assign(divider2.style, {
@@ -2074,11 +2199,11 @@ function showAddressOverlay() {
     }
 
     // Phone: required, 10 digits
-    const phoneDigits = fPhone.inp.value.replace(/\D/g, "");
-    if (!fPhone.inp.value.trim() || phoneDigits.length < 10) {
-      fPhone.inp.classList.add("addr-err");
+    const phoneDigits = fPhoneNum.inp.value.replace(/\D/g, "");
+    if (!fPhoneNum.inp.value.trim() || phoneDigits.length < 7) {
+      fPhoneNum.inp.classList.add("addr-err");
       valid = false;
-      errors.push("Phone number must have at least 10 digits");
+      errors.push("Please enter a valid phone number");
     }
 
     if (!valid) {
@@ -2098,7 +2223,8 @@ function showAddressOverlay() {
     ].filter(Boolean);
 
     const customerName = fName.inp.value.trim();
-    const customerPhone = fPhone.inp.value.replace(/\D/g, "").slice(-10);
+    const countryCode = fCountryCode.inp.value.split(" ")[0];
+    const customerPhone = countryCode + fPhoneNum.inp.value.replace(/\D/g, "");
 
     try {
       const savedOrder = await saveOrderToSupabase({
@@ -2708,18 +2834,18 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
     margin-bottom:16px;
   }
   .table-card{border:1.5px solid #222}
-  .table-card-header{
+ .table-card-header{
     background:#1a1a1a;
     color:#cc2200;
     font-family:'Oswald',sans-serif;
-    font-size:10px;
+    font-size:15px;
     font-weight:600;
     letter-spacing:0.2em;
     padding:7px 12px;
     text-transform:uppercase;
   }
   .table-card-header.weight-header{color:#2e86c1}
-  table{width:100%;border-collapse:collapse;font-size:12px}
+  table{width:100%;border-collapse:collapse;font-size:16px}
   td{
     padding:6px 10px;
     border-bottom:1px solid #e5e5e5;
@@ -2731,7 +2857,7 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
     font-family:'Oswald',sans-serif;
     font-weight:600;
     letter-spacing:0.08em;
-    font-size:11px;
+    font-size:15px;
   }
   tr:last-child td{border-bottom:none}
   tr:nth-child(even) td{background:#fafafa}
@@ -6011,7 +6137,7 @@ function initWeightSection() {
       #weight-section{border-top:1px solid rgba(208,88,24,0.18);flex-shrink:0}
       #weight-section-header{display:flex;align-items:center;justify-content:space-between;padding:9px 14px 8px 16px;cursor:pointer;user-select:none;transition:background 0.12s}
       #weight-section-header:hover{background:rgba(208,88,24,0.05)}
-      #weight-section-title{font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:#d05818;display:flex;align-items:center;gap:7px}
+      #weight-section-title{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:#6a8098;display:flex;align-items:center;gap:7px}
       #weight-total-badge{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;color:#d8e8f4;letter-spacing:0.06em}
     #weight-chevron{font-size:20px;color:#d05818;transition:transform 0.2s ease,color 0.12s;font-family:'Share Tech Mono',monospace;margin-left:8px}
       #weight-section-header:hover #weight-chevron{color:#d05818}
@@ -6053,6 +6179,7 @@ function initWeightSection() {
   body.appendChild(rows);
   const totalRow = document.createElement("div");
   totalRow.id = "weight-total-row";
+  totalRow.style.display = "none";
   totalRow.innerHTML = `<div id="weight-total-label">TOTAL WEIGHT</div><div id="weight-total-value">0 <span>g</span></div>`;
   body.appendChild(totalRow);
   section.appendChild(body);
@@ -6113,7 +6240,7 @@ function updateWeightDisplay() {
     const totalDisp =
       totalG >= 1000 ? `${(totalG / 1000).toFixed(2)} kg` : `${totalG} g`;
     const unitDisp =
-      unitG >= 1000 ? `${(unitG / 1000).toFixed(2)}kg ea` : `${unitG}g ea`;
+      unitG >= 1000 ? `${(unitG / 1000).toFixed(2)}kg ea` : `${unitG}g each`;
 
     const row = document.createElement("div");
     row.dataset.partType = type;
@@ -6213,8 +6340,8 @@ function initMinimap() {
       #minimap-canvas-wrap{position:relative;width:${MINIMAP_SIZE}px;height:${MINIMAP_SIZE}px;margin:0 auto 0;cursor:crosshair;border:1px solid rgba(208,88,24,0.5);border-top:none;overflow:hidden;background:#0a1420;display:block;box-shadow:inset 0 0 20px rgba(0,0,0,0.5)}
       #minimap-canvas-wrap canvas{display:block;position:absolute;top:0;left:0}
       #minimap-dims-bar{width:${MINIMAP_SIZE}px;margin:0 auto;padding:5px 10px;background:#0a1420;border:1px solid rgba(208,88,24,0.3);border-top:1px solid rgba(208,88,24,0.15);display:flex;justify-content:space-between;align-items:center;gap:6px}
-      #minimap-dims-bar span{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:0.1em;color:#8aacbf;text-transform:uppercase}
-    #minimap-dims-bar .dim-val{color:#ffffff;font-weight:700;font-family:'Orbitron',sans-serif;font-size:11px}
+    #minimap-dims-bar span{font-family:'Orbitron',monospace;font-size:11px;letter-spacing:0.1em;color:#ffffff;text-transform:uppercase}
+    #minimap-dims-bar .dim-val{color:#ffffff;font-weight:900;font-family:'Orbitron',sans-serif;font-size:13px;text-shadow:none}
       #minimap-hint{text-align:center;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:0.12em;color:#4a6878;padding:5px 14px 8px;text-transform:uppercase}
       @keyframes minimapIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
       #minimap-section{animation:minimapIn 0.35s ease 0.5s both}
@@ -6273,11 +6400,11 @@ function initMinimap() {
   body.appendChild(canvasWrap);
   const dimsBar = document.createElement("div");
   dimsBar.id = "minimap-dims-bar";
-  dimsBar.innerHTML = `<span>W <span class="dim-val" id="mm-dim-w">—</span></span><span style="color:#2a3848">·</span><span>D <span class="dim-val" id="mm-dim-d">—</span></span><span style="color:#2a3848">·</span><span>H <span class="dim-val" id="mm-dim-h">—</span></span>`;
+  dimsBar.innerHTML = `<span>Width <span class="dim-val" id="mm-dim-w">—</span></span><span style="color:#2a3848">·</span><span>Length <span class="dim-val" id="mm-dim-d">—</span></span><span style="color:#2a3848">·</span><span>Height <span class="dim-val" id="mm-dim-h">—</span></span>`;
   body.appendChild(dimsBar);
   const hint = document.createElement("div");
   hint.id = "minimap-hint";
-  hint.textContent = "Top view · Click to snap camera";
+  hint.textContent = "";
   body.appendChild(hint);
   section.appendChild(body);
 
@@ -6764,7 +6891,7 @@ function initComponentPreview() {
         background: rgba(6,11,20,0.97);
         border: 1.5px solid rgba(208,88,24,0.5);
         border-left: 3px solid #d05818;
-        clip-path: polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%);
+        clip-path: none;
         box-shadow: 0 8px 32px rgba(0,0,0,0.8), 0 0 0 1px rgba(208,88,24,0.15);
         backdrop-filter: blur(6px);
         z-index: 900;
@@ -6833,25 +6960,25 @@ function initComponentPreview() {
       }
       #comp-preview-weight-label {
         font-family: 'Oswald', sans-serif;
-        font-size: 8px;
+        font-size: 12px;
         font-weight: 500;
         letter-spacing: 0.14em;
         text-transform: uppercase;
-        color: #7a9ab8;
+        color: #ffffff;
         display: flex;
         align-items: center;
         gap: 4px;
       }
       #comp-preview-weight-value {
         font-family: 'Oswald', sans-serif;
-        font-size: 14px;
+        font-size: 20px;
         font-weight: 600;
         letter-spacing: 0.06em;
-        color: #e8f4ff;
+        color: #ffffff;
       }
       #comp-preview-weight-unit {
-        font-size: 9px;
-        color: #5a7888;
+        font-size: 14px;
+        color: #ffffff;
         margin-left: 2px;
         font-family: 'Oswald', sans-serif;
         font-weight: 400;
@@ -6879,7 +7006,7 @@ function initComponentPreview() {
         font-weight: 400;
         letter-spacing: 0.14em;
         text-transform: uppercase;
-        color: #8aacbf;
+        color: #ffffff;
       }
       #comp-preview-accent-line {
         position: absolute;
@@ -6962,8 +7089,8 @@ function initComponentPreview() {
   _cpRenderer.setSize(180, 120);
   _cpRenderer.setClearColor(0x1e2d3d, 1);
   _cpRenderer.outputColorSpace = THREE.SRGBColorSpace;
-  _cpRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-  _cpRenderer.toneMappingExposure = 2.4;
+  _cpRenderer.toneMapping = THREE.NoToneMapping;
+  _cpRenderer.toneMappingExposure = 1.0;
   canvasWrap.appendChild(_cpRenderer.domElement);
 
   _cpScene = new THREE.Scene();
@@ -6971,23 +7098,16 @@ function initComponentPreview() {
   _cpCamera = new THREE.PerspectiveCamera(38, 150 / 100, 0.01, 100);
   _cpCamera.position.set(0, 0, 4);
 
-  _cpScene.add(new THREE.AmbientLight(0xffffff, 1.4));
-
-  const keyL = new THREE.DirectionalLight(0xffffff, 4.0);
+  _cpScene.add(new THREE.AmbientLight(0xffffff, 2.5));
+  const keyL = new THREE.DirectionalLight(0xffffff, 1.5);
   keyL.position.set(4, 5, 6);
   _cpScene.add(keyL);
-
-  const fillL = new THREE.DirectionalLight(0xd0e8ff, 2.2);
+  const fillL = new THREE.DirectionalLight(0xffffff, 0.8);
   fillL.position.set(-5, 3, 4);
   _cpScene.add(fillL);
-
-  const rimL = new THREE.DirectionalLight(0xffd0a0, 2.0);
+  const rimL = new THREE.DirectionalLight(0xffffff, 0.5);
   rimL.position.set(-3, 6, -5);
   _cpScene.add(rimL);
-
-  const bottomL = new THREE.DirectionalLight(0xffffff, 1.2);
-  bottomL.position.set(0, -4, 3);
-  _cpScene.add(bottomL);
 }
 function showComponentPreview(type, template) {
   if (!_cpEl || !_cpScene || !_cpRenderer) return;
