@@ -7301,9 +7301,15 @@ async function initiateRazorpayPayment({
               razorpay_signature: response.razorpay_signature,
             })
             .eq("id", savedOrder.id);
-          if (updateErr)
+          if (updateErr) {
             console.error("[RAZORPAY] DB update error:", updateErr);
-          else console.log("[RAZORPAY] DB updated successfully");
+            showHudMessage(
+              "⚠ Payment received but DB update failed: " + updateErr.message,
+            );
+          } else {
+            console.log("[RAZORPAY] DB updated successfully to PAID");
+            showHudMessage("✓ Order marked as PAID");
+          }
         } catch (dbErr) {
           console.error("[RAZORPAY] DB update failed:", dbErr);
         }
