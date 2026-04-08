@@ -2890,7 +2890,7 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
 
   .manifest-subtotal td{
     font-family:'Oswald',sans-serif !important;
-    font-size:11px !important;
+   font-size:18px !important;
     font-weight:700 !important;
     color:#cc2200 !important;
     background:#fff5f5 !important;
@@ -2900,7 +2900,7 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
   }
   .manifest-total-parts td{
     font-family:'Oswald',sans-serif !important;
-    font-size:10px !important;
+    font-size:14px !important;
     font-weight:400 !important;
     color:#555 !important;
     background:#f8f8f8 !important;
@@ -2909,7 +2909,7 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
   }
   .weight-total-row td{
     font-family:'Oswald',sans-serif !important;
-    font-size:12px !important;
+    font-size:18px !important;
     font-weight:700 !important;
     color:#1a5276 !important;
     background:#eaf4fb !important;
@@ -3121,9 +3121,8 @@ function addTechnicalOverlay(dataURL, viewLabel, dims = null) {
       const isIsoOrPersp =
         viewLabel === "ISOMETRIC" || viewLabel === "PERSPECTIVE";
       const CROP_PAD = isIsoOrPersp
-        ? Math.round(Math.max(W, H) * 0.06) // ISO: small padding
-        : Math.round(Math.max(W, H) * 0.1); // Ortho: extra space for arrows
-
+        ? Math.round(Math.max(W, H) * 0.06)
+        : Math.round(Math.max(W, H) * 0.2);
       const cropX = Math.max(0, minX - CROP_PAD);
       const cropY = Math.max(0, minY - CROP_PAD);
       const cropW = Math.min(W, maxX + CROP_PAD) - cropX;
@@ -3184,12 +3183,12 @@ function addTechnicalOverlay(dataURL, viewLabel, dims = null) {
           mY1 = maxY - cropY;
 
         const PAD = CROP_PAD * 0.55;
-        const LW = Math.max(1.5, cropW / 600);
-        const AH = Math.max(7, cropW / 110);
-        const TICK = Math.max(5, cropW / 160);
-        const FONT_SZ = Math.max(22, cropW / 35);
-        const LABEL_H = FONT_SZ + 10;
-        const LABEL_P = Math.round(FONT_SZ * 0.5);
+        const LW = Math.max(2.5, cropW / 350);
+        const AH = Math.max(12, cropW / 65);
+        const TICK = Math.max(9, cropW / 95);
+        const FONT_SZ = Math.max(34, cropW / 22);
+        const LABEL_H = FONT_SZ + 16;
+        const LABEL_P = Math.round(FONT_SZ * 0.6);
 
         function dimArrow(x1, y1, x2, y2, label) {
           octx.save();
@@ -3256,9 +3255,9 @@ function addTechnicalOverlay(dataURL, viewLabel, dims = null) {
           octx.restore();
         }
 
-        const widthY = Math.min(mY1 + PAD, cropH - LABEL_H - 4);
+        const widthY = Math.min(mY1 + PAD, cropH - LABEL_H - 16);
         dimArrow(mX0, widthY, mX1, widthY, dims?.horizCm ?? "WIDTH");
-        const heightX = Math.min(mX1 + PAD, cropW - LABEL_H - 4);
+        const heightX = Math.min(mX1 + PAD, cropW - LABEL_H - 16);
         dimArrow(heightX, mY0, heightX, mY1, dims?.vertCm ?? "HEIGHT");
       }
 
