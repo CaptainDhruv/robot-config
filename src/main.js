@@ -3473,16 +3473,20 @@ function initShortcutBar() {
     bottom: "0",
     left: `${pw}px`,
     right: `${pw}px`,
-    height: "40px",
+    minHeight: "36px",
+    height: "auto",
     background: "rgba(12,18,28,0.98)",
     borderTop: "1px solid rgba(208,88,24,0.45)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    flexWrap: "nowrap",
     gap: "0",
     zIndex: "9000",
     backdropFilter: "blur(8px)",
-    overflow: "hidden",
+    overflowX: "auto",
+    overflowY: "hidden",
+    scrollbarWidth: "none",
     transform: "translateY(100%)",
     opacity: "0",
     transition: "transform 0.25s ease, opacity 0.2s ease",
@@ -3533,13 +3537,14 @@ function initShortcutBar() {
     s.id = "sb-kf";
     s.textContent = `
       @keyframes sbItemIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
-      .sb-sep{width:1px;height:18px;background:rgba(208,88,24,0.2);flex-shrink:0;margin:0}
-      .sb-item{display:flex;align-items:center;gap:7px;padding:0 16px;height:100%;animation:sbItemIn 0.18s ease both;cursor:default;flex-shrink:0;transition:background 0.15s}
+      #shortcut-bar::-webkit-scrollbar { display:none; }
+      .sb-sep{width:1px;height:16px;background:rgba(208,88,24,0.2);flex-shrink:0;margin:0;align-self:center}
+      .sb-item{display:flex;align-items:center;gap:clamp(3px,0.5vw,7px);padding:0 clamp(6px,1vw,16px);min-height:36px;height:100%;animation:sbItemIn 0.18s ease both;cursor:default;flex-shrink:0;transition:background 0.15s}
       .sb-item:hover{background:rgba(208,88,24,0.07)}
-      .sb-key{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.1em;color:#e87030;background:rgba(208,88,24,0.15);border:1.5px solid rgba(208,88,24,0.5);padding:3px 8px;white-space:nowrap;line-height:1.4}
-      .sb-action{font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:0.08em;color:#8aacbf;text-transform:uppercase;white-space:nowrap}
-      .sb-mode-label{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.2em;padding:0 18px;text-transform:uppercase;flex-shrink:0;white-space:nowrap;border-right:1px solid rgba(208,88,24,0.25);height:100%;display:flex;align-items:center}
-      .sb-chain-label{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:0.1em;color:#e87030;padding:0 14px;flex-shrink:0;white-space:nowrap;display:flex;align-items:center;gap:7px;border-right:1px solid rgba(208,88,24,0.2)}
+      .sb-key{font-family:'Orbitron',sans-serif;font-size:clamp(7px,0.65vw,10px);font-weight:700;letter-spacing:0.08em;color:#e87030;background:rgba(208,88,24,0.15);border:1.5px solid rgba(208,88,24,0.5);padding:2px clamp(4px,0.5vw,8px);white-space:nowrap;line-height:1.4}
+      .sb-action{font-family:'Share Tech Mono',monospace;font-size:clamp(8px,0.7vw,11px);letter-spacing:0.06em;color:#8aacbf;text-transform:uppercase;white-space:nowrap}
+      .sb-mode-label{font-family:'Orbitron',sans-serif;font-size:clamp(7px,0.65vw,10px);font-weight:700;letter-spacing:0.16em;padding:0 clamp(8px,1vw,18px);text-transform:uppercase;flex-shrink:0;white-space:nowrap;border-right:1px solid rgba(208,88,24,0.25);min-height:36px;height:100%;display:flex;align-items:center}
+      .sb-chain-label{font-family:'Share Tech Mono',monospace;font-size:clamp(8px,0.7vw,10px);letter-spacing:0.08em;color:#e87030;padding:0 clamp(6px,0.8vw,14px);flex-shrink:0;white-space:nowrap;display:flex;align-items:center;gap:clamp(4px,0.5vw,7px);border-right:1px solid rgba(208,88,24,0.2)}
       #help-toggle-btn.help-btn-active{background:rgba(208,88,24,0.25)!important;border-color:#d05818!important;box-shadow:0 3px 0 rgba(0,0,0,0.6),0 0 12px rgba(208,88,24,0.3)!important}
     `;
     document.head.appendChild(s);
