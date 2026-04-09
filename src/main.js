@@ -1120,6 +1120,10 @@ async function init() {
   const canvas = document.getElementById("app");
   if (!canvas) return;
 
+  const lsStatus = document.getElementById("ls-status");
+  function setLoadStatus(msg) {
+    if (lsStatus) lsStatus.textContent = msg;
+  }
   renderer = createRenderer(canvas);
   renderer.physicallyCorrectLights = true;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -1227,8 +1231,13 @@ async function init() {
   });
   // ─────────────────────────────────────────────────────────────────────────
 
+  setLoadStatus("LOADING FRAME MODEL...");
   frameTemplate = await loadGLB("/assets/models/rectangle_frame.glb");
+
+  setLoadStatus("LOADING MOTOR MODEL...");
   motorTemplate = await loadGLB("/assets/models/motor_housing.glb");
+
+  setLoadStatus("LOADING TRIANGLE MODEL...");
   triangleTemplate = await loadGLB("/assets/models/triangle_frame.glb");
 
   triangleTemplate.traverse((o) => {
@@ -1321,6 +1330,13 @@ async function init() {
   });
 
   animate();
+
+  // Hide loading screen
+  const ls = document.getElementById("loading-screen");
+  if (ls) {
+    ls.classList.add("ls-hide");
+    setTimeout(() => ls.remove(), 750);
+  }
 }
 
 /* ── Helper to refresh basket totals when config updates live ── */

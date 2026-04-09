@@ -16,6 +16,27 @@
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   </head>
   <body>
+    <!-- ── LOADING SCREEN ── -->
+    <div id="loading-screen">
+      <div id="ls-scanline"></div>
+      <div id="ls-grid"></div>
+      <div id="ls-content">
+        <div id="ls-glyph">⬡</div>
+        <div id="ls-title">ROBOT CONFIGURATOR</div>
+        <div id="ls-sub">UNIT MK-1 · INITIALISING SYSTEMS</div>
+        <div id="ls-bar-wrap">
+          <div id="ls-bar"></div>
+          <div id="ls-bar-glow"></div>
+        </div>
+        <div id="ls-status">LOADING ASSETS...</div>
+        <div id="ls-dots"><span></span><span></span><span></span></div>
+      </div>
+      <div id="ls-corner-tl"></div>
+      <div id="ls-corner-tr"></div>
+      <div id="ls-corner-bl"></div>
+      <div id="ls-corner-br"></div>
+    </div>
+
     <div class="app-shell">
       <!-- LEFT PANEL -->
       <aside class="panel panel-left">
@@ -233,9 +254,7 @@
             <!-- WEIGHT (injected by JS) -->
             <div id="weight-section-placeholder"></div>
           </div>
-          <!-- end .req-combined-panel -->
         </div>
-        <!-- end .requisition-scroll-area -->
 
         <!-- Total cost footer — pinned -->
         <div class="basket-footer">
