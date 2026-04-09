@@ -1247,7 +1247,7 @@
           .update({
             delivered,
             delivered_at: delivered ? new Date().toISOString() : null,
-            status: "paid",
+            status: delivered ? "delivered" : "paid",
           })
           .eq("id", id);
         if (error) {
@@ -1259,6 +1259,7 @@
         if (order) {
           order.delivered = delivered;
           order.delivered_at = delivered ? new Date().toISOString() : null;
+          order.order_status = delivered ? "delivered" : "paid";
         }
         applyFilters();
         updateStats(allOrders);
