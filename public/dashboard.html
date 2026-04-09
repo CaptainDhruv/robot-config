@@ -903,7 +903,7 @@
           </div>
           <div class="stat-card">
             <div class="stat-value" id="stat-confirmed">—</div>
-            <div class="stat-label">Confirmed</div>
+            <div class="stat-label">Delivered</div>
           </div>
           <div class="stat-card">
             <div class="stat-value" id="stat-paid">—</div>
@@ -1468,7 +1468,7 @@
       function updateStats(orders) {
         document.getElementById("stat-total").textContent = orders.length;
         document.getElementById("stat-confirmed").textContent = orders.filter(
-          (o) => o.order_status === "confirmed",
+          (o) => o.delivered === true,
         ).length;
         document.getElementById("stat-paid").textContent = orders.filter(
           (o) => o.payment_status === "captured",
