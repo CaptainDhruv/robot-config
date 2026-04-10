@@ -1371,8 +1371,7 @@ function updateBasketTotals() {
         </span>
         <span style="text-align:right;flex-shrink:0;margin-left:8px;">
          <span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;letter-spacing:0.06em;color:#ffffff;display:block;">₹${subtotal.toLocaleString("en-IN")}</span>
-<span style="font-family:'Oswald',sans-serif;font-size:8px;font-weight:300;letter-spacing:0.08em;color:#6a8098;display:block;">₹${price.toLocaleString("en-IN")} each</span>        </span>
-      `;
+<span style="font-family:'Oswald',sans-serif;font-size:10px;font-weight:300;letter-spacing:0.08em;color:#6a8098;display:block;text-transform:uppercase;">₹${price.toLocaleString("en-IN")} EACH</span>    `;
       basketEl.appendChild(row);
     }
   }
@@ -6195,7 +6194,7 @@ function initWeightSection() {
       #weight-section{border-top:1px solid rgba(208,88,24,0.18);flex-shrink:0}
       #weight-section-header{display:flex;align-items:center;justify-content:space-between;padding:9px 14px 8px 16px;cursor:pointer;user-select:none;transition:background 0.12s}
       #weight-section-header:hover{background:rgba(208,88,24,0.05)}
-      #weight-section-title{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:#6a8098;display:flex;align-items:center;gap:7px}
+      #weight-section-title{font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:#6a8098;display:flex;align-items:center;gap:7px}
       #weight-total-badge{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;color:#d8e8f4;letter-spacing:0.06em}
     #weight-chevron{font-size:20px;color:#d05818;transition:transform 0.2s ease,color 0.12s;font-family:'Share Tech Mono',monospace;margin-left:8px}
       #weight-section-header:hover #weight-chevron{color:#d05818}
@@ -6319,8 +6318,8 @@ function updateWeightDisplay() {
         ${label}
       </span>
       <span style="text-align:right;flex-shrink:0;margin-left:8px;">
-        <span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:0.06em;color:#d8eef8;display:block;">${totalDisp}</span>
-        <span style="font-family:'Oswald',sans-serif;font-size:10px;font-weight:300;letter-spacing:0.08em;color:#6a8098;display:block;">${unitDisp}</span>
+       <span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;letter-spacing:0.06em;color:#ffffff;display:block;">${totalDisp}</span>
+<span style="font-family:'Oswald',sans-serif;font-size:10px;font-weight:300;letter-spacing:0.08em;color:#6a8098;display:block;text-transform:uppercase;">${unitDisp}</span>
       </span>
     `;
     rowsEl.appendChild(row);
