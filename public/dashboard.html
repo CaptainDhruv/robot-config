@@ -1588,7 +1588,7 @@
         const hasReport = Boolean(order.report_url);
         document.getElementById("detail-report-section").innerHTML =
           `<div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <button class="report-btn" onclick="printDispatchReport('${order.id}',${hasReport ? `'${order.report_url}'` : "null"})">🖨 &nbsp; PRINT DISPATCH REPORT</button>
+          <button class="report-btn" onclick="window.printDispatchReport('${order.id}',${hasReport ? `'${order.report_url}'` : "null"})">🖨 &nbsp; PRINT DISPATCH REPORT</button>
             ${!hasReport ? `<span style="font-size:10px;color:var(--muted);align-self:center;letter-spacing:0.06em;">⚠ Design images not yet generated — bill only</span>` : ""}
           </div>`;
         document
