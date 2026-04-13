@@ -5066,6 +5066,12 @@ function onClick(e) {
     if (supportHit) {
       const socket = supportHit.object.userData.socket;
       if (!usedSockets.has(socket.uuid)) {
+        if (wouldFrameIntersectSupport(socket, frameOnSupportRotationSteps)) {
+          showPopup(
+            "A Rectangular Frame cannot be placed here — it would intersect an existing Stress Bridge.\n\nRemove the Stress Bridge first, or choose a different socket.",
+          );
+          return;
+        }
         placeFrameOnSupport(socket, frameOnSupportRotationSteps);
         frameOnSupportRotationSteps = 0;
         frameHoverType = "frame";
@@ -5078,6 +5084,12 @@ function onClick(e) {
     if (nearestSupport) {
       const socket = nearestSupport.userData.socket;
       if (!usedSockets.has(socket.uuid)) {
+        if (wouldFrameIntersectSupport(socket, frameOnSupportRotationSteps)) {
+          showPopup(
+            "A Rectangular Frame cannot be placed here — it would intersect an existing Stress Bridge.\n\nRemove the Stress Bridge first, or choose a different socket.",
+          );
+          return;
+        }
         placeFrameOnSupport(socket, frameOnSupportRotationSteps);
         frameOnSupportRotationSteps = 0;
         frameHoverType = "frame";
@@ -5255,6 +5267,32 @@ function onClick(e) {
 /* =========================================================
    PLACE FUNCTIONS
    ========================================================= */
+
+function wouldFrameIntersectSupport(socket, rotationSteps) {
+  const snap = computeFrameOnSupportSnap(socket, rotationSteps);
+
+  const tempFrame = frameTemplate.clone(true);
+  tempFrame.position.copy(snap.position);
+  tempFrame.rotation.set(0, snap.rotation, 0);
+  tempFrame.updateMatrixWorld(true);
+
+  const frameBox = new THREE.Box3().setFromObject(tempFrame);
+  frameBox.expandByScalar(-0.04);
+
+  let intersects = false;
+  scene.traverse((o) => {
+    if (
+      intersects ||
+      !o.userData?.isMount ||
+      o.userData.type !== "support_frame"
+    )
+      return;
+    const supportBox = new THREE.Box3().setFromObject(o);
+    supportBox.expandByScalar(-0.04);
+    if (frameBox.intersectsBox(supportBox)) intersects = true;
+  });
+  return intersects;
+}
 
 function placeFrameAtPosition(x, z) {
   const frame = frameTemplate.clone(true);
