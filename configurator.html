@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, minimum-scale=1.0"
+    />
+    <title>Robot Configurator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Exo+2:wght@300;400;500;600;700;800&family=Oswald:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  </head>
+  <body>
+    <!-- ── LOADING SCREEN ── -->
+    <div id="loading-screen">
+      <div id="ls-scanline"></div>
+      <div id="ls-grid"></div>
+      <div id="ls-content">
+        <div id="ls-glyph">⬡</div>
+        <div id="ls-title">ROBOT CONFIGURATOR</div>
+        <div id="ls-sub">UNIT MK-1 · INITIALISING SYSTEMS</div>
+        <div id="ls-bar-wrap">
+          <div id="ls-bar"></div>
+          <div id="ls-bar-glow"></div>
+        </div>
+        <div id="ls-status">LOADING ASSETS...</div>
+        <div id="ls-dots"><span></span><span></span><span></span></div>
+      </div>
+      <div id="ls-corner-tl"></div>
+      <div id="ls-corner-tr"></div>
+      <div id="ls-corner-bl"></div>
+      <div id="ls-corner-br"></div>
+    </div>
+
+    <div class="app-shell">
+      <!-- LEFT PANEL -->
+      <aside class="panel panel-left">
+        <div class="logo-header">
+          <h1 class="logo">Robot Configurator</h1>
+          <div class="logo-sub">
+            UNIT&nbsp;MK-1 &nbsp;·&nbsp; BUILD MODE ACTIVE
+          </div>
+        </div>
+
+        <section class="panel-section">
+          <button class="section-toggle" data-target="sec-components">
+            COMPONENTS <span class="chevron">▼</span>
+          </button>
+          <div class="section-body" id="sec-components">
+            <div class="btn-tip-wrap" data-tip="addFrame">
+              <button id="addFrame" class="btn btn-frame">
+                <div class="btn-inner">
+                  <span class="btn-glyph">▬</span>
+                  <span class="btn-body"
+                    ><span class="btn-label">Rectangle Frame</span
+                    ><span class="btn-desc">Structural base</span></span
+                  >
+                  <span class="btn-tag">FRM</span>
+                </div>
+              </button>
+            </div>
+            <div class="btn-tip-wrap" data-tip="addMotor">
+              <button id="addMotor" class="btn btn-motor">
+                <div class="btn-inner">
+                  <span class="btn-glyph">⬡</span>
+                  <span class="btn-body"
+                    ><span class="btn-label">Motor Assembly</span
+                    ><span class="btn-desc">Drive unit housing</span></span
+                  >
+                  <span class="btn-tag">MOT</span>
+                </div>
+              </button>
+            </div>
+            <div class="btn-tip-wrap" data-tip="addWheelBtn">
+              <button
+                id="addWheelBtn"
+                class="btn btn-wheel"
+                disabled
+                style="opacity: 0.35; pointer-events: none"
+                title="Place a Motor first to unlock wheels"
+              >
+                <div class="btn-inner">
+                  <span class="btn-glyph">◉</span>
+                  <span class="btn-body"
+                    ><span class="btn-label">Wheel</span
+                    ><span class="btn-desc">Motor-driven wheel</span></span
+                  >
+                  <span class="btn-tag">WHL</span>
+                </div>
+              </button>
+            </div>
+            <div class="btn-tip-wrap" data-tip="addTriangle">
+              <button id="addTriangle" class="btn btn-triangle">
+                <div class="btn-inner">
+                  <span class="btn-glyph">▲</span>
+                  <span class="btn-body"
+                    ><span class="btn-label">Triangle Frame</span
+                    ><span class="btn-desc">Angular brace</span></span
+                  >
+                  <span class="btn-tag">TRI</span>
+                </div>
+              </button>
+            </div>
+            <div class="btn-tip-wrap" data-tip="addSupportFrame">
+              <button id="addSupportFrame" class="btn btn-support">
+                <div class="btn-inner">
+                  <span class="btn-glyph">╬</span>
+                  <span class="btn-body"
+                    ><span class="btn-label">Stress Bridge</span
+                    ><span class="btn-desc">Cross-bridge span</span></span
+                  >
+                  <span class="btn-tag">SUP</span>
+                </div>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel-section panel-section-camera">
+          <button class="section-toggle" data-target="sec-camera">
+            CAMERA PRESETS <span class="chevron">▼</span>
+          </button>
+          <div class="section-body" id="sec-camera">
+            <div class="sidebar-cam-grid">
+              <button
+                class="sidebar-cam-btn active"
+                data-cam="front"
+                title="Front View"
+              >
+                <span class="sidebar-cam-icon">⬛</span
+                ><span class="sidebar-cam-label">FRONT</span>
+              </button>
+              <button class="sidebar-cam-btn" data-cam="back" title="Back View">
+                <span class="sidebar-cam-icon">⬛</span
+                ><span class="sidebar-cam-label">BACK</span>
+              </button>
+              <button class="sidebar-cam-btn" data-cam="top" title="Top View">
+                <span class="sidebar-cam-icon">⊡</span
+                ><span class="sidebar-cam-label">TOP</span>
+              </button>
+              <button
+                class="sidebar-cam-btn"
+                data-cam="left"
+                title="Left Side View"
+              >
+                <span class="sidebar-cam-icon">◁</span
+                ><span class="sidebar-cam-label">LEFT</span>
+              </button>
+              <button
+                class="sidebar-cam-btn"
+                data-cam="right"
+                title="Right Side View"
+              >
+                <span class="sidebar-cam-icon">▷</span
+                ><span class="sidebar-cam-label">RIGHT</span>
+              </button>
+              <button
+                class="sidebar-cam-btn"
+                data-cam="iso"
+                title="Isometric View"
+              >
+                <span class="sidebar-cam-icon">⬡</span
+                ><span class="sidebar-cam-label">ISO</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel-section undo-redo-section">
+          <div class="undo-redo-row">
+            <button
+              id="undoBtn"
+              class="undo-redo-btn"
+              disabled
+              style="opacity: 0.35; pointer-events: none"
+              title="Undo (Ctrl+Z)"
+            >
+              <span class="ur-icon">↩</span><span class="ur-label">UNDO</span
+              ><span class="ur-kbd">Ctrl Z</span>
+            </button>
+            <button
+              id="redoBtn"
+              class="undo-redo-btn"
+              disabled
+              style="opacity: 0.35; pointer-events: none"
+              title="Redo (Ctrl+Y)"
+            >
+              <span class="ur-icon">↪</span><span class="ur-label">REDO</span
+              ><span class="ur-kbd">Ctrl Y</span>
+            </button>
+          </div>
+        </section>
+      </aside>
+
+      <!-- VIEWPORT -->
+      <main class="viewport">
+        <canvas id="app"></canvas>
+        <div id="idle-arrows"></div>
+        <div id="viewport-rot-controls" style="display: none">
+          <div class="arrow-key-row">
+            <button
+              class="arrow-key arrow-key-active arrow-key-labeled"
+              id="arrowKeyLeft"
+              title="Rotate left"
+            >
+              <span class="arrow-key-label">Rotate L</span
+              ><span class="arrow-key-glyph">←</span>
+            </button>
+            <button
+              class="arrow-key arrow-key-active arrow-key-labeled"
+              id="arrowKeyRight"
+              title="Rotate right"
+            >
+              <span class="arrow-key-glyph">→</span
+              ><span class="arrow-key-label">Rotate R</span>
+            </button>
+          </div>
+        </div>
+      </main>
+
+      <!-- RIGHT PANEL -->
+      <aside class="panel panel-right">
+        <!-- Header -->
+        <div class="requisition-header">
+          <span class="requisition-title">REQUISITION</span>
+        </div>
+
+        <!-- Scrollable cost + weight as one unified card -->
+        <div class="requisition-scroll-area">
+          <div class="req-combined-panel">
+            <!-- COST -->
+            <div id="cost-section">
+              <div id="cost-section-header">
+                <div id="cost-section-title">
+                  <span style="color: #384858; font-size: 11px">⊕</span> COST
+                </div>
+                <div style="display: flex; align-items: center; gap: 0">
+                  <div id="cost-total-badge">₹0</div>
+                  <div id="cost-chevron">▾</div>
+                </div>
+              </div>
+              <div id="cost-body">
+                <div class="basket-section">
+                  <div id="basketItems" class="basket-items"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- WEIGHT (injected by JS) -->
+            <div id="weight-section-placeholder"></div>
+          </div>
+        </div>
+
+        <!-- Total cost footer — pinned -->
+        <div class="basket-footer">
+          <div style="display: flex; flex-direction: column; gap: 2px">
+            <span>Total Cost</span>
+            <span
+              style="
+                font-family: &quot;Share Tech Mono&quot;, monospace;
+                font-size: 8px;
+                color: #6a8098;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+              "
+              >Incl. GST</span
+            >
+          </div>
+          <span class="price">&#8377;<span id="totalPrice">0</span></span>
+        </div>
+
+        <!-- Buttons — pinned -->
+        <div class="save-print-section">
+          <button id="finalizeBtn" class="btn btn-primary btn-finalize-large">
+            <div class="btn-inner">
+              <span class="btn-icon">▤</span
+              ><span class="btn-action-label">Save Design</span>
+            </div>
+          </button>
+          <button id="proceedPaymentBtn" class="btn btn-primary">
+            <div class="btn-inner">
+              <span class="btn-icon">▶▶</span
+              ><span class="btn-action-label">Proceed to Payment</span>
+            </div>
+          </button>
+        </div>
+      </aside>
+    </div>
+
+    <script>
+      document.querySelectorAll(".section-toggle").forEach((toggle) => {
+        const targetId = toggle.dataset.target;
+        const body = document.getElementById(targetId);
+        toggle.addEventListener("click", () => {
+          const isCollapsed = toggle.classList.contains("collapsed");
+          if (isCollapsed) {
+            toggle.classList.remove("collapsed");
+            body.classList.remove("collapsed");
+            body.classList.add("animate-in");
+            setTimeout(() => body.classList.remove("animate-in"), 400);
+          } else {
+            toggle.classList.add("collapsed");
+            body.classList.add("collapsed");
+          }
+        });
+      });
+
+      const costHeader = document.getElementById("cost-section-header");
+      const costBody = document.getElementById("cost-body");
+      const costChevron = document.getElementById("cost-chevron");
+      let costCollapsed = false;
+      costHeader.addEventListener("click", () => {
+        costCollapsed = !costCollapsed;
+        costBody.classList.toggle("collapsed", costCollapsed);
+        costChevron.style.transform = costCollapsed
+          ? "rotate(-90deg)"
+          : "rotate(0deg)";
+        costChevron.style.color = "#d05818";
+      });
+    </script>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

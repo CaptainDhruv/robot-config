@@ -1337,6 +1337,12 @@ async function init() {
     ls.classList.add("ls-hide");
     setTimeout(() => ls.remove(), 750);
   }
+
+  // Auto-load preset if URL param present
+  const presetParam = new URLSearchParams(window.location.search).get("preset");
+  if (presetParam) {
+    setTimeout(() => applyPreset(presetParam), 800);
+  }
 }
 
 /* ── Helper to refresh basket totals when config updates live ── */
@@ -6187,6 +6193,191 @@ function executeDelete(mount) {
   updateWeightDisplay();
   updateUndoRedoButtons();
   showHudMessage(`DELETED: ${(PART_LABELS()[type] ?? type).toUpperCase()}`);
+}
+async function applyPreset(presetName) {
+  const DELAY = 150;
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  function placeMotorAuto() {
+    rebuildSocketMarkers();
+    if (motorMarkers.length === 0) return false;
+    const socket = motorMarkers[0].userData.socket;
+    if (!socket || usedSockets.has(socket.uuid)) return false;
+    placeMotor(socket, computeMotorAutoYaw(socket), 0);
+    rebuildSocketMarkers();
+    updateWheelButtonState();
+    updateSupportButtonState();
+    applySocketHighlights();
+    updateWeightDisplay();
+    return true;
+  }
+
+  function placeWheelAuto() {
+    rebuildSocketMarkers();
+    if (wheelMarkers.length === 0) return false;
+    const socket = wheelMarkers[0].userData.socket;
+    if (!socket || usedSockets.has(socket.uuid)) return false;
+    placeWheel(socket);
+    rebuildSocketMarkers();
+    updateWheelButtonState();
+    updateSupportButtonState();
+    applySocketHighlights();
+    updateWeightDisplay();
+    return true;
+  }
+
+  function placeFrameAuto() {
+    rebuildSocketMarkers();
+    if (frameMarkers.length === 0) return false;
+    const socket = frameMarkers[0].userData.socket;
+    if (!socket || usedSockets.has(socket.uuid)) return false;
+    placeFrame(socket);
+    rebuildSocketMarkers();
+    updateWheelButtonState();
+    updateSupportButtonState();
+    applySocketHighlights();
+    updateWeightDisplay();
+    return true;
+  }
+
+  function findAndPlaceAxisAlignedTrianglePair() {
+    rebuildSocketMarkers();
+    if (triangleSocketMarkers.length < 2) return false;
+
+    const AXIS_THRESH = 0.25;
+    const MIN_DIST = 0.5;
+    let socketA = null,
+      socketB = null;
+    let bestDist = -1;
+
+    for (let i = 0; i < triangleSocketMarkers.length; i++) {
+      const sA = triangleSocketMarkers[i].userData.socket;
+      if (!sA || usedSockets.has(sA.uuid)) continue;
+      const posA = new THREE.Vector3();
+      sA.getWorldPosition(posA);
+
+      for (let j = i + 1; j < triangleSocketMarkers.length; j++) {
+        const sB = triangleSocketMarkers[j].userData.socket;
+        if (!sB || usedSockets.has(sB.uuid)) continue;
+        const posB = new THREE.Vector3();
+        sB.getWorldPosition(posB);
+
+        const dx = Math.abs(posA.x - posB.x);
+        const dz = Math.abs(posA.z - posB.z);
+        const dist = Math.hypot(dx, dz);
+
+        if (dist > MIN_DIST && (dx < AXIS_THRESH || dz < AXIS_THRESH)) {
+          if (dist > bestDist) {
+            bestDist = dist;
+            socketA = sA;
+            socketB = sB;
+          }
+        }
+      }
+    }
+
+    if (!socketA || !socketB) return false;
+
+    const yawA = computeTriangleAutoYaw(socketA);
+    placeTriangle(socketA, yawA, 0);
+    rebuildSocketMarkers();
+    updateWheelButtonState();
+    updateSupportButtonState();
+    applySocketHighlights();
+    updateWeightDisplay();
+
+    placeTriangle(socketB, yawA + Math.PI, 0);
+    rebuildSocketMarkers();
+    updateWheelButtonState();
+    updateSupportButtonState();
+    applySocketHighlights();
+    updateWeightDisplay();
+    return true;
+  }
+
+  function placeSupportAuto() {
+    rebuildSocketMarkers();
+    if (!canPlaceSupportBridge()) return false;
+    const valid = getValidStressConnectorSockets();
+    if (valid.length === 0) return false;
+
+    for (const marker of valid) {
+      const socket = marker.userData.socket;
+      if (!socket || usedSockets.has(socket.uuid)) continue;
+      const pair = resolveBestSupportSocketPair(socket);
+      if (!pair) continue;
+      const { socketA, posA, socketB, posB } = pair;
+      if (usedSockets.has(socketA.uuid) || usedSockets.has(socketB.uuid))
+        continue;
+
+      const dx = Math.abs(posA.x - posB.x);
+      const dz = Math.abs(posA.z - posB.z);
+      if (dx > 0.25 && dz > 0.25) continue; // skip diagonal
+
+      placeSupportBridgeFromPair(socketA, posA, socketB, posB, 0, socketA);
+      rebuildSocketMarkers();
+      updateWheelButtonState();
+      updateSupportButtonState();
+      applySocketHighlights();
+      updateWeightDisplay();
+      return true;
+    }
+    return false;
+  }
+
+  showHudMessage(`LOADING PRESET: ${presetName.toUpperCase()}...`);
+
+  if (presetName === "scout") {
+    // All motors then all wheels on base frame
+    let placed = true;
+    while (placed) {
+      placed = placeMotorAuto();
+      await wait(DELAY);
+    }
+    placed = true;
+    while (placed) {
+      placed = placeWheelAuto();
+      await wait(DELAY);
+    }
+  }
+
+  if (presetName === "combat") {
+    // Step 1 — add 3 extra frames (total 4)
+    for (let i = 0; i < 3; i++) {
+      placeFrameAuto();
+      await wait(DELAY);
+    }
+    await wait(200);
+
+    // Step 2 — place two axis-aligned triangle pairs (one per side)
+    findAndPlaceAxisAlignedTrianglePair();
+    await wait(200);
+    findAndPlaceAxisAlignedTrianglePair();
+    await wait(200);
+
+    // Step 3 — place two stress bridges (one per triangle pair)
+    placeSupportAuto();
+    await wait(DELAY);
+    placeSupportAuto();
+    await wait(200);
+
+    // Step 4 — all motors
+    let placed = true;
+    while (placed) {
+      placed = placeMotorAuto();
+      await wait(DELAY);
+    }
+
+    // Step 5 — all wheels
+    placed = true;
+    while (placed) {
+      placed = placeWheelAuto();
+      await wait(DELAY);
+    }
+  }
+
+  applyCameraPreset("iso");
+  showHudMessage(`✓ PRESET LOADED: ${presetName.toUpperCase()}`);
 }
 /* =========================================================
    RENDER LOOP
