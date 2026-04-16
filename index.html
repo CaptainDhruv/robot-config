@@ -3,13 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MK-1 Robot Platform</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&family=Oswald:wght@300;400;600&display=swap"
-      rel="stylesheet"
-    />
+    <title>Blackburn Robot Configurator</title>
     <style>
+      @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap");
+
+      :root {
+        --accent: #d05818;
+        --accent2: #b84010;
+        --accent-soft: rgba(208, 88, 24, 0.1);
+        --accent-softer: rgba(208, 88, 24, 0.05);
+        --bg: #f5f5f3;
+        --bg2: #ffffff;
+        --bg3: #fafaf8;
+        --border: rgba(0, 0, 0, 0.09);
+        --text: #1a1a1a;
+        --text2: #555;
+        --muted: #999;
+        --shadow: 0 1px 4px rgba(0, 0, 0, 0.07), 0 4px 16px rgba(0, 0, 0, 0.05);
+        --shadow-lg: 0 4px 24px rgba(0, 0, 0, 0.1);
+      }
       *,
       *::before,
       *::after {
@@ -17,276 +29,637 @@
         margin: 0;
         padding: 0;
       }
-
-      :root {
-        --bg: #080d14;
-        --panel: #0e1520;
-        --border: rgba(208, 88, 24, 0.35);
-        --accent: #d05818;
-        --text: #e8eef4;
-        --muted: #6a8098;
-      }
-
-      html,
       body {
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
         background: var(--bg);
         color: var(--text);
-        font-family: "Share Tech Mono", monospace;
+        font-family: "Montserrat", sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
       }
 
-      .bg-grid {
+      /* ── BOOT OVERLAY ─────────────────────────────── */
+      #boot {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: var(--bg2);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        transition: opacity 0.5s ease;
+      }
+      #boot.done {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .boot-logo {
+        font-family: "Orbitron", sans-serif;
+        font-size: clamp(22px, 4vw, 42px);
+        font-weight: 900;
+        letter-spacing: 0.12em;
+        color: var(--text);
+      }
+      .boot-logo span {
+        color: var(--accent);
+      }
+      .boot-bar-wrap {
+        width: min(380px, 80vw);
+        height: 3px;
+        background: rgba(0, 0, 0, 0.08);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .boot-bar {
+        height: 100%;
+        width: 0;
+        background: var(--accent);
+        border-radius: 2px;
+        transition: width 0.06s linear;
+      }
+      #boot-log {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 10px;
+        color: var(--muted);
+        letter-spacing: 0.1em;
+        height: 80px;
+        overflow: hidden;
+        width: min(380px, 80vw);
+        line-height: 1.8;
+      }
+      .boot-line {
+        opacity: 0;
+        animation: bootLine 0.15s ease forwards;
+      }
+      @keyframes bootLine {
+        to {
+          opacity: 1;
+        }
+      }
+
+      /* ── BACKGROUND ───────────────────────────────── */
+      .bg-layer {
         position: fixed;
         inset: 0;
         z-index: 0;
-        background-image:
-          linear-gradient(rgba(80, 120, 170, 0.07) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(80, 120, 170, 0.07) 1px, transparent 1px);
-        background-size: 40px 40px;
+        pointer-events: none;
       }
-      .bg-grid::after {
-        content: "";
+      .bg-grid {
         position: absolute;
         inset: 0;
         background-image:
-          linear-gradient(rgba(80, 120, 170, 0.04) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(80, 120, 170, 0.04) 1px, transparent 1px);
-        background-size: 8px 8px;
+          linear-gradient(rgba(0, 0, 0, 0.035) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 0, 0, 0.035) 1px, transparent 1px);
+        background-size: 20px 20px;
       }
-
-      .scanline {
-        position: fixed;
+      .bg-grid-major {
+        position: absolute;
         inset: 0;
-        z-index: 1;
-        pointer-events: none;
-        background: repeating-linear-gradient(
-          0deg,
-          transparent,
-          transparent 2px,
-          rgba(0, 0, 0, 0.03) 2px,
-          rgba(0, 0, 0, 0.03) 4px
+        background-image:
+          linear-gradient(rgba(208, 88, 24, 0.07) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(208, 88, 24, 0.07) 1px, transparent 1px);
+        background-size: 100px 100px;
+      }
+      .bg-vignette {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          ellipse 65% 65% at 50% 50%,
+          var(--bg) 25%,
+          transparent 100%
         );
       }
 
-      .corner {
+      /* ── RADAR ────────────────────────────────────── */
+      #radar-canvas {
         position: fixed;
-        width: 60px;
-        height: 60px;
+        right: 36px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+        opacity: 0.22;
+        pointer-events: none;
+      }
+
+      /* ── SCAN LINE ────────────────────────────────── */
+      .scan-line {
+        position: fixed;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(208, 88, 24, 0.2),
+          transparent
+        );
+        z-index: 3;
+        pointer-events: none;
+        animation: scan 7s linear infinite;
+        top: 60px;
+      }
+      @keyframes scan {
+        0% {
+          transform: translateY(0);
+          opacity: 0;
+        }
+        5% {
+          opacity: 1;
+        }
+        95% {
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(calc(100vh - 60px));
+          opacity: 0;
+        }
+      }
+
+      /* ── CURSOR HUD ───────────────────────────────── */
+      #cursor-hud {
+        position: fixed;
+        z-index: 9998;
+        pointer-events: none;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 9px;
+        color: var(--accent);
+        letter-spacing: 0.1em;
+        opacity: 0;
+        transition: opacity 0.2s;
+        white-space: nowrap;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 4px 8px;
+        border-left: 2px solid var(--accent);
+        border-bottom: 1px solid rgba(208, 88, 24, 0.2);
+      }
+      #cursor-cross {
+        position: fixed;
+        z-index: 9997;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+      #cursor-cross::before,
+      #cursor-cross::after {
+        content: "";
+        position: absolute;
+        background: rgba(208, 88, 24, 0.5);
+      }
+      #cursor-cross::before {
+        width: 1px;
+        height: 14px;
+        left: 50%;
+        transform: translateX(-50%) translateY(-7px);
+      }
+      #cursor-cross::after {
+        height: 1px;
+        width: 14px;
+        top: 50%;
+        transform: translateY(-50%) translateX(-7px);
+      }
+
+      /* ── CORNER BRACKETS ──────────────────────────── */
+      .bracket {
+        position: fixed;
+        width: 44px;
+        height: 44px;
         z-index: 2;
       }
-      .corner::before,
-      .corner::after {
+      .bracket::before,
+      .bracket::after {
         content: "";
         position: absolute;
         background: var(--accent);
+        opacity: 0.4;
       }
-      .corner::before {
+      .bracket::before {
         width: 2px;
-        height: 40px;
+        height: 28px;
       }
-      .corner::after {
-        width: 40px;
+      .bracket::after {
+        width: 28px;
         height: 2px;
       }
-      .corner-tl {
-        top: 20px;
-        left: 20px;
+      .bracket-tl {
+        top: 16px;
+        left: 16px;
       }
-      .corner-tl::before {
+      .bracket-tl::before {
         top: 0;
         left: 0;
       }
-      .corner-tl::after {
+      .bracket-tl::after {
         top: 0;
         left: 0;
       }
-      .corner-tr {
-        top: 20px;
-        right: 20px;
+      .bracket-tr {
+        top: 16px;
+        right: 16px;
       }
-      .corner-tr::before {
-        top: 0;
-        right: 0;
-      }
-      .corner-tr::after {
+      .bracket-tr::before {
         top: 0;
         right: 0;
       }
-      .corner-bl {
-        bottom: 20px;
-        left: 20px;
+      .bracket-tr::after {
+        top: 0;
+        right: 0;
       }
-      .corner-bl::before {
+      .bracket-bl {
+        bottom: 16px;
+        left: 16px;
+      }
+      .bracket-bl::before {
         bottom: 0;
         left: 0;
       }
-      .corner-bl::after {
+      .bracket-bl::after {
         bottom: 0;
         left: 0;
       }
-      .corner-br {
-        bottom: 20px;
-        right: 20px;
+      .bracket-br {
+        bottom: 16px;
+        right: 16px;
       }
-      .corner-br::before {
+      .bracket-br::before {
         bottom: 0;
         right: 0;
       }
-      .corner-br::after {
+      .bracket-br::after {
         bottom: 0;
         right: 0;
       }
 
-      .status-bar {
+      /* ── DATA READOUTS ────────────────────────────── */
+      .data-readout {
+        position: fixed;
+        z-index: 3;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 8px;
+        color: rgba(208, 88, 24, 0.4);
+        letter-spacing: 0.12em;
+        line-height: 2;
+        pointer-events: none;
+      }
+      .dr-bl {
+        bottom: 42px;
+        left: 36px;
+      }
+      .dr-br {
+        bottom: 42px;
+        right: 36px;
+        text-align: right;
+      }
+      .data-blink {
+        animation: blink 1.8s step-end infinite;
+      }
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0;
+        }
+      }
+
+      /* ── TOPBAR ───────────────────────────────────── */
+      .topbar {
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
-        z-index: 10;
-        height: 36px;
-        background: rgba(8, 13, 20, 0.97);
+        z-index: 100;
+        height: 60px;
+        background: var(--bg2);
         border-bottom: 1px solid var(--border);
+        box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0 28px;
-        animation: fadeDown 0.6s ease both;
+        padding: 0 36px;
       }
-      .status-left {
+      /* warning stripe under topbar */
+      .topbar::after {
+        content: "";
+        position: absolute;
+        bottom: -4px;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: repeating-linear-gradient(
+          90deg,
+          var(--accent) 0,
+          var(--accent) 8px,
+          transparent 8px,
+          transparent 16px
+        );
+        opacity: 0.25;
+      }
+      .topbar-left {
         display: flex;
         align-items: center;
-        gap: 18px;
+        gap: 14px;
       }
-      .status-dot {
-        width: 6px;
-        height: 6px;
+      .topbar-logo-img {
+        height: 34px;
+        width: auto;
+        display: block;
+      }
+      .topbar-divider {
+        width: 1px;
+        height: 26px;
+        background: var(--border);
+      }
+      .topbar-name {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .topbar-name-main {
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--text);
+        line-height: 1;
+      }
+      .topbar-name-sub {
+        font-size: 8px;
+        font-weight: 600;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--muted);
+        line-height: 1;
+      }
+      .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .topbar-dot {
+        width: 7px;
+        height: 7px;
         border-radius: 50%;
-        background: var(--accent);
+        background: #1a8a3a;
         animation: pulse 2s ease-in-out infinite;
       }
       @keyframes pulse {
         0%,
         100% {
           opacity: 1;
-          box-shadow: 0 0 6px var(--accent);
         }
         50% {
-          opacity: 0.4;
-          box-shadow: none;
+          opacity: 0.3;
         }
       }
-      .status-tag {
-        font-family: "Orbitron", sans-serif;
-        font-size: 8px;
-        font-weight: 700;
-        letter-spacing: 0.28em;
-        color: var(--accent);
-        text-transform: uppercase;
-      }
-      .status-right {
+      .topbar-status {
+        font-family: "Share Tech Mono", monospace;
         font-size: 9px;
-        letter-spacing: 0.14em;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
         color: var(--muted);
-        display: flex;
-        align-items: center;
-        gap: 20px;
+      }
+      #topbar-clock {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 11px;
+        color: var(--accent);
+        letter-spacing: 0.1em;
       }
 
+      /* ── PAGE ─────────────────────────────────────── */
       .page {
         position: relative;
-        z-index: 5;
-        width: 100%;
-        height: 100%;
+        z-index: 10;
+        min-height: 100vh;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 80px 24px 60px;
+        padding: 100px 60px 64px;
       }
 
+      /* ── HERO ─────────────────────────────────────── */
       .hero {
         text-align: center;
         margin-bottom: 48px;
-        animation: fadeUp 0.7s ease 0.2s both;
+        animation: fadeUp 0.7s ease 0.1s both;
       }
       .hero-eyebrow {
-        font-size: 9px;
-        letter-spacing: 0.4em;
-        color: var(--accent);
-        text-transform: uppercase;
-        margin-bottom: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 12px;
+        gap: 10px;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 9px;
+        letter-spacing: 0.34em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 16px;
+        opacity: 0.8;
       }
       .hero-eyebrow::before,
       .hero-eyebrow::after {
         content: "";
-        width: 40px;
+        width: 36px;
         height: 1px;
-        background: var(--border);
+        background: rgba(208, 88, 24, 0.35);
+      }
+      .eyebrow-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--accent);
+        display: inline-block;
+        animation: pulse 2s ease-in-out infinite;
       }
       .hero-title {
+        position: relative;
+        display: inline-block;
         font-family: "Orbitron", sans-serif;
-        font-size: clamp(36px, 6vw, 72px);
+        font-size: clamp(32px, 5.8vw, 72px);
         font-weight: 900;
-        letter-spacing: 0.14em;
+        letter-spacing: 0.1em;
         line-height: 1;
-        color: #ffffff;
-        text-shadow: 0 0 60px rgba(208, 88, 24, 0.25);
-        margin-bottom: 6px;
+        color: var(--text);
+        margin-bottom: 4px;
       }
-      .hero-title-sub {
-        font-family: "Orbitron", sans-serif;
-        font-size: clamp(14px, 2vw, 22px);
-        font-weight: 400;
-        letter-spacing: 0.3em;
+      .hero-title span {
         color: var(--accent);
-        margin-bottom: 18px;
+      }
+      /* blinking cursor */
+      .hero-title::after {
+        content: "_";
+        color: var(--accent);
+        animation: blink 1s step-end infinite;
+        font-size: 0.7em;
+        vertical-align: bottom;
+        margin-left: 4px;
+      }
+      .hero-underline {
+        height: 3px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--accent) 30%,
+          var(--accent) 70%,
+          transparent
+        );
+        margin: 8px auto 0;
+        width: 60%;
+        opacity: 0.5;
+      }
+      .hero-sub {
+        font-family: "Orbitron", sans-serif;
+        font-size: clamp(10px, 1.4vw, 16px);
+        font-weight: 400;
+        letter-spacing: 0.42em;
+        color: var(--muted);
+        margin: 14px 0 18px;
+        text-transform: uppercase;
       }
       .hero-desc {
         font-size: 11px;
-        letter-spacing: 0.12em;
-        color: var(--muted);
-        line-height: 1.8;
-        max-width: 480px;
+        font-weight: 500;
+        letter-spacing: 0.08em;
+        color: var(--text2);
+        line-height: 1.9;
+        max-width: 460px;
         margin: 0 auto;
         text-transform: uppercase;
       }
 
-      .divider {
-        width: 320px;
+      /* ── DIMENSION LINE ───────────────────────────── */
+      .dim-line-wrap {
+        position: relative;
+        width: min(580px, 90vw);
+        margin: 0 auto 40px;
+        animation: fadeUp 0.6s ease 0.25s both;
+      }
+      .dim-line {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        height: 20px;
+      }
+      .dim-end {
+        width: 1px;
+        height: 14px;
+        background: rgba(208, 88, 24, 0.5);
+      }
+      .dim-shaft {
+        flex: 1;
         height: 1px;
-        background: linear-gradient(
-          90deg,
-          transparent,
-          var(--border),
-          transparent
-        );
-        margin-bottom: 48px;
-        animation: fadeUp 0.7s ease 0.3s both;
+        background: rgba(208, 88, 24, 0.3);
+        position: relative;
+      }
+      .dim-shaft::before,
+      .dim-shaft::after {
+        content: "◀";
+        position: absolute;
+        font-size: 7px;
+        color: rgba(208, 88, 24, 0.5);
+        top: 50%;
+        transform: translateY(-50%);
+      }
+      .dim-shaft::before {
+        left: 0;
+      }
+      .dim-shaft::after {
+        content: "▶";
+        right: 0;
+      }
+      .dim-label {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        top: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--bg);
+        padding: 0 10px;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 8px;
+        letter-spacing: 0.2em;
+        color: var(--accent);
+        white-space: nowrap;
       }
 
-      .btn-grid {
+      /* ── SECTION LABEL ────────────────────────────── */
+      .section-label {
         display: flex;
-        gap: 20px;
+        align-items: center;
+        gap: 10px;
+        font-size: 8px;
+        font-weight: 800;
+        letter-spacing: 0.26em;
+        text-transform: uppercase;
+        color: var(--text);
+        margin-bottom: 24px;
+        animation: fadeUp 0.6s ease 0.3s both;
+      }
+      .section-label::before {
+        content: "";
+        display: block;
+        width: 3px;
+        height: 14px;
+        background: var(--accent);
+        border-radius: 2px;
+      }
+      .section-label-num {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 9px;
+        color: var(--muted);
+        margin-left: 4px;
+      }
+
+      /* ── CARDS ────────────────────────────────────── */
+      .cards {
+        display: flex;
+        gap: 22px;
         flex-wrap: wrap;
         justify-content: center;
-        align-items: stretch;
-        animation: fadeUp 0.7s ease 0.4s both;
+        animation: fadeUp 0.6s ease 0.38s both;
+        position: relative;
       }
 
-      .card-btn {
+      /* connector line between cards */
+      .cards::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: calc(50% - 140px - 22px);
+        right: calc(50% - 140px - 22px);
+        height: 1px;
+        background: repeating-linear-gradient(
+          90deg,
+          rgba(208, 88, 24, 0.2) 0,
+          rgba(208, 88, 24, 0.2) 4px,
+          transparent 4px,
+          transparent 8px
+        );
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      .card {
         position: relative;
-        width: 240px;
-        background: var(--panel);
-        border: 1.5px solid var(--border);
+        width: 242px;
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-top: 3px solid transparent;
+        box-shadow: var(--shadow);
+        padding: 32px 26px 56px;
+        text-decoration: none;
+        display: block;
+        border-radius: 2px;
         cursor: pointer;
-        text-align: left;
-        padding: 28px 26px 52px;
+        transition:
+          border-color 0.18s,
+          box-shadow 0.18s,
+          transform 0.18s;
+        overflow: hidden;
+        z-index: 1;
         clip-path: polygon(
           0 0,
           calc(100% - 16px) 0,
@@ -294,146 +667,258 @@
           100% 100%,
           0 100%
         );
-        transition:
-          border-color 0.2s,
-          box-shadow 0.2s,
-          transform 0.18s;
-        text-decoration: none;
-        display: block;
-        outline: none;
       }
-      .card-btn::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 2px;
-        background: linear-gradient(90deg, var(--accent), transparent);
-        opacity: 0;
-        transition: opacity 0.2s;
-      }
-      .card-btn:hover {
-        border-color: var(--accent);
-        box-shadow:
-          0 0 30px rgba(208, 88, 24, 0.18),
-          inset 0 0 20px rgba(208, 88, 24, 0.04);
-        transform: translateY(-3px);
-      }
-      .card-btn:hover::before {
-        opacity: 1;
-      }
-      .card-btn::after {
+
+      /* card inner grid */
+      .card::before {
         content: "";
         position: absolute;
         inset: 0;
-        background: radial-gradient(
-          circle at var(--mx, 50%) var(--my, 50%),
-          rgba(208, 88, 24, 0.06) 0%,
-          transparent 65%
-        );
-        opacity: 0;
-        transition: opacity 0.3s;
+        background-image:
+          linear-gradient(rgba(0, 0, 0, 0.022) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 0, 0, 0.022) 1px, transparent 1px);
+        background-size: 16px 16px;
         pointer-events: none;
+        transition: opacity 0.3s;
+        z-index: 0;
       }
-      .card-btn:hover::after {
-        opacity: 1;
+      .card:hover {
+        border-color: var(--accent);
+        border-top-color: var(--accent);
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-5px);
+      }
+      .card:hover::before {
+        opacity: 0;
+      }
+
+      /* rivet dots */
+      .card .rivet {
+        position: absolute;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        border: 1.5px solid rgba(0, 0, 0, 0.12);
+        background: var(--bg3);
+      }
+      .card .rivet.tl {
+        top: 8px;
+        left: 8px;
+      }
+      .card .rivet.tr {
+        top: 8px;
+        right: 20px;
+      }
+      .card .rivet.bl {
+        bottom: 8px;
+        left: 8px;
+      }
+      .card .rivet.br {
+        bottom: 8px;
+        right: 8px;
+      }
+      .card:hover .rivet {
+        border-color: rgba(208, 88, 24, 0.4);
+        background: rgba(208, 88, 24, 0.08);
+      }
+
+      /* large watermark num */
+      .card-num {
+        position: absolute;
+        bottom: 14px;
+        left: 20px;
+        font-family: "Orbitron", sans-serif;
+        font-size: 44px;
+        font-weight: 900;
+        color: rgba(0, 0, 0, 0.04);
+        line-height: 1;
+        pointer-events: none;
+        user-select: none;
+        z-index: 0;
       }
 
       .card-badge {
-        font-family: "Orbitron", sans-serif;
-        font-size: 7px;
-        font-weight: 700;
-        letter-spacing: 0.28em;
+        position: relative;
+        z-index: 1;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 8px;
+        letter-spacing: 0.2em;
         text-transform: uppercase;
+        padding: 3px 9px;
+        border: 1px solid;
+        margin-bottom: 16px;
+        border-radius: 2px;
+      }
+      .card-badge::before {
+        content: "";
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: currentColor;
+        display: block;
+        flex-shrink: 0;
+      }
+      .badge-accent {
         color: var(--accent);
-        background: rgba(208, 88, 24, 0.1);
-        border: 1px solid rgba(208, 88, 24, 0.3);
-        padding: 3px 8px;
-        display: inline-block;
-        margin-bottom: 14px;
+        background: var(--accent-softer);
+        border-color: rgba(208, 88, 24, 0.25);
       }
-      .card-badge.badge-alt {
-        color: #6a9ab8;
-        background: rgba(106, 154, 184, 0.08);
-        border-color: rgba(106, 154, 184, 0.25);
-      }
-      .card-badge.badge-config {
-        color: #8aacbf;
-        background: rgba(138, 172, 191, 0.08);
-        border-color: rgba(138, 172, 191, 0.2);
+      .badge-blue {
+        color: #1a6abf;
+        background: rgba(26, 106, 191, 0.06);
+        border-color: rgba(26, 106, 191, 0.2);
       }
 
       .card-icon {
-        font-size: 28px;
+        position: relative;
+        z-index: 1;
+        font-size: 22px;
         line-height: 1;
-        margin-bottom: 12px;
+        margin-bottom: 14px;
         display: block;
-        filter: drop-shadow(0 0 8px currentColor);
+        color: var(--muted);
+        opacity: 0.7;
       }
       .card-title {
+        position: relative;
+        z-index: 1;
         font-family: "Orbitron", sans-serif;
-        font-size: 13px;
+        font-size: 11px;
         font-weight: 700;
-        letter-spacing: 0.14em;
+        letter-spacing: 0.15em;
         text-transform: uppercase;
-        color: #ffffff;
-        margin-bottom: 8px;
-        line-height: 1.3;
+        color: var(--text);
+        margin-bottom: 10px;
+        line-height: 1.4;
       }
       .card-desc {
+        position: relative;
+        z-index: 1;
         font-size: 9px;
-        letter-spacing: 0.08em;
+        font-weight: 500;
+        letter-spacing: 0.06em;
         color: var(--muted);
-        line-height: 1.7;
+        line-height: 1.9;
         text-transform: uppercase;
       }
+
+      /* signal bars */
+      .card-signal {
+        position: absolute;
+        top: 30px;
+        right: 26px;
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        z-index: 1;
+      }
+      .sig-bar {
+        width: 3px;
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 1px;
+      }
+      .sig-bar.active {
+        background: var(--accent);
+        opacity: 0.5;
+      }
+      .card:hover .sig-bar.active {
+        opacity: 0.9;
+      }
+
       .card-arrow {
         position: absolute;
-        bottom: 22px;
-        right: 22px;
-        font-family: "Share Tech Mono", monospace;
+        bottom: 18px;
+        right: 20px;
         font-size: 14px;
-        color: var(--border);
+        color: #ddd;
+        font-family: monospace;
         transition:
-          color 0.2s,
-          transform 0.2s;
+          color 0.18s,
+          transform 0.18s;
+        z-index: 1;
       }
-      .card-btn:hover .card-arrow {
+      .card:hover .card-arrow {
         color: var(--accent);
         transform: translate(3px, -3px);
       }
 
-      .card-btn.primary {
-        width: 280px;
-        border-color: rgba(208, 88, 24, 0.5);
-        background: linear-gradient(135deg, #0e1520, #141e2e);
+      /* dashed bottom spec strip */
+      .card-spec {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: repeating-linear-gradient(
+          90deg,
+          rgba(208, 88, 24, 0.15) 0,
+          rgba(208, 88, 24, 0.15) 4px,
+          transparent 4px,
+          transparent 8px
+        );
       }
-      .card-btn.primary:hover {
-        box-shadow:
-          0 0 50px rgba(208, 88, 24, 0.28),
-          inset 0 0 30px rgba(208, 88, 24, 0.06);
+      .card:hover .card-spec {
+        background: repeating-linear-gradient(
+          90deg,
+          rgba(208, 88, 24, 0.5) 0,
+          rgba(208, 88, 24, 0.5) 4px,
+          transparent 4px,
+          transparent 8px
+        );
       }
 
+      .card.primary {
+        width: 282px;
+        border-color: rgba(208, 88, 24, 0.22);
+        border-top-color: var(--accent);
+        background: linear-gradient(150deg, #fff 60%, #fff8f4);
+      }
+      .card.primary:hover {
+        box-shadow:
+          var(--shadow-lg),
+          0 8px 32px rgba(208, 88, 24, 0.14);
+      }
+
+      /* ── FOOTER ───────────────────────────────────── */
       .footer {
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
-        z-index: 10;
+        z-index: 100;
         height: 32px;
-        background: rgba(8, 13, 20, 0.97);
+        background: var(--bg2);
         border-top: 1px solid var(--border);
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 32px;
-        animation: fadeUp 0.6s ease 0.8s both;
+        gap: 28px;
+      }
+      /* warning stripe above footer */
+      .footer::before {
+        content: "";
+        position: absolute;
+        top: -4px;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: repeating-linear-gradient(
+          90deg,
+          var(--accent) 0,
+          var(--accent) 8px,
+          transparent 8px,
+          transparent 16px
+        );
+        opacity: 0.18;
       }
       .footer-item {
+        font-family: "Share Tech Mono", monospace;
         font-size: 8px;
-        letter-spacing: 0.18em;
-        color: #2a3848;
+        letter-spacing: 0.16em;
+        color: #ccc;
         text-transform: uppercase;
       }
       .footer-item.active {
@@ -443,17 +928,7 @@
       @keyframes fadeUp {
         from {
           opacity: 0;
-          transform: translateY(14px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-      @keyframes fadeDown {
-        from {
-          opacity: 0;
-          transform: translateY(-8px);
+          transform: translateY(12px);
         }
         to {
           opacity: 1;
@@ -462,91 +937,209 @@
       }
 
       @media (max-width: 680px) {
-        .btn-grid {
+        .cards {
           flex-direction: column;
           align-items: center;
         }
-        .card-btn,
-        .card-btn.primary {
+        .card,
+        .card.primary {
           width: 100%;
           max-width: 320px;
         }
-        .hero-title {
-          font-size: 32px;
+        .topbar {
+          padding: 0 18px;
+        }
+        .topbar-status,
+        #topbar-clock {
+          display: none;
+        }
+        #radar-canvas {
+          display: none;
+        }
+        .dr-bl,
+        .dr-br {
+          display: none;
         }
       }
     </style>
   </head>
   <body>
-    <div class="bg-grid"></div>
-    <div class="scanline"></div>
-    <div class="corner corner-tl"></div>
-    <div class="corner corner-tr"></div>
-    <div class="corner corner-bl"></div>
-    <div class="corner corner-br"></div>
-
-    <div class="status-bar">
-      <div class="status-left">
-        <div class="status-dot"></div>
-        <div class="status-tag">MK-1 Robot Platform</div>
+    <!-- ── BOOT SCREEN ────────────────────────────── -->
+    <div id="boot">
+      <div class="boot-logo">BLACK<span>BURN</span></div>
+      <div class="boot-bar-wrap">
+        <div class="boot-bar" id="boot-bar"></div>
       </div>
-      <div class="status-right">
-        <span>SYSTEM READY</span>
-        <span id="clock">--:--:--</span>
+      <div id="boot-log"></div>
+    </div>
+
+    <!-- ── BACKGROUND ────────────────────────────── -->
+    <div class="bg-layer">
+      <div class="bg-grid"></div>
+      <div class="bg-grid-major"></div>
+      <div class="bg-vignette"></div>
+    </div>
+
+    <!-- ── RADAR ─────────────────────────────────── -->
+    <canvas id="radar-canvas" width="140" height="140"></canvas>
+
+    <!-- ── SCAN LINE ──────────────────────────────── -->
+    <div class="scan-line"></div>
+
+    <!-- ── CURSOR HUD ─────────────────────────────── -->
+    <div id="cursor-hud"></div>
+    <div id="cursor-cross"></div>
+
+    <!-- ── CORNER BRACKETS ───────────────────────── -->
+    <div class="bracket bracket-tl"></div>
+    <div class="bracket bracket-tr"></div>
+    <div class="bracket bracket-bl"></div>
+    <div class="bracket bracket-br"></div>
+
+    <!-- ── DATA READOUTS ──────────────────────────── -->
+    <div class="data-readout dr-bl">
+      SYS_ID: BRC-MK1-001<br />
+      BUILD: 2025.04.16<br />
+      STATUS: <span class="data-blink">NOMINAL ▮</span>
+    </div>
+    <div class="data-readout dr-br">
+      AXES: 4<br />
+      CONFIGS: 03<br />
+      FW: v1.0.0
+    </div>
+
+    <!-- ── TOPBAR ─────────────────────────────────── -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <img
+          class="topbar-logo-img"
+          src="data:image/jpeg;base64,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"
+          alt="Vanora"
+        />
+        <div class="topbar-divider"></div>
+        <div class="topbar-name">
+          <span class="topbar-name-main">Blackburn</span>
+          <span class="topbar-name-sub">◈ Robot Configurator</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-dot"></div>
+        <span class="topbar-status">System Ready</span>
+        <span id="topbar-clock">--:--:--</span>
       </div>
     </div>
 
+    <!-- ── MAIN PAGE ──────────────────────────────── -->
     <div class="page">
       <div class="hero">
-        <div class="hero-eyebrow">Unit Configuration System</div>
-        <div class="hero-title">MK-1</div>
-        <div class="hero-title-sub">ROBOT PLATFORM</div>
+        <div class="hero-eyebrow">
+          <span class="eyebrow-dot"></span>Unit Configuration System<span
+            class="eyebrow-dot"
+          ></span>
+        </div>
+        <div class="hero-title">BLACK<span>BURN</span></div>
+        <div class="hero-underline"></div>
+        <div class="hero-sub">Robot Configurator</div>
         <div class="hero-desc">
-          Select a preconfigured build or launch the full 3D configurator to
-          design your own unit from scratch
+          Select a preconfigured build or launch the full<br />3D configurator
+          to design your own unit from scratch
         </div>
       </div>
 
-      <div class="divider"></div>
+      <div class="dim-line-wrap">
+        <div class="dim-line">
+          <div class="dim-end"></div>
+          <div class="dim-shaft">
+            <span class="dim-label">UNIT MK-1 · 4-AXIS · 3 CONFIGS</span>
+          </div>
+          <div class="dim-end"></div>
+        </div>
+      </div>
 
-      <div class="btn-grid">
-        <a class="card-btn" href="./configurator.html?preset=scout">
-          <div class="card-badge">Preset · 01</div>
-          <span class="card-icon" style="color: #6a9ab8">⬡</span>
+      <div class="section-label">
+        Choose Your Configuration<span class="section-label-num"
+          >[ 03 MODES ]</span
+        >
+      </div>
+
+      <div class="cards">
+        <a class="card" href="./configurator.html?preset=scout">
+          <div class="rivet tl"></div>
+          <div class="rivet tr"></div>
+          <div class="rivet bl"></div>
+          <div class="rivet br"></div>
+          <div class="card-num">01</div>
+          <!-- signal: 2 bars -->
+          <div class="card-signal">
+            <div class="sig-bar active" style="height: 6px"></div>
+            <div class="sig-bar active" style="height: 10px"></div>
+            <div class="sig-bar" style="height: 14px"></div>
+            <div class="sig-bar" style="height: 18px"></div>
+          </div>
+          <div class="card-badge badge-accent">Preset · 01</div>
+          <span class="card-icon">⬡</span>
           <div class="card-title">Scout Config</div>
           <div class="card-desc">
-            Lightweight 4-motor<br />chassis — high mobility<br />low-profile
-            build
+            Lightweight 4-motor chassis —<br />high mobility low-profile build
           </div>
           <div class="card-arrow">↗</div>
+          <div class="card-spec"></div>
         </a>
 
-        <a class="card-btn" href="./configurator.html?preset=combat">
-          <div class="card-badge badge-alt">Preset · 02</div>
-          <span class="card-icon" style="color: #ada7ab">▲</span>
+        <a class="card" href="./configurator.html?preset=combat">
+          <div class="rivet tl"></div>
+          <div class="rivet tr"></div>
+          <div class="rivet bl"></div>
+          <div class="rivet br"></div>
+          <div class="card-num">02</div>
+          <!-- signal: 3 bars -->
+          <div class="card-signal">
+            <div class="sig-bar active" style="height: 6px"></div>
+            <div class="sig-bar active" style="height: 10px"></div>
+            <div class="sig-bar active" style="height: 14px"></div>
+            <div class="sig-bar" style="height: 18px"></div>
+          </div>
+          <div class="card-badge badge-blue">Preset · 02</div>
+          <span class="card-icon">▲</span>
           <div class="card-title">Combat Config</div>
           <div class="card-desc">
-            Reinforced frame with<br />stress bridges — maximum<br />structural
-            rigidity
+            Reinforced frame with stress<br />bridges — maximum rigidity
           </div>
           <div class="card-arrow">↗</div>
+          <div class="card-spec"></div>
         </a>
 
-        <a class="card-btn primary" href="./configurator.html">
-          <div class="card-badge badge-config">Custom Build</div>
-          <span class="card-icon" style="color: #d05818">◈</span>
+        <a class="card primary" href="./configurator.html">
+          <div class="rivet tl"></div>
+          <div class="rivet tr"></div>
+          <div class="rivet bl"></div>
+          <div class="rivet br"></div>
+          <div class="card-num" style="color: rgba(208, 88, 24, 0.07)">03</div>
+          <!-- signal: 4 bars full -->
+          <div class="card-signal">
+            <div class="sig-bar active" style="height: 6px"></div>
+            <div class="sig-bar active" style="height: 10px"></div>
+            <div class="sig-bar active" style="height: 14px"></div>
+            <div class="sig-bar active" style="height: 18px"></div>
+          </div>
+          <div class="card-badge badge-accent">Custom Build</div>
+          <span class="card-icon" style="color: var(--accent); opacity: 1"
+            >◈</span
+          >
           <div class="card-title">Launch<br />Configurator</div>
           <div class="card-desc">
-            Full 3D assembly tool.<br />Place parts, define your<br />build,
-            configure & order
+            Full 3D assembly tool. Place<br />parts, define your build,<br />configure
+            &amp; order
           </div>
           <div class="card-arrow">↗</div>
+          <div class="card-spec"></div>
         </a>
       </div>
     </div>
 
+    <!-- ── FOOTER ─────────────────────────────────── -->
     <div class="footer">
-      <div class="footer-item active">Robot Configurator v1.0</div>
+      <div class="footer-item active">Blackburn Robot Configurator v1.0</div>
       <div class="footer-item">·</div>
       <div class="footer-item active">Unit MK-1</div>
       <div class="footer-item">·</div>
@@ -554,26 +1147,140 @@
     </div>
 
     <script>
+      // ── BOOT SEQUENCE ──────────────────────────────
+      const bootLines = [
+        "INITIALIZING BLACKBURN PLATFORM...",
+        "LOADING UNIT CONFIG DATABASE [OK]",
+        "CHECKING PART MANIFESTS........[OK]",
+        "CALIBRATING 4-AXIS SYSTEM......[OK]",
+        "NETWORK HANDSHAKE...............[OK]",
+        "LAUNCHING INTERFACE.............[READY]",
+      ];
+      const bootBar = document.getElementById("boot-bar");
+      const bootLog = document.getElementById("boot-log");
+      const bootEl = document.getElementById("boot");
+      let pct = 0;
+      function addLine(txt, delay) {
+        setTimeout(() => {
+          const d = document.createElement("div");
+          d.className = "boot-line";
+          d.textContent = "> " + txt;
+          bootLog.appendChild(d);
+          if (bootLog.children.length > 5)
+            bootLog.removeChild(bootLog.children[0]);
+        }, delay);
+      }
+      bootLines.forEach((l, i) => addLine(l, i * 280));
+      const interval = setInterval(() => {
+        pct = Math.min(pct + 1.6, 100);
+        bootBar.style.width = pct + "%";
+        if (pct >= 100) {
+          clearInterval(interval);
+          setTimeout(() => bootEl.classList.add("done"), 300);
+        }
+      }, 28);
+
+      // ── CLOCK ──────────────────────────────────────
       function tick() {
-        const el = document.getElementById("clock");
+        const el = document.getElementById("topbar-clock");
         if (el) el.textContent = new Date().toLocaleTimeString("en-GB");
       }
       tick();
       setInterval(tick, 1000);
 
-      document.querySelectorAll(".card-btn").forEach((card) => {
-        card.addEventListener("mousemove", (e) => {
-          const r = card.getBoundingClientRect();
-          card.style.setProperty(
-            "--mx",
-            ((e.clientX - r.left) / r.width) * 100 + "%",
-          );
-          card.style.setProperty(
-            "--my",
-            ((e.clientY - r.top) / r.height) * 100 + "%",
-          );
-        });
+      // ── CURSOR HUD ─────────────────────────────────
+      const hud = document.getElementById("cursor-hud");
+      const cross = document.getElementById("cursor-cross");
+      let hudVisible = false;
+      document.addEventListener("mousemove", (e) => {
+        const x = e.clientX,
+          y = e.clientY;
+        hud.style.left = x + 16 + "px";
+        hud.style.top = y + 16 + "px";
+        cross.style.left = x + "px";
+        cross.style.top = y + "px";
+        hud.textContent = `X:${x.toString().padStart(4, "0")} Y:${y.toString().padStart(4, "0")}`;
+        if (!hudVisible) {
+          hud.style.opacity = "1";
+          cross.style.opacity = "1";
+          hudVisible = true;
+        }
       });
+      document.addEventListener("mouseleave", () => {
+        hud.style.opacity = "0";
+        cross.style.opacity = "0";
+        hudVisible = false;
+      });
+
+      // ── RADAR ──────────────────────────────────────
+      const canvas = document.getElementById("radar-canvas");
+      const ctx = canvas.getContext("2d");
+      const cx = 70,
+        cy = 70,
+        r = 60;
+      let angle = 0;
+      // blips
+      const blips = [
+        { a: 0.4, d: 0.45 },
+        { a: 1.9, d: 0.7 },
+        { a: 3.8, d: 0.35 },
+        { a: 5.1, d: 0.6 },
+      ];
+      function drawRadar() {
+        ctx.clearRect(0, 0, 140, 140);
+        // rings
+        for (let i = 1; i <= 3; i++) {
+          ctx.beginPath();
+          ctx.arc(cx, cy, r * (i / 3), 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(208,88,24,0.35)";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+        // cross hairs
+        ctx.strokeStyle = "rgba(208,88,24,0.25)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(cx - r, cy);
+        ctx.lineTo(cx + r, cy);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - r);
+        ctx.lineTo(cx, cy + r);
+        ctx.stroke();
+        // sweep gradient
+        const sweep = ctx.createConicalGradient ? null : null;
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(angle);
+        const g = ctx.createLinearGradient(0, 0, r, 0);
+        g.addColorStop(0, "rgba(208,88,24,0.35)");
+        g.addColorStop(1, "rgba(208,88,24,0)");
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, r, -0.18, 0);
+        ctx.closePath();
+        ctx.fillStyle = g;
+        ctx.fill();
+        ctx.restore();
+        // blips
+        blips.forEach((b) => {
+          const da =
+            (((angle - b.a) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+          const fade =
+            da < 0.4 ? 1 - da / 0.4 : da > 5.9 ? (da - 5.9) / 0.38 : 0;
+          if (fade > 0.02) {
+            const bx = cx + Math.cos(b.a) * r * b.d;
+            const by = cy + Math.sin(b.a) * r * b.d;
+            ctx.beginPath();
+            ctx.arc(bx, by, 3, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(208,88,24,${fade * 0.9})`;
+            ctx.fill();
+          }
+        });
+        angle = (angle + 0.018) % (Math.PI * 2);
+        requestAnimationFrame(drawRadar);
+      }
+      drawRadar();
     </script>
   </body>
 </html>
