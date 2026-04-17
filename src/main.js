@@ -88,7 +88,12 @@ const redoStack = [];
 const MAX_UNDO = 50;
 
 function pushUndo(mount, socketUuids, type) {
-  undoStack.push({ mount, socketUuids: [...socketUuids], type });
+  undoStack.push({
+    mount,
+    socketUuids: [...socketUuids],
+    type,
+    action: "place",
+  });
   if (undoStack.length > MAX_UNDO) undoStack.shift();
   redoStack.length = 0;
   updateUndoRedoButtons();
@@ -1061,53 +1066,13 @@ function performCascadeDelete(targetMount, directDependents) {
   function collectDeps(mount) {
     if (toDelete.has(mount)) return;
     toDelete.add(mount);
-    const deps = getDependentMounts(mount);
-    deps.forEach(collectDeps);
+    getDependentMounts(mount).forEach(collectDeps);
   }
 
   directDependents.forEach(collectDeps);
   toDelete.add(targetMount);
 
-  for (const mount of toDelete) {
-    if (mount.userData?.isBase) continue;
-    if (selectedMount === mount) {
-      restoreMeshEmissive(selectedMesh, selectedOrigEm);
-      selectedMesh = null;
-      selectedMount = null;
-    }
-    if (hoveredMount === mount) {
-      restoreMeshEmissive(hoveredMesh, hoveredOrigEm);
-      hoveredMesh = null;
-      hoveredMount = null;
-    }
-
-    const { socket, socketB, type } = mount.userData;
-    if (socket) usedSockets.delete(socket.uuid);
-    if (socketB) usedSockets.delete(socketB.uuid);
-
-    for (const entry of undoStack) {
-      if (entry.mount === mount) {
-        entry.socketUuids.forEach((uuid) => usedSockets.delete(uuid));
-      }
-    }
-
-    scene.remove(mount);
-    removeFromInventory(type ?? "frame");
-  }
-
-  hoveredMotorMarker = null;
-  hoveredTriangleMarker = null;
-
-  rebuildSocketMarkers();
-  updateWheelButtonState();
-  updateSupportButtonState();
-  applySocketHighlights();
-  updateWeightDisplay();
-
-  const count = toDelete.size;
-  showHudMessage(
-    `CASCADE DELETE: ${count} part${count !== 1 ? "s" : ""} removed`,
-  );
+  executeDeleteUnified([...toDelete]);
 }
 
 /* =========================================================
@@ -5713,15 +5678,17 @@ function performUndo() {
     return;
   }
   const entry = undoStack.pop();
-  const { mount, socketUuids, type, action } = entry;
 
-  if (action === "delete") {
-    // Undo a delete → re-add the mount
-    scene.add(mount);
-    socketUuids.forEach((uuid) => usedSockets.add(uuid));
-    addToInventory(type);
+  if (entry.action === "delete") {
+    // Undo delete → re-add every item
+    for (const item of entry.items) {
+      scene.add(item.mount);
+      item.socketUuids.forEach((u) => usedSockets.add(u));
+      addToInventory(item.type);
+    }
   } else {
-    // Undo a place → remove the mount
+    // Undo place → remove the mount
+    const { mount, socketUuids, type } = entry;
     if (selectedMount === mount) {
       restoreMeshEmissive(selectedMesh, selectedOrigEm);
       selectedMesh = null;
@@ -5732,14 +5699,15 @@ function performUndo() {
       hoveredMesh = null;
       hoveredMount = null;
     }
-    socketUuids.forEach((uuid) => usedSockets.delete(uuid));
-    hoveredMotorMarker = null;
-    hoveredTriangleMarker = null;
+    socketUuids.forEach((u) => usedSockets.delete(u));
     scene.remove(mount);
     removeFromInventory(type);
   }
 
+  hoveredMotorMarker = null;
+  hoveredTriangleMarker = null;
   redoStack.push(entry);
+
   rebuildSocketMarkers();
   updateWheelButtonState();
   updateSupportButtonState();
@@ -5755,26 +5723,36 @@ function performRedo() {
     return;
   }
   const entry = redoStack.pop();
-  const { mount, socketUuids, type, action } = entry;
 
-  if (action === "delete") {
-    // Redo a delete → remove the mount again
-    if (selectedMount === mount) {
-      restoreMeshEmissive(selectedMesh, selectedOrigEm);
-      selectedMesh = null;
-      selectedMount = null;
+  if (entry.action === "delete") {
+    // Redo delete → remove every item again
+    for (const item of entry.items) {
+      if (selectedMount === item.mount) {
+        restoreMeshEmissive(selectedMesh, selectedOrigEm);
+        selectedMesh = null;
+        selectedMount = null;
+      }
+      if (hoveredMount === item.mount) {
+        restoreMeshEmissive(hoveredMesh, hoveredOrigEm);
+        hoveredMesh = null;
+        hoveredMount = null;
+      }
+      item.socketUuids.forEach((u) => usedSockets.delete(u));
+      scene.remove(item.mount);
+      removeFromInventory(item.type);
     }
-    socketUuids.forEach((uuid) => usedSockets.delete(uuid));
-    scene.remove(mount);
-    removeFromInventory(type);
   } else {
-    // Redo a place → add the mount back
+    // Redo place → add mount back
+    const { mount, socketUuids, type } = entry;
     scene.add(mount);
-    socketUuids.forEach((uuid) => usedSockets.add(uuid));
+    socketUuids.forEach((u) => usedSockets.add(u));
     addToInventory(type);
   }
 
+  hoveredMotorMarker = null;
+  hoveredTriangleMarker = null;
   undoStack.push(entry);
+
   rebuildSocketMarkers();
   updateWheelButtonState();
   updateSupportButtonState();
@@ -6140,59 +6118,95 @@ function onContextMenu(e) {
   destroyContextMenu();
 }
 
-function executeDelete(mount) {
-  if (mount.userData?.isBase) {
-    showHudMessage("⚠ BASE FRAME CANNOT BE DELETED");
-    return;
-  }
-  if (selectedMount === mount) {
-    restoreMeshEmissive(selectedMesh, selectedOrigEm);
-    selectedMesh = null;
-    selectedMount = null;
-  }
-  if (hoveredMount === mount) {
-    restoreMeshEmissive(hoveredMesh, hoveredOrigEm);
-    hoveredMesh = null;
-    hoveredMount = null;
-  }
-  const { socket, socketB, type } = mount.userData;
+function executeDeleteUnified(mounts) {
+  // Filter out base + already-removed
+  mounts = mounts.filter((m) => m && !m.userData?.isBase);
+  if (mounts.length === 0) return;
 
-  // Collect ALL socket UUIDs for this mount
-  const allSocketUuids = new Set();
-  if (socket?.uuid) allSocketUuids.add(socket.uuid);
-  if (socketB?.uuid) allSocketUuids.add(socketB.uuid);
-  for (const entry of undoStack) {
-    if (entry.mount === mount)
-      entry.socketUuids.forEach((uuid) => allSocketUuids.add(uuid));
+  const entries = [];
+
+  for (const mount of mounts) {
+    const { socket, socketB, type } = mount.userData;
+
+    // Collect ALL socket UUIDs this mount owns — from userData AND any stack entries
+    const allSocketUuids = new Set();
+    if (socket?.uuid) allSocketUuids.add(socket.uuid);
+    if (socketB?.uuid) allSocketUuids.add(socketB.uuid);
+
+    for (const entry of [...undoStack, ...redoStack]) {
+      if (entry.mount === mount && entry.socketUuids) {
+        entry.socketUuids.forEach((u) => allSocketUuids.add(u));
+      }
+      if (entry.action === "delete" && Array.isArray(entry.items)) {
+        for (const it of entry.items) {
+          if (it.mount === mount && it.socketUuids) {
+            it.socketUuids.forEach((u) => allSocketUuids.add(u));
+          }
+        }
+      }
+    }
+
+    entries.push({ mount, socketUuids: [...allSocketUuids], type });
+
+    // Release sockets
+    allSocketUuids.forEach((u) => usedSockets.delete(u));
+
+    // Clear selection / hover
+    if (selectedMount === mount) {
+      restoreMeshEmissive(selectedMesh, selectedOrigEm);
+      selectedMesh = null;
+      selectedMount = null;
+    }
+    if (hoveredMount === mount) {
+      restoreMeshEmissive(hoveredMesh, hoveredOrigEm);
+      hoveredMesh = null;
+      hoveredMount = null;
+    }
+
+    scene.remove(mount);
+    removeFromInventory(type ?? "frame");
   }
 
-  // Release sockets
-  allSocketUuids.forEach((uuid) => usedSockets.delete(uuid));
+  // Clean both stacks: drop entries that reference any of the deleted mounts
+  const mountSet = new Set(entries.map((e) => e.mount));
+  const filterStack = (stack) => {
+    const kept = stack.filter((e) => {
+      if (e.action === "delete" && Array.isArray(e.items)) {
+        return !e.items.some((it) => mountSet.has(it.mount));
+      }
+      if (e.mount && mountSet.has(e.mount)) return false;
+      return true;
+    });
+    stack.length = 0;
+    kept.forEach((e) => stack.push(e));
+  };
+  filterStack(undoStack);
+  filterStack(redoStack);
 
-  // Remove this mount's existing place entries from undoStack
-  const kept = undoStack.filter((e) => e.mount !== mount);
-  undoStack.length = 0;
-  kept.forEach((e) => undoStack.push(e));
-
-  // Push DELETE action so it can be undone
-  undoStack.push({
-    mount,
-    socketUuids: [...allSocketUuids],
-    type,
-    action: "delete",
-  });
+  // Push single delete entry (covers single OR cascade)
+  undoStack.push({ items: entries, action: "delete" });
   if (undoStack.length > MAX_UNDO) undoStack.shift();
   redoStack.length = 0;
 
-  scene.remove(mount);
-  removeFromInventory(type);
+  hoveredMotorMarker = null;
+  hoveredTriangleMarker = null;
   rebuildSocketMarkers();
   updateWheelButtonState();
   updateSupportButtonState();
   applySocketHighlights();
   updateWeightDisplay();
   updateUndoRedoButtons();
-  showHudMessage(`DELETED: ${(PART_LABELS()[type] ?? type).toUpperCase()}`);
+
+  const n = entries.length;
+  showHudMessage(`DELETED: ${n} part${n !== 1 ? "s" : ""}`);
+}
+
+function executeDelete(mount) {
+  if (mount.userData?.isBase) {
+    showHudMessage("⚠ BASE FRAME CANNOT BE DELETED");
+    return;
+  }
+  executeDeleteUnified([mount]);
 }
 async function applyPreset(presetName) {
   const DELAY = 150;
