@@ -277,7 +277,7 @@ function applyBasketTypeColors() {
       child.style.setProperty("border-left-color", color, "important");
       child.style.setProperty("border-left-width", "3px", "important");
       child.dataset.partType = matched;
-      child.style.display = ""; // ensure visible
+      if (child.style.display === "none") child.style.display = "";
     } else {
       // Unmatched = inventory.js injected summary/total bar — hide it.
       // The basket-footer already shows the grand total.
@@ -799,6 +799,40 @@ function computeFrameOnSupportSnap(socket, rotSteps) {
   };
 }
 /* =========================================================
+   TRIANGLE ORIENTATION RULE HELPERS
+   ========================================================= */
+
+function getTriangleParentMount(socket) {
+  let m = socket.parent;
+  while (m && !m.userData?.isMount) m = m.parent;
+  return m ?? null;
+}
+
+function getExistingTriangleYawOnMount(mount) {
+  let existingYaw = null;
+  scene.traverse((o) => {
+    if (existingYaw !== null) return;
+    if (!o.userData?.isMount || o.userData.type !== "triangle_frame") return;
+    const attachSocket = o.userData.socket;
+    if (!attachSocket) return;
+    let m = attachSocket.parent;
+    while (m && !m.userData?.isMount) m = m.parent;
+    if (m === mount) existingYaw = o.rotation.y;
+  });
+  return existingYaw;
+}
+
+function triangleOrientationConflicts(socket, yaw) {
+  const mount = getTriangleParentMount(socket);
+  if (!mount) return false;
+  const existingYaw = getExistingTriangleYawOnMount(mount);
+  if (existingYaw === null) return false;
+  const normalize = (a) => ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  const diff = Math.abs(normalize(yaw) - normalize(existingYaw));
+  return Math.min(diff, Math.PI * 2 - diff) > 0.1;
+}
+
+/* =========================================================
    TRIANGLE AUTO-ORIENTATION HELPER
    ========================================================= */
 
@@ -1310,7 +1344,7 @@ async function init() {
   }
 }
 
-/* ── Helper to refresh basket totals when config updates live ── */
+/* ── Updated updateBasketTotals to handle text wrapping ── */
 function updateBasketTotals() {
   const counts = {};
   scene.traverse((o) => {
@@ -1332,17 +1366,39 @@ function updateBasketTotals() {
       const row = document.createElement("div");
       row.dataset.partType = type;
       const color = BASKET_BTN_COLORS[type] ?? "rgba(208,88,24,0.65)";
+
+      Object.assign(row.style, {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "7px 10px",
+        background: "#1e2836",
+        border: "1px solid #2e4058",
+        marginBottom: "3px",
+        flexWrap: "wrap",
+        gap: "4px",
+      });
+
       row.style.setProperty("border-left-color", color, "important");
       row.style.setProperty("border-left-width", "3px", "important");
 
       row.innerHTML = `
-        <span style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:400;letter-spacing:0.06em;color:#e8f4ff;display:flex;align-items:center;gap:6px;">
-          <span style="font-size:11px;color:#8aacbf;background:#111820;border:1px solid #2a3848;padding:1px 5px;letter-spacing:0.06em;font-family:'Oswald',sans-serif;">${qty}×</span>
-          ${label}
-        </span>
-        <span style="text-align:right;flex-shrink:0;margin-left:8px;">
-         <span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;letter-spacing:0.06em;color:#ffffff;display:block;">₹${subtotal.toLocaleString("en-IN")}</span>
-<span style="font-family:'Oswald',sans-serif;font-size:10px;font-weight:300;letter-spacing:0.08em;color:#6a8098;display:block;text-transform:uppercase;">₹${price.toLocaleString("en-IN")} EACH</span>    `;
+        <div style="display:flex; align-items:center; gap:6px; flex: 1 1 120px; min-width:0;">
+          <span style="font-size:11px; color:#8aacbf; background:#111820; border:1px solid #2a3848; padding:1px 5px; font-family:'Oswald',sans-serif; flex-shrink:0;">
+            ${qty}×
+          </span>
+          <span style="font-family:'Oswald',sans-serif; font-size:13px; color:#e8f4ff; line-height:1.2; white-space:normal; overflow-wrap:break-word; flex: 1 1 auto;">
+            ${label}
+          </span>
+        </div>
+        <div style="text-align:right; flex-shrink:0; flex-grow:1; min-width: 60px;">
+          <span style="font-family:'Oswald',sans-serif; font-size:14px; font-weight:600; color:#ffffff; display:block;">
+            ₹${subtotal.toLocaleString("en-IN")}
+          </span>
+          <span style="font-family:'Oswald',sans-serif; font-size:10px; font-weight:300; color:#6a8098; display:block; text-transform:uppercase;">
+            ₹${price.toLocaleString("en-IN")} EACH
+          </span>
+        </div>`;
       basketEl.appendChild(row);
     }
   }
@@ -5228,6 +5284,42 @@ function onClick(e) {
     }
     const socket = hit.object.userData.socket;
     if (usedSockets.has(socket.uuid)) return;
+
+    // ── Build rule: triangles on same rectangle must face same direction ──
+    let parentMount = socket.parent;
+    while (parentMount && !parentMount.userData?.isMount) {
+      parentMount = parentMount.parent;
+    }
+    if (parentMount) {
+      let existingYaw = null;
+      scene.traverse((o) => {
+        if (existingYaw !== null) return;
+        if (!o.userData?.isMount) return;
+        if (o.userData.type !== "triangle_frame") return;
+        const attachSocket = o.userData.socket;
+        if (!attachSocket) return;
+        let m = attachSocket.parent;
+        while (m && !m.userData?.isMount) m = m.parent;
+        if (m === parentMount) existingYaw = o.rotation.y;
+      });
+      if (existingYaw !== null) {
+        const attemptedYaw = ghost
+          ? ghost.rotation.y
+          : triangleAutoBaseYaw + triangleManualRotSteps * Math.PI;
+        const normalize = (a) =>
+          ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+        const diff = Math.abs(normalize(attemptedYaw) - normalize(existingYaw));
+        const angularDiff = Math.min(diff, Math.PI * 2 - diff);
+        if (angularDiff > 0.1) {
+          showPopup(
+            "Triangular Frames on the same Rectangular Frame must face the same direction.\n\nUse the ← → arrow keys to flip the triangle 180° before placing.",
+          );
+          return;
+        }
+      }
+    }
+    // ──────────────────────────────────────────────────────────────────────
+
     placeTriangle(socket, triangleAutoBaseYaw, triangleManualRotSteps);
     restartPlacementMode("triangle");
     checkQueuedIntent();
@@ -6260,15 +6352,21 @@ async function applyPreset(presetName) {
 
     const AXIS_THRESH = 0.25;
     const MIN_DIST = 0.5;
+
     let socketA = null,
       socketB = null;
+    let resolvedYawA = null,
+      resolvedYawB = null;
     let bestDist = -1;
 
     for (let i = 0; i < triangleSocketMarkers.length; i++) {
       const sA = triangleSocketMarkers[i].userData.socket;
       if (!sA || usedSockets.has(sA.uuid)) continue;
+      const yA = computeTriangleAutoYaw(sA);
+      if (triangleOrientationConflicts(sA, yA)) continue;
       const posA = new THREE.Vector3();
       sA.getWorldPosition(posA);
+      const mountA = getTriangleParentMount(sA);
 
       for (let j = i + 1; j < triangleSocketMarkers.length; j++) {
         const sB = triangleSocketMarkers[j].userData.socket;
@@ -6279,28 +6377,49 @@ async function applyPreset(presetName) {
         const dx = Math.abs(posA.x - posB.x);
         const dz = Math.abs(posA.z - posB.z);
         const dist = Math.hypot(dx, dz);
+        if (dist <= MIN_DIST || (dx >= AXIS_THRESH && dz >= AXIS_THRESH))
+          continue;
 
-        if (dist > MIN_DIST && (dx < AXIS_THRESH || dz < AXIS_THRESH)) {
-          if (dist > bestDist) {
-            bestDist = dist;
-            socketA = sA;
-            socketB = sB;
+        const mountB = getTriangleParentMount(sB);
+        const sameMountCase = mountA && mountB && mountA === mountB;
+
+        let yB;
+        if (sameMountCase) {
+          yB = yA;
+        } else {
+          const yBauto = computeTriangleAutoYaw(sB);
+          if (!triangleOrientationConflicts(sB, yBauto)) {
+            yB = yBauto;
+          } else {
+            const yBflipped = yBauto + Math.PI;
+            if (!triangleOrientationConflicts(sB, yBflipped)) {
+              yB = yBflipped;
+            } else {
+              continue;
+            }
           }
+        }
+
+        if (dist > bestDist) {
+          bestDist = dist;
+          socketA = sA;
+          socketB = sB;
+          resolvedYawA = yA;
+          resolvedYawB = yB;
         }
       }
     }
 
     if (!socketA || !socketB) return false;
 
-    const yawA = computeTriangleAutoYaw(socketA);
-    placeTriangle(socketA, yawA, 0);
+    placeTriangle(socketA, resolvedYawA, 0);
     rebuildSocketMarkers();
     updateWheelButtonState();
     updateSupportButtonState();
     applySocketHighlights();
     updateWeightDisplay();
 
-    placeTriangle(socketB, yawA + Math.PI, 0);
+    placeTriangle(socketB, resolvedYawB, 0);
     rebuildSocketMarkers();
     updateWheelButtonState();
     updateSupportButtonState();
@@ -6308,7 +6427,81 @@ async function applyPreset(presetName) {
     updateWeightDisplay();
     return true;
   }
+  function placeCombatTriangles() {
+    rebuildSocketMarkers();
 
+    const available = triangleSocketMarkers
+      .map((m) => m.userData.socket)
+      .filter((s) => s && !usedSockets.has(s.uuid));
+
+    if (available.length < 4) return;
+
+    const withPos = available.map((s) => {
+      const p = new THREE.Vector3();
+      s.getWorldPosition(p);
+      return { s, x: p.x, z: p.z };
+    });
+
+    const centerX =
+      (Math.min(...withPos.map((w) => w.x)) +
+        Math.max(...withPos.map((w) => w.x))) /
+      2;
+
+    const leftSide = withPos
+      .filter((w) => w.x < centerX)
+      .sort((a, b) => a.z - b.z);
+    const rightSide = withPos
+      .filter((w) => w.x >= centerX)
+      .sort((a, b) => a.z - b.z);
+
+    const placeOnSide = (sockets) => {
+      let bestPair = null,
+        bestDist = -1;
+
+      for (let i = 0; i < sockets.length; i++) {
+        for (let j = i + 1; j < sockets.length; j++) {
+          const sA = sockets[i].s,
+            sB = sockets[j].s;
+          if (getTriangleParentMount(sA) === getTriangleParentMount(sB))
+            continue;
+
+          const yA = computeTriangleAutoYaw(sA);
+          if (triangleOrientationConflicts(sA, yA)) continue;
+
+          let yB = computeTriangleAutoYaw(sB);
+          if (triangleOrientationConflicts(sB, yB)) {
+            yB += Math.PI;
+            if (triangleOrientationConflicts(sB, yB)) continue;
+          }
+
+          const dist = Math.abs(sockets[i].z - sockets[j].z);
+          if (dist > bestDist) {
+            bestDist = dist;
+            bestPair = { sA, sB, yA, yB };
+          }
+        }
+      }
+
+      if (!bestPair) return;
+
+      placeTriangle(bestPair.sA, bestPair.yA, 0);
+      rebuildSocketMarkers();
+      updateWheelButtonState();
+      updateSupportButtonState();
+      applySocketHighlights();
+      updateWeightDisplay();
+
+      placeTriangle(bestPair.sB, bestPair.yB, 0);
+      rebuildSocketMarkers();
+      updateWheelButtonState();
+      updateSupportButtonState();
+      applySocketHighlights();
+      updateWeightDisplay();
+    };
+
+    placeOnSide(leftSide);
+    placeOnSide(rightSide);
+  }
   function placeSupportAuto() {
     rebuildSocketMarkers();
     if (!canPlaceSupportBridge()) return false;
@@ -6326,7 +6519,29 @@ async function applyPreset(presetName) {
 
       const dx = Math.abs(posA.x - posB.x);
       const dz = Math.abs(posA.z - posB.z);
-      if (dx > 0.25 && dz > 0.25) continue; // skip diagonal
+      const major = Math.max(dx, dz);
+      const minor = Math.min(dx, dz);
+      if (major > 0.1 && minor > 0.3 && minor / major > 0.3) continue; // skip diagonal
+
+      // Skip if a bridge already connects these two triangle mounts
+      let mountA = socketA.parent;
+      while (mountA && !mountA.userData?.isMount) mountA = mountA.parent;
+      let mountB = socketB.parent;
+      while (mountB && !mountB.userData?.isMount) mountB = mountB.parent;
+      const bridgeExists = getAllMounts().some((m) => {
+        if (m.userData.type !== "support_frame") return false;
+        const sA = m.userData.socket,
+          sB = m.userData.socketB;
+        if (!sA) return false;
+        let mA = sA.parent;
+        while (mA && !mA.userData?.isMount) mA = mA.parent;
+        let mB = sB?.parent;
+        while (mB && !mB.userData?.isMount) mB = mB.parent;
+        return (
+          (mA === mountA && mB === mountB) || (mA === mountB && mB === mountA)
+        );
+      });
+      if (bridgeExists) continue;
 
       placeSupportBridgeFromPair(socketA, posA, socketB, posB, 0, socketA);
       rebuildSocketMarkers();
@@ -6342,7 +6557,19 @@ async function applyPreset(presetName) {
   showHudMessage(`LOADING PRESET: ${presetName.toUpperCase()}...`);
 
   if (presetName === "scout") {
-    // All motors then all wheels on base frame
+    // Place one triangle pair
+    findAndPlaceAxisAlignedTrianglePair();
+    await wait(200);
+
+    // Place stress bridge connecting the pair
+    let bridgePlaced = true;
+    while (bridgePlaced) {
+      bridgePlaced = placeSupportAuto();
+      await wait(DELAY);
+    }
+    await wait(200);
+
+    // All motors then all wheels
     let placed = true;
     while (placed) {
       placed = placeMotorAuto();
@@ -6364,15 +6591,17 @@ async function applyPreset(presetName) {
     await wait(200);
 
     // Step 2 — place two axis-aligned triangle pairs (one per side)
-    findAndPlaceAxisAlignedTrianglePair();
-    await wait(200);
-    findAndPlaceAxisAlignedTrianglePair();
+    // Step 2 — place triangles on both long sides
+    placeCombatTriangles();
     await wait(200);
 
     // Step 3 — place two stress bridges (one per triangle pair)
-    placeSupportAuto();
-    await wait(DELAY);
-    placeSupportAuto();
+    // Step 3 — place all available stress bridges
+    let bridgePlaced = true;
+    while (bridgePlaced) {
+      bridgePlaced = placeSupportAuto();
+      await wait(DELAY);
+    }
     await wait(200);
 
     // Step 4 — all motors
@@ -6556,9 +6785,9 @@ function updateWeightDisplay() {
     });
 
     row.innerHTML = `
-      <span style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:400;letter-spacing:0.06em;color:#e8f4ff;display:flex;align-items:center;gap:6px;">
-        <span style="font-size:11px;color:#8aacbf;background:#111820;border:1px solid #2a3848;padding:1px 5px;letter-spacing:0.06em;font-family:'Oswald',sans-serif;">${qty}×</span>
-        ${label}
+      <span style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:400;letter-spacing:0.06em;color:#e8f4ff;display:flex;align-items:center;gap:6px;min-width:0;flex:1 1 auto;">
+        <span style="font-size:11px;color:#8aacbf;background:#111820;border:1px solid #2a3848;padding:1px 5px;letter-spacing:0.06em;font-family:'Oswald',sans-serif;flex-shrink:0;">${qty}×</span>
+        <span style="white-space:normal;overflow-wrap:break-word;line-height:1.2;min-width:0;flex:1 1 auto;">${label}</span>
       </span>
       <span style="text-align:right;flex-shrink:0;margin-left:8px;">
        <span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;letter-spacing:0.06em;color:#ffffff;display:block;">${totalDisp}</span>
@@ -7545,8 +7774,22 @@ async function initiateRazorpayPayment({
         receipt: orderRef,
       }),
     });
-    const fnData = await rzpRes.json();
-    if (!rzpRes.ok) throw new Error(fnData?.error ?? "Razorpay API error");
+    const rawText = await rzpRes.text();
+    if (!rawText || rawText.trim() === "") {
+      throw new Error(
+        `/api/create-order returned empty response (HTTP ${rzpRes.status}). Check your server function is deployed.`,
+      );
+    }
+    let fnData;
+    try {
+      fnData = JSON.parse(rawText);
+    } catch {
+      throw new Error(
+        `/api/create-order returned non-JSON: ${rawText.slice(0, 120)}`,
+      );
+    }
+    if (!rzpRes.ok)
+      throw new Error(fnData?.error ?? `API error ${rzpRes.status}`);
     if (!fnData?.id) throw new Error("No order ID returned from Razorpay");
 
     razorpayOrderId = fnData.id;
