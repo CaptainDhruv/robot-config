@@ -113,35 +113,37 @@
         flex-shrink: 0;
         background: #0a1018;
         border-bottom: 1px solid rgba(208, 88, 24, 0.2);
-        padding: 12px 24px;
+        padding: 10px 24px;
         display: flex;
         align-items: center;
-        gap: 28px;
-        flex-wrap: wrap;
+        gap: 20px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        white-space: nowrap;
       }
       .price-label {
         font-family: "Orbitron", sans-serif;
-        font-size: 11px;
+        font-size: 14px;
         font-weight: 700;
-        letter-spacing: 0.18em;
+        letter-spacing: 0.14em;
         color: #6a8098;
         text-transform: uppercase;
-        margin-bottom: 4px;
+        margin-bottom: 2px;
       }
       .price-value {
         font-family: "Orbitron", sans-serif;
-        font-size: 22px;
+        font-size: 16px;
         font-weight: 900;
         color: #ffffff;
         letter-spacing: 0.06em;
       }
       .price-value.accent {
         color: #d05818;
-        font-size: 22px;
+        font-size: 16px;
       }
       .price-sep {
         width: 1px;
-        height: 42px;
+        height: 32px;
         background: rgba(208, 88, 24, 0.2);
         flex-shrink: 0;
       }
@@ -967,7 +969,10 @@
           wheel: 8,
         },
       };
-      const PRESET_LABELS = { scout: "Scout Config", combat: "Combat Config" };
+      const PRESET_LABELS = {
+        scout: "Standard Configuration",
+        combat: "Extended Configuration",
+      };
       const PRESET_DIMS = {
         scout: "W 55.0cm × D 63.8cm × H 26.8cm",
         combat: "W 55.0cm × D 85.1cm × H 26.8cm",
