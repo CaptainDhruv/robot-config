@@ -1,0 +1,1061 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Blackburn — Preset Config Viewer</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Oswald:wght@300;400;600;700&display=swap");
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: #0e1018;
+        color: #e8eef4;
+        font-family: "Oswald", sans-serif;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      /* ── HEADER ── */
+      #viewer-header {
+        flex-shrink: 0;
+        background: #111111;
+        border-bottom: 2px solid #cc2200;
+        padding: 10px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      #viewer-title {
+        font-family: "Orbitron", sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        color: #ffffff;
+        text-transform: uppercase;
+      }
+      #viewer-subtitle {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 9px;
+        letter-spacing: 0.14em;
+        color: #6a8098;
+        margin-top: 4px;
+        text-transform: uppercase;
+      }
+
+      .hdr-btn {
+        font-family: "Orbitron", sans-serif;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        padding: 9px 20px;
+        cursor: pointer;
+        text-transform: uppercase;
+        border: 1.5px solid;
+        transition: all 0.12s ease;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        text-decoration: none;
+      }
+      .btn-back {
+        background: transparent;
+        border-color: #333;
+        color: #888;
+      }
+      .btn-back:hover {
+        background: #1a1a1a;
+        border-color: #888;
+        color: #fff;
+      }
+      .btn-pdf {
+        background: transparent;
+        border-color: #cc2200;
+        color: #cc2200;
+      }
+      .btn-pdf:hover {
+        background: #cc2200;
+        color: #111;
+      }
+      .btn-order {
+        background: #cc2200;
+        border-color: #cc2200;
+        color: #fff;
+        box-shadow: 4px 4px 0 #7a1000;
+      }
+      .btn-order:hover {
+        background: #a81a00;
+        transform: translate(-1px, -1px);
+      }
+      .btn-order:disabled {
+        background: #5a2010;
+        border-color: #5a2010;
+        color: #8a4030;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+      }
+
+      #btn-group {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      /* ── PRICE STRIP ── */
+      #price-strip {
+        flex-shrink: 0;
+        background: #0a1018;
+        border-bottom: 1px solid rgba(208, 88, 24, 0.2);
+        padding: 8px 24px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+      .price-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .price-label {
+        font-family: "Orbitron", sans-serif;
+        font-size: 7px;
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        color: #384858;
+        text-transform: uppercase;
+      }
+      .price-value {
+        font-family: "Orbitron", sans-serif;
+        font-size: 14px;
+        font-weight: 900;
+        color: #ffffff;
+        letter-spacing: 0.06em;
+      }
+      .price-value.accent {
+        color: #d05818;
+      }
+      .price-sep {
+        width: 1px;
+        height: 30px;
+        background: rgba(208, 88, 24, 0.15);
+        flex-shrink: 0;
+      }
+      #loading-prices {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 10px;
+        color: #384858;
+        letter-spacing: 0.1em;
+        animation: blink 1.2s step-end infinite;
+      }
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.2;
+        }
+      }
+
+      /* ── PDF FRAME ── */
+      #pdf-frame {
+        flex: 1;
+        width: 100%;
+        border: none;
+        background: #fff;
+      }
+
+      /* ── ADDRESS OVERLAY ── */
+      #addr-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(8, 12, 20, 0.95);
+        z-index: 99999;
+        overflow-y: auto;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(6px);
+      }
+      #addr-overlay.visible {
+        display: flex;
+      }
+
+      .addr-card {
+        width: min(560px, 92vw);
+        background: #18202e;
+        border: 1.5px solid rgba(208, 88, 24, 0.3);
+        border-left: 3px solid #d05818;
+        box-shadow: 0 0 60px rgba(0, 0, 0, 0.8);
+        margin: 40px auto;
+      }
+      .addr-top-bar {
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          #d05818,
+          rgba(208, 88, 24, 0.1),
+          transparent
+        );
+      }
+      .addr-strip {
+        background: rgba(208, 88, 24, 0.06);
+        border-bottom: 1px solid rgba(208, 88, 24, 0.14);
+        padding: 12px 26px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .addr-strip-label {
+        font-family: "Orbitron", sans-serif;
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.24em;
+        color: #d05818;
+        text-transform: uppercase;
+      }
+      .addr-total-display {
+        font-family: "Orbitron", sans-serif;
+        font-size: 20px;
+        font-weight: 900;
+        color: #ffffff;
+        letter-spacing: 0.06em;
+      }
+      .addr-body {
+        padding: 22px 26px 26px;
+      }
+      .addr-section-title {
+        font-family: "Orbitron", sans-serif;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        color: #6a8098;
+        text-transform: uppercase;
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .addr-section-title::before {
+        content: "";
+        width: 3px;
+        height: 13px;
+        background: #d05818;
+        display: inline-block;
+        flex-shrink: 0;
+      }
+
+      /* shared field styles injected via JS */
+      .addr-field {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 14px;
+      }
+      .addr-label {
+        font-family: "Orbitron", sans-serif;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: #ffffff;
+        display: block;
+        margin-bottom: 6px;
+      }
+      .addr-input,
+      .addr-select {
+        background: #111820;
+        border: 1.5px solid #2a3848;
+        color: #ffffff;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 13px;
+        letter-spacing: 0.04em;
+        padding: 10px 14px;
+        width: 100%;
+        border-radius: 0;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        transition: border-color 0.15s;
+        appearance: none;
+        -webkit-appearance: none;
+      }
+      .addr-input::placeholder {
+        color: #8aacbf;
+      }
+      .addr-input:focus,
+      .addr-select:focus {
+        outline: none;
+        border-color: #d05818;
+        box-shadow:
+          0 0 0 2px rgba(208, 88, 24, 0.18),
+          inset 0 2px 4px rgba(0, 0, 0, 0.3);
+      }
+      .addr-input.err,
+      .addr-select.err {
+        border-color: #cc2200;
+      }
+      .addr-rule-hint {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 9px;
+        letter-spacing: 0.06em;
+        color: #8aacbf;
+        margin-top: 4px;
+        line-height: 1.4;
+      }
+      .addr-select-wrap {
+        position: relative;
+      }
+      .addr-select-wrap::after {
+        content: "▾";
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #fff;
+        font-size: 14px;
+        pointer-events: none;
+      }
+      .addr-row-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      .addr-row-3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 14px;
+      }
+      .addr-phone-row {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 14px;
+      }
+      .addr-btn-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding-top: 16px;
+        margin-top: 4px;
+      }
+      .addr-btn {
+        font-family: "Orbitron", sans-serif;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        padding: 11px 26px;
+        border: 1.5px solid;
+        cursor: pointer;
+        transition: all 0.12s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .addr-btn-cancel {
+        background: transparent;
+        border-color: #2a3848;
+        color: #ffffff;
+        box-shadow: 3px 3px 0 #0e1420;
+      }
+      .addr-btn-cancel:hover {
+        background: #1e2838;
+        border-color: #ffffff;
+        box-shadow: 5px 5px 0 #0e1420;
+        transform: translate(-2px, -2px);
+      }
+      .addr-btn-submit {
+        background: transparent;
+        border-color: #d05818;
+        color: #d05818;
+        box-shadow: 4px 4px 0 #5a2008;
+      }
+      .addr-btn-submit:hover {
+        background: #d05818;
+        color: #0e1018;
+        box-shadow: 6px 6px 0 #5a2008;
+        transform: translate(-2px, -2px);
+      }
+      .addr-btn-submit:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+      @media (max-width: 540px) {
+        .addr-row-2,
+        .addr-row-3,
+        .addr-phone-row {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ── ORDER CONFIRM ── */
+      #order-confirm {
+        position: fixed;
+        inset: 0;
+        background: rgba(8, 12, 20, 0.96);
+        z-index: 999999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(8px);
+      }
+      #order-confirm.visible {
+        display: flex;
+      }
+      .confirm-card {
+        width: min(440px, 90vw);
+        background: #18202e;
+        border: 1.5px solid rgba(208, 88, 24, 0.3);
+        border-left: 3px solid #d05818;
+        clip-path: polygon(
+          0 0,
+          calc(100% - 18px) 0,
+          100% 18px,
+          100% 100%,
+          0 100%
+        );
+        box-shadow: 0 0 60px rgba(0, 0, 0, 0.8);
+        padding: 40px 44px 36px;
+        text-align: center;
+        position: relative;
+      }
+      .confirm-icon {
+        font-family: "Orbitron", sans-serif;
+        font-size: 44px;
+        color: #d05818;
+        line-height: 1;
+        margin-bottom: 14px;
+        text-shadow: 0 0 40px rgba(208, 88, 24, 0.5);
+      }
+      .confirm-title {
+        font-family: "Orbitron", sans-serif;
+        font-size: 17px;
+        font-weight: 900;
+        letter-spacing: 0.2em;
+        color: #d8e8f4;
+        margin-bottom: 8px;
+      }
+      .confirm-sub {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 10px;
+        color: #384858;
+        letter-spacing: 0.1em;
+        line-height: 1.6;
+        margin-bottom: 24px;
+      }
+      .confirm-ref {
+        font-family: "Orbitron", sans-serif;
+        font-size: 9px;
+        letter-spacing: 0.2em;
+        color: #384858;
+        margin-bottom: 24px;
+        line-height: 1.8;
+      }
+      .confirm-close {
+        font-family: "Orbitron", sans-serif;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        padding: 11px 26px;
+        border: 1.5px solid #d05818;
+        color: #d05818;
+        background: transparent;
+        cursor: pointer;
+        transition: all 0.12s;
+      }
+      .confirm-close:hover {
+        background: #d05818;
+        color: #0e1018;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- HEADER -->
+    <div id="viewer-header">
+      <div>
+        <div id="viewer-title">— CONFIG</div>
+        <div id="viewer-subtitle">Design Report · MK-1 Unit</div>
+      </div>
+      <div id="btn-group">
+        <a href="./index.html" class="hdr-btn btn-back">← Back</a>
+        <button class="hdr-btn btn-pdf" id="btn-pdf">⬇ Save as PDF</button>
+        <button class="hdr-btn btn-order" id="btn-order" disabled>
+          ▶ Order Now
+        </button>
+      </div>
+    </div>
+
+    <!-- PRICE STRIP -->
+    <div id="price-strip">
+      <div id="loading-prices">FETCHING LIVE PRICES...</div>
+    </div>
+
+    <!-- PDF EMBED -->
+    <iframe id="pdf-frame" id="pdf-frame"></iframe>
+
+    <!-- ADDRESS OVERLAY -->
+    <div id="addr-overlay">
+      <div class="addr-card">
+        <div class="addr-top-bar"></div>
+        <div class="addr-strip">
+          <div class="addr-strip-label">Your Order</div>
+          <div id="addr-total-display" class="addr-total-display">—</div>
+        </div>
+        <div class="addr-body">
+          <div class="addr-section-title">Delivery Address</div>
+
+          <div class="addr-field">
+            <label class="addr-label"
+              >Full Name <span style="color: #d05818">*</span></label
+            >
+            <input
+              class="addr-input"
+              id="f-name"
+              type="text"
+              placeholder="e.g. Rahul Sharma"
+              autocomplete="name"
+            />
+            <span class="addr-rule-hint">Letters and spaces only</span>
+          </div>
+
+          <div class="addr-field">
+            <label class="addr-label"
+              >PIN Code <span style="color: #d05818">*</span></label
+            >
+            <input
+              class="addr-input"
+              id="f-pin"
+              type="text"
+              placeholder="560001"
+              maxlength="6"
+              autocomplete="postal-code"
+            />
+            <span class="addr-rule-hint"
+              >6-digit PIN — auto-fills city/state</span
+            >
+          </div>
+
+          <div class="addr-field">
+            <label class="addr-label"
+              >Address Line 1 <span style="color: #d05818">*</span></label
+            >
+            <input
+              class="addr-input"
+              id="f-line1"
+              type="text"
+              placeholder="House / Flat No., Building Name"
+              autocomplete="address-line1"
+            />
+          </div>
+          <div class="addr-field">
+            <label class="addr-label">Address Line 2</label>
+            <input
+              class="addr-input"
+              id="f-line2"
+              type="text"
+              placeholder="Street, Area, Landmark"
+              autocomplete="address-line2"
+            />
+          </div>
+          <div class="addr-field">
+            <label class="addr-label">Address Line 3</label>
+            <input
+              class="addr-input"
+              id="f-line3"
+              type="text"
+              placeholder="Locality / Neighbourhood"
+              autocomplete="address-line3"
+            />
+          </div>
+
+          <div class="addr-row-3" style="margin-bottom: 14px">
+            <div class="addr-field" style="margin-bottom: 0">
+              <label class="addr-label"
+                >City <span style="color: #d05818">*</span></label
+              >
+              <input
+                class="addr-input"
+                id="f-city"
+                type="text"
+                placeholder="Auto-filled"
+                autocomplete="address-level2"
+              />
+            </div>
+            <div class="addr-field" style="margin-bottom: 0">
+              <label class="addr-label"
+                >District <span style="color: #d05818">*</span></label
+              >
+              <input
+                class="addr-input"
+                id="f-district"
+                type="text"
+                placeholder="Auto-filled"
+              />
+            </div>
+            <div class="addr-field" style="margin-bottom: 0">
+              <label class="addr-label"
+                >State <span style="color: #d05818">*</span></label
+              >
+              <div class="addr-select-wrap">
+                <select
+                  class="addr-select"
+                  id="f-state"
+                  autocomplete="address-level1"
+                >
+                  <option value="">Select state…</option>
+                  <option>Andhra Pradesh</option>
+                  <option>Arunachal Pradesh</option>
+                  <option>Assam</option>
+                  <option>Bihar</option>
+                  <option>Chandigarh</option>
+                  <option>Chhattisgarh</option>
+                  <option>Delhi</option>
+                  <option>Goa</option>
+                  <option>Gujarat</option>
+                  <option>Haryana</option>
+                  <option>Himachal Pradesh</option>
+                  <option>Jammu and Kashmir</option>
+                  <option>Jharkhand</option>
+                  <option>Karnataka</option>
+                  <option>Kerala</option>
+                  <option>Ladakh</option>
+                  <option>Madhya Pradesh</option>
+                  <option>Maharashtra</option>
+                  <option>Manipur</option>
+                  <option>Meghalaya</option>
+                  <option>Mizoram</option>
+                  <option>Nagaland</option>
+                  <option>Odisha</option>
+                  <option>Puducherry</option>
+                  <option>Punjab</option>
+                  <option>Rajasthan</option>
+                  <option>Sikkim</option>
+                  <option>Tamil Nadu</option>
+                  <option>Telangana</option>
+                  <option>Tripura</option>
+                  <option>Uttar Pradesh</option>
+                  <option>Uttarakhand</option>
+                  <option>West Bengal</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="addr-phone-row" style="margin-bottom: 14px">
+            <div class="addr-field" style="margin-bottom: 0">
+              <label class="addr-label"
+                >Country Code <span style="color: #d05818">*</span></label
+              >
+              <div class="addr-select-wrap">
+                <select class="addr-select" id="f-code">
+                  <option value="+91">+91 India</option>
+                  <option value="+1">+1 USA/Canada</option>
+                  <option value="+44">+44 UK</option>
+                  <option value="+61">+61 Australia</option>
+                  <option value="+971">+971 UAE</option>
+                  <option value="+65">+65 Singapore</option>
+                </select>
+              </div>
+            </div>
+            <div class="addr-field" style="margin-bottom: 0">
+              <label class="addr-label"
+                >Phone <span style="color: #d05818">*</span></label
+              >
+              <input
+                class="addr-input"
+                id="f-phone"
+                type="tel"
+                placeholder="98765 43210"
+                autocomplete="tel"
+              />
+              <span class="addr-rule-hint">Digits only</span>
+            </div>
+          </div>
+
+          <div class="addr-btn-row">
+            <span
+              style="
+                font-family: &quot;Share Tech Mono&quot;, monospace;
+                font-size: 9px;
+                color: #384858;
+                letter-spacing: 0.1em;
+              "
+              >* Required fields</span
+            >
+            <div style="display: flex; gap: 10px">
+              <button class="addr-btn addr-btn-cancel" id="addr-cancel">
+                Cancel
+              </button>
+              <button class="addr-btn addr-btn-submit" id="addr-submit">
+                ▶ Confirm Order
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORDER CONFIRM -->
+    <div id="order-confirm">
+      <div class="confirm-card">
+        <div class="confirm-icon">✓</div>
+        <div class="confirm-title">ORDER PLACED</div>
+        <div class="confirm-sub">
+          Your MK-1 build has been submitted for production.
+        </div>
+        <div class="confirm-ref" id="confirm-ref"></div>
+        <button
+          class="confirm-close"
+          onclick="window.location.href = './index.html'"
+        >
+          ← Back to Home
+        </button>
+      </div>
+    </div>
+
+    <script type="module">
+      import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+      // ── Pull Supabase config from your existing env / hardcode here ──
+      // Replace these with your actual values from supabaseClient.js
+      const SUPABASE_URL = "https://paxeivuabqbfodnjxfpw.supabase.co";
+      const SUPABASE_ANON_KEY =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBheGVpdnVhYnFiZm9kbmp4ZnB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNDQwMTAsImV4cCI6MjA4OTgyMDAxMH0.iit20CxI6S04wEJgsPRmEyf3oziSD4e9T2SjJGlHiVQ";
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      // ── Preset part counts ───────────────────────────────────────────
+      const PRESET_PARTS = {
+        scout: {
+          frame: 4,
+          triangle_frame: 4,
+          support_frame: 2,
+          motor: 4,
+          wheel: 4,
+        },
+        combat: {
+          frame: 6,
+          triangle_frame: 4,
+          support_frame: 2,
+          motor: 8,
+          wheel: 8,
+        },
+      };
+
+      const PRESET_LABELS = {
+        scout: "Scout Config",
+        combat: "Combat Config",
+      };
+
+      const PDF_PATHS = {
+        scout: "/assets/scoutconfig.pdf",
+        combat: "/assets/combatconfig.pdf",
+      };
+
+      // ── Read URL param ───────────────────────────────────────────────
+      const config =
+        new URLSearchParams(window.location.search).get("config") ?? "scout";
+      const parts = PRESET_PARTS[config] ?? PRESET_PARTS.scout;
+      const label = PRESET_LABELS[config] ?? "Config";
+      const pdfPath = PDF_PATHS[config] ?? PDF_PATHS.scout;
+
+      // ── Set header & PDF ─────────────────────────────────────────────
+      document.getElementById("viewer-title").textContent =
+        label + " · Design Summary";
+      document.getElementById("pdf-frame").src = pdfPath;
+      document.getElementById("btn-pdf").onclick = () =>
+        window.open(pdfPath, "_blank");
+
+      // ── Fetch prices from Supabase ───────────────────────────────────
+      let priceMap = {};
+      let totalCost = 0;
+      let totalParts = Object.values(parts).reduce((a, b) => a + b, 0);
+      const orderRef = "MK1-" + Date.now().toString(36).toUpperCase().slice(-8);
+
+      async function loadPrices() {
+        try {
+          const { data, error } = await supabase
+            .from("part_config")
+            .select("*");
+          if (error) throw error;
+
+          data.forEach((row) => {
+            const base = parseFloat(row.price) || 0;
+            const gst = parseFloat(row.gst_percent) || 0;
+            priceMap[row.part_type] = Math.round(base * (1 + gst / 100));
+          });
+
+          // Build price strip
+          const strip = document.getElementById("price-strip");
+          strip.innerHTML = "";
+          totalCost = 0;
+
+          const order = [
+            "frame",
+            "motor",
+            "triangle_frame",
+            "support_frame",
+            "wheel",
+          ];
+          const partLabels = {
+            frame: "Rect. Frame",
+            motor: "Motor",
+            triangle_frame: "Tri. Frame",
+            support_frame: "Stress Bridge",
+            wheel: "Wheel",
+          };
+
+          order.forEach((type, i) => {
+            const qty = parts[type] ?? 0;
+            if (!qty) return;
+            const unitPrice = priceMap[type] ?? 0;
+            const sub = unitPrice * qty;
+            totalCost += sub;
+
+            if (i > 0) {
+              const sep = document.createElement("div");
+              sep.className = "price-sep";
+              strip.appendChild(sep);
+            }
+
+            const item = document.createElement("div");
+            item.className = "price-item";
+            item.innerHTML = `
+        <span class="price-label">${qty}× ${partLabels[type]}</span>
+        <span class="price-value">₹${sub.toLocaleString("en-IN")}</span>
+      `;
+            strip.appendChild(item);
+          });
+
+          // Total
+          const sep = document.createElement("div");
+          sep.className = "price-sep";
+          strip.appendChild(sep);
+          const totalItem = document.createElement("div");
+          totalItem.className = "price-item";
+          totalItem.innerHTML = `
+      <span class="price-label">Total (incl. GST)</span>
+      <span class="price-value accent">₹${totalCost.toLocaleString("en-IN")}</span>
+    `;
+          strip.appendChild(totalItem);
+
+          document.getElementById("addr-total-display").textContent =
+            "₹" + totalCost.toLocaleString("en-IN");
+
+          // Enable order button
+          const orderBtn = document.getElementById("btn-order");
+          orderBtn.disabled = false;
+        } catch (e) {
+          document.getElementById("price-strip").innerHTML =
+            `<span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#cc2200;letter-spacing:0.1em">⚠ Could not load prices — check Supabase config</span>`;
+          console.error("[PRICES]", e);
+        }
+      }
+
+      loadPrices();
+
+      // ── PIN auto-fill ────────────────────────────────────────────────
+      document.getElementById("f-pin").addEventListener("input", async () => {
+        const pin = document.getElementById("f-pin").value.trim();
+        if (pin.length !== 6 || !/^\d{6}$/.test(pin)) return;
+        try {
+          const res = await fetch(
+            `https://api.postalpincode.in/pincode/${pin}`,
+          );
+          const data = await res.json();
+          if (data[0].Status === "Success") {
+            const po = data[0].PostOffice[0];
+            document.getElementById("f-city").value =
+              po.Block !== "NA" ? po.Block : po.Division;
+            document.getElementById("f-district").value = po.District;
+            const stateEl = document.getElementById("f-state");
+            Array.from(stateEl.options).forEach((o) => {
+              if (o.value === po.State) stateEl.value = po.State;
+            });
+          }
+        } catch (e) {
+          /* silent */
+        }
+      });
+
+      // ── Open/close address overlay ───────────────────────────────────
+      document.getElementById("btn-order").onclick = () =>
+        document.getElementById("addr-overlay").classList.add("visible");
+
+      document.getElementById("addr-cancel").onclick = () =>
+        document.getElementById("addr-overlay").classList.remove("visible");
+
+      // ── Submit ───────────────────────────────────────────────────────
+      document.getElementById("addr-submit").onclick = async () => {
+        const get = (id) => document.getElementById(id);
+        let valid = true;
+
+        const fields = [
+          {
+            id: "f-name",
+            check: (v) => v.length >= 2 && /^[a-zA-Z\s'.]+$/.test(v),
+          },
+          { id: "f-pin", check: (v) => /^\d{6}$/.test(v) },
+          { id: "f-line1", check: (v) => v.length >= 5 },
+          { id: "f-city", check: (v) => v.length > 0 },
+          { id: "f-district", check: (v) => v.length > 0 },
+          { id: "f-state", check: (v) => v.length > 0 },
+          { id: "f-phone", check: (v) => v.replace(/\D/g, "").length >= 7 },
+        ];
+
+        fields.forEach(({ id, check }) => {
+          const el = get(id);
+          if (!check(el.value.trim())) {
+            el.classList.add("err");
+            valid = false;
+          } else {
+            el.classList.remove("err");
+          }
+        });
+
+        if (!valid) return;
+
+        const submitBtn = get("addr-submit");
+        submitBtn.disabled = true;
+        submitBtn.textContent = "⟳ Saving...";
+
+        const customerName = get("f-name").value.trim();
+        const countryCode = get("f-code").value;
+        const customerPhone =
+          countryCode + get("f-phone").value.replace(/\D/g, "");
+
+        try {
+          // ── Save order to Supabase ─────────────────────────────────
+          const { data: order, error: orderErr } = await supabase
+            .from("orders")
+            .insert({
+              order_ref: orderRef,
+              customer_name: customerName,
+              customer_phone: customerPhone,
+              address_line1: get("f-line1").value.trim(),
+              address_line2: get("f-line2").value.trim() || null,
+              address_line3: get("f-line3").value.trim() || null,
+              city: get("f-city").value.trim(),
+              state: get("f-state").value.trim(),
+              pin: get("f-pin").value.trim(),
+              total_amount: totalCost,
+              parts_count: totalParts,
+              status: "pending",
+              preset_config: config,
+            })
+            .select()
+            .single();
+
+          if (orderErr) throw orderErr;
+
+          // ── Save order parts ───────────────────────────────────────
+          const PART_LABELS_DB = {
+            frame: "Rectangular Frame",
+            motor: "Motor Assembly",
+            triangle_frame: "Triangular Frame",
+            support_frame: "Stress Bridge",
+            wheel: "Wheel",
+          };
+          const partRows = Object.entries(parts).map(([type, qty]) => ({
+            order_id: order.id,
+            part_type: type,
+            part_label: PART_LABELS_DB[type] ?? type,
+            quantity: qty,
+            unit_cost: priceMap[type] ?? 0,
+            total_cost: (priceMap[type] ?? 0) * qty,
+          }));
+          await supabase.from("order_parts").insert(partRows);
+
+          // ── Razorpay ───────────────────────────────────────────────
+          await loadRazorpay();
+          const rzpRes = await fetch("/api/create-order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              amount: totalCost,
+              currency: "INR",
+              receipt: orderRef,
+            }),
+          });
+          const rzpData = await rzpRes.json();
+          if (!rzpData?.id) throw new Error("No Razorpay order ID");
+
+          const addrLines = [
+            get("f-line1").value.trim(),
+            get("f-line2").value.trim(),
+            get("f-line3").value.trim(),
+            `${get("f-city").value.trim()}, ${get("f-state").value.trim()} — ${get("f-pin").value.trim()}`,
+          ].filter(Boolean);
+
+          document.getElementById("addr-overlay").classList.remove("visible");
+
+          new window.Razorpay({
+            key: rzpData.key_id,
+            amount: Math.round(totalCost * 100),
+            currency: "INR",
+            name: "Robot Configurator",
+            description: `${label} · ${orderRef}`,
+            order_id: rzpData.id,
+            prefill: { name: customerName, contact: customerPhone },
+            theme: { color: "#d05818" },
+            modal: {
+              backdropclose: false,
+              ondismiss: async () => {
+                await supabase.from("orders").delete().eq("id", order.id);
+              },
+            },
+            handler: async (response) => {
+              await supabase
+                .from("orders")
+                .update({
+                  status: "paid",
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                })
+                .eq("id", order.id);
+
+              document.getElementById("confirm-ref").innerHTML =
+                `ORDER REF: ${orderRef}<br>
+           <span style="font-size:9px;color:#2a6848">✓ PAYMENT ID: ${response.razorpay_payment_id}</span>`;
+              document.getElementById("order-confirm").classList.add("visible");
+            },
+          }).open();
+        } catch (err) {
+          console.error("[ORDER]", err);
+          alert("Order failed: " + (err.message ?? String(err)));
+          submitBtn.disabled = false;
+          submitBtn.textContent = "▶ Confirm Order";
+        }
+      };
+
+      function loadRazorpay() {
+        if (window.Razorpay) return Promise.resolve();
+        return new Promise((res, rej) => {
+          const s = document.createElement("script");
+          s.src = "https://checkout.razorpay.com/v1/checkout.js";
+          s.onload = res;
+          s.onerror = rej;
+          document.head.appendChild(s);
+        });
+      }
+
+      // Remove err class on input
+      document.querySelectorAll(".addr-input,.addr-select").forEach((el) => {
+        el.addEventListener("input", () => el.classList.remove("err"));
+        el.addEventListener("change", () => el.classList.remove("err"));
+      });
+    </script>
+  </body>
+</html>

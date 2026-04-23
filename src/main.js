@@ -1339,8 +1339,16 @@ async function init() {
 
   // Auto-load preset if URL param present
   const presetParam = new URLSearchParams(window.location.search).get("preset");
+  const autoReport = new URLSearchParams(window.location.search).get(
+    "autoreport",
+  );
   if (presetParam) {
-    setTimeout(() => applyPreset(presetParam), 800);
+    setTimeout(async () => {
+      await applyPreset(presetParam);
+      if (autoReport) {
+        setTimeout(() => showReportOverlay(presetParam), 600);
+      }
+    }, 800);
   }
 }
 
@@ -3313,7 +3321,174 @@ function addTechnicalOverlay(dataURL, viewLabel, dims = null) {
 /* =========================================================
    PRINT DESIGN
    ========================================================= */
+async function showReportOverlay(presetName) {
+  showHudMessage("GENERATING DESIGN SUMMARY...");
+  await new Promise((r) => setTimeout(r, 120));
 
+  const captureKeys = ["iso", "top", "left", "front"];
+  const overlayLabels = {
+    iso: "ISOMETRIC",
+    top: "TOP",
+    left: "LEFT",
+    front: "FRONT",
+  };
+  const angleLabels = {
+    iso: "Isometric",
+    top: "Top View",
+    left: "Side View",
+    front: "Front View",
+  };
+
+  const rawScreenshots = {};
+  for (const key of captureKeys) rawScreenshots[key] = captureFromAngle(key);
+
+  const _dimBox = new THREE.Box3();
+  scene.traverse((o) => {
+    if (o.userData?.isMount) _dimBox.union(new THREE.Box3().setFromObject(o));
+  });
+  const _sz = _dimBox.isEmpty()
+    ? new THREE.Vector3(1, 1, 1)
+    : _dimBox.getSize(new THREE.Vector3());
+  const _W = (_sz.x * WORLD_TO_CM).toFixed(1) + "cm";
+  const _D = (_sz.z * WORLD_TO_CM).toFixed(1) + "cm";
+  const _H = (_sz.y * WORLD_TO_CM).toFixed(1) + "cm";
+  const viewDims = {
+    iso: null,
+    top: { horizCm: _W, vertCm: _D },
+    left: { horizCm: _D, vertCm: _H },
+    front: { horizCm: _W, vertCm: _H },
+  };
+
+  const screenshots = {};
+  for (const key of captureKeys)
+    screenshots[key] = await addTechnicalOverlay(
+      rawScreenshots[key],
+      overlayLabels[key],
+      viewDims[key] ?? null,
+    );
+
+  const orderRef = "MK1-" + Date.now().toString(36).toUpperCase().slice(-8);
+
+  let reportHTML = buildFullReportHTML(screenshots, angleLabels, orderRef);
+  reportHTML = reportHTML.replace(
+    /<div class="no-print"[\s\S]*?<\/div>\s*<\/div>/,
+    "",
+  );
+
+  const existing = document.getElementById("report-overlay");
+  if (existing) existing.remove();
+
+  const overlay = document.createElement("div");
+  overlay.id = "report-overlay";
+  Object.assign(overlay.style, {
+    position: "fixed",
+    inset: "0",
+    background: "#fff",
+    zIndex: "10000000",
+    display: "flex",
+    flexDirection: "column",
+  });
+
+  const headerBar = document.createElement("div");
+  Object.assign(headerBar.style, {
+    flexShrink: "0",
+    background: "#111111",
+    padding: "10px 24px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottom: "2px solid #cc2200",
+    gap: "12px",
+    flexWrap: "wrap",
+  });
+
+  const titleEl = document.createElement("div");
+  titleEl.innerHTML = `<span style="font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.2em;color:#ffffff;text-transform:uppercase">${presetName.toUpperCase()} CONFIG · DESIGN SUMMARY</span>`;
+
+  const btnGroup = document.createElement("div");
+  btnGroup.style.cssText =
+    "display:flex;gap:10px;align-items:center;flex-wrap:wrap;";
+
+  function makeHeaderBtn(html, bg, border, color) {
+    const b = document.createElement("button");
+    b.innerHTML = html;
+    Object.assign(b.style, {
+      background: bg,
+      border: `1.5px solid ${border}`,
+      color,
+      fontFamily: "'Orbitron',sans-serif",
+      fontSize: "9px",
+      letterSpacing: "0.18em",
+      padding: "8px 18px",
+      cursor: "pointer",
+      fontWeight: "700",
+      textTransform: "uppercase",
+      transition: "all 0.12s",
+    });
+    return b;
+  }
+
+  const backBtn = makeHeaderBtn("← BACK", "transparent", "#444", "#aaaaaa");
+  backBtn.onclick = () => window.history.back();
+
+  const pdfBtn = makeHeaderBtn(
+    "⬇ SAVE AS PDF",
+    "transparent",
+    "#cc2200",
+    "#cc2200",
+  );
+  pdfBtn.onmouseover = () => {
+    pdfBtn.style.background = "#cc2200";
+    pdfBtn.style.color = "#111";
+  };
+  pdfBtn.onmouseout = () => {
+    pdfBtn.style.background = "transparent";
+    pdfBtn.style.color = "#cc2200";
+  };
+  pdfBtn.onclick = () => {
+    const win = window.open("", "_blank", "width=1100,height=900");
+    const printable = buildFullReportHTML(screenshots, angleLabels, orderRef);
+    win.document.write(printable);
+    win.document.close();
+  };
+
+  const orderBtn = makeHeaderBtn(
+    "▶ ORDER NOW",
+    "#cc2200",
+    "#cc2200",
+    "#ffffff",
+  );
+  orderBtn.style.boxShadow = "4px 4px 0 #7a1000";
+  orderBtn.onmouseover = () => {
+    orderBtn.style.background = "#a81a00";
+    orderBtn.style.transform = "translate(-1px,-1px)";
+  };
+  orderBtn.onmouseout = () => {
+    orderBtn.style.background = "#cc2200";
+    orderBtn.style.transform = "none";
+  };
+  orderBtn.onclick = () => showAddressOverlay();
+
+  btnGroup.appendChild(backBtn);
+  btnGroup.appendChild(pdfBtn);
+  btnGroup.appendChild(orderBtn);
+  headerBar.appendChild(titleEl);
+  headerBar.appendChild(btnGroup);
+  overlay.appendChild(headerBar);
+
+  const iframe = document.createElement("iframe");
+  Object.assign(iframe.style, {
+    flex: "1",
+    width: "100%",
+    border: "none",
+    background: "#fff",
+  });
+  iframe.srcdoc = reportHTML;
+  overlay.appendChild(iframe);
+
+  document.body.appendChild(overlay);
+  showHudMessage("✓ DESIGN SUMMARY READY");
+}
 async function printDesign() {
   showHudMessage("CAPTURING VIEWS...");
 
@@ -6557,12 +6732,29 @@ async function applyPreset(presetName) {
   showHudMessage(`LOADING PRESET: ${presetName.toUpperCase()}...`);
 
   if (presetName === "scout") {
-    // Place one triangle pair
+    // Place 2 extra rectangular frames
+    for (let i = 0; i < 2; i++) {
+      placeFrameAuto();
+      await wait(DELAY);
+    }
+    await wait(200);
+
+    // Place first triangle pair + its bridge
     findAndPlaceAxisAlignedTrianglePair();
     await wait(200);
 
-    // Place stress bridge connecting the pair
     let bridgePlaced = true;
+    while (bridgePlaced) {
+      bridgePlaced = placeSupportAuto();
+      await wait(DELAY);
+    }
+    await wait(200);
+
+    // Place second triangle pair + its bridges
+    findAndPlaceAxisAlignedTrianglePair();
+    await wait(200);
+
+    bridgePlaced = true;
     while (bridgePlaced) {
       bridgePlaced = placeSupportAuto();
       await wait(DELAY);
