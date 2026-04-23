@@ -199,7 +199,7 @@ function injectChainToastKeyframe() {
    ========================================================= */
 const WORLD_TO_CM = 10.07;
 
-const PART_WEIGHTS = {
+let PART_WEIGHTS = {
   frame: 450,
   motor: 380,
   triangle_frame: 180,
@@ -1145,7 +1145,16 @@ async function init() {
   setupLights();
 
   // ── Load part config from Supabase BEFORE any UI renders ─────────────────
+
   await getPartConfig(supabase);
+
+  // Sync weights from DB on load
+  ["frame", "motor", "triangle_frame", "support_frame", "wheel"].forEach(
+    (type) => {
+      const meta = getPartMeta(type);
+      if (meta?.weight_grams) PART_WEIGHTS[type] = meta.weight_grams;
+    },
+  );
 
   // ── COMPONENT BUTTON TOOLTIPS (reads live from partConfig) ────────
   const BTN_TO_TYPE = {
@@ -1224,6 +1233,18 @@ async function init() {
 
   // Subscribe to live admin changes — updates basket/weight/tooltips instantly
   subscribePartConfig(supabase, () => {
+    // Sync weights from DB
+    const allMeta = [
+      "frame",
+      "motor",
+      "triangle_frame",
+      "support_frame",
+      "wheel",
+    ];
+    allMeta.forEach((type) => {
+      const meta = getPartMeta(type);
+      if (meta?.weight_grams) PART_WEIGHTS[type] = meta.weight_grams;
+    });
     updateWeightDisplay();
     updateBasketTotals();
     refreshInventory();

@@ -27,13 +27,11 @@
         --shadow: 0 1px 4px rgba(0, 0, 0, 0.07), 0 4px 16px rgba(0, 0, 0, 0.05);
         --shadow-lg: 0 4px 24px rgba(0, 0, 0, 0.1);
       }
-
       * {
         box-sizing: border-box;
         margin: 0;
         padding: 0;
       }
-
       body {
         background: var(--bg);
         color: var(--text);
@@ -48,18 +46,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background:
-          radial-gradient(
-            ellipse at 30% 20%,
-            rgba(208, 88, 24, 0.06) 0%,
-            transparent 60%
-          ),
-          radial-gradient(
-            ellipse at 70% 80%,
-            rgba(208, 88, 24, 0.04) 0%,
-            transparent 60%
-          ),
-          #f5f5f3;
+        background: #f5f5f3;
       }
       .login-card {
         width: min(420px, 92vw);
@@ -81,10 +68,8 @@
       .login-title {
         font-size: 22px;
         font-weight: 800;
-        letter-spacing: -0.01em;
         color: var(--text);
         margin-bottom: 32px;
-        line-height: 1.25;
       }
       .login-title span {
         color: var(--accent);
@@ -110,11 +95,9 @@
         font-size: 13px;
         font-weight: 500;
         padding: 11px 14px;
-        transition:
-          border-color 0.15s,
-          box-shadow 0.15s;
         outline: none;
         border-radius: 2px;
+        transition: border-color 0.15s;
       }
       .field-input::placeholder {
         color: var(--muted);
@@ -122,7 +105,6 @@
       .field-input:focus {
         border-color: var(--accent);
         box-shadow: 0 0 0 3px rgba(208, 88, 24, 0.12);
-        background: var(--bg2);
       }
       .login-btn {
         width: 100%;
@@ -149,7 +131,6 @@
         opacity: 0.5;
         cursor: not-allowed;
         transform: none;
-        box-shadow: none;
       }
       .login-error {
         font-size: 11px;
@@ -162,14 +143,12 @@
         border-left: 3px solid var(--red);
       }
 
-      /* ── APP SHELL ── */
+      /* ── APP ── */
       #app {
         display: none;
         min-height: 100vh;
         flex-direction: column;
       }
-
-      /* ── TOPBAR ── */
       .topbar {
         display: flex;
         align-items: center;
@@ -275,10 +254,8 @@
       .logout-btn:hover {
         border-color: var(--accent);
         color: var(--accent);
-        background: var(--accent-softer);
       }
 
-      /* ── MAIN ── */
       .main {
         padding: 32px;
         max-width: 1100px;
@@ -290,7 +267,6 @@
       .page-title {
         font-size: 20px;
         font-weight: 800;
-        letter-spacing: -0.01em;
         color: var(--text);
         margin-bottom: 6px;
       }
@@ -298,7 +274,6 @@
         font-size: 12px;
         font-weight: 500;
         color: var(--muted);
-        letter-spacing: 0.02em;
       }
 
       /* ── SQL NOTICE ── */
@@ -365,13 +340,12 @@
         text-decoration: underline;
       }
 
-      /* ── COMPONENT CARDS ── */
+      /* ── CARDS ── */
       .components-grid {
         display: flex;
         flex-direction: column;
         gap: 16px;
       }
-
       .component-card {
         background: var(--bg2);
         border: 1px solid var(--border);
@@ -429,8 +403,62 @@
         font-size: 14px;
         font-weight: 700;
         color: var(--text);
-        letter-spacing: -0.01em;
       }
+
+      /* ── STOCK TOGGLE in header ── */
+      .stock-toggle-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-left: auto;
+      }
+      .stock-label {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .toggle-switch {
+        position: relative;
+        width: 44px;
+        height: 24px;
+        flex-shrink: 0;
+      }
+      .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background: #ddd;
+        border-radius: 24px;
+        transition: 0.2s;
+      }
+      .toggle-slider::before {
+        content: "";
+        position: absolute;
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        top: 3px;
+        background: #fff;
+        border-radius: 50%;
+        transition: 0.2s;
+      }
+      .toggle-switch input:checked + .toggle-slider {
+        background: var(--green);
+      }
+      .toggle-switch input:checked + .toggle-slider::before {
+        transform: translateX(20px);
+      }
+      .toggle-switch input:disabled + .toggle-slider {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
       .card-status {
         display: flex;
         align-items: center;
@@ -469,18 +497,11 @@
       .card-body {
         padding: 20px;
         display: grid;
-        grid-template-columns: 1fr 1fr 200px;
+        grid-template-columns: 1fr 1fr;
         gap: 20px;
         align-items: start;
         position: relative;
       }
-      @media (max-width: 768px) {
-        .card-body {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      /* Locked overlay */
       .card-body.locked::after {
         content: "";
         position: absolute;
@@ -488,6 +509,11 @@
         background: rgba(250, 250, 248, 0.55);
         pointer-events: none;
         z-index: 1;
+      }
+      @media (max-width: 768px) {
+        .card-body {
+          grid-template-columns: 1fr;
+        }
       }
 
       .field {
@@ -501,6 +527,11 @@
         letter-spacing: 0.18em;
         text-transform: uppercase;
         color: var(--muted);
+      }
+      .field-hint {
+        font-size: 9px;
+        color: var(--muted);
+        margin-top: 2px;
       }
 
       .input,
@@ -563,6 +594,61 @@
         font-weight: 700 !important;
       }
 
+      /* ── PRICE ROW ── */
+      .price-row {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+      .price-row .field {
+        flex: 2;
+        min-width: 140px;
+      }
+      .price-row .field.narrow {
+        flex: 1;
+        min-width: 90px;
+      }
+
+      /* ── META ROW (SKU + Lead time + Weight) ── */
+      .meta-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+        margin-top: 0;
+      }
+      @media (max-width: 600px) {
+        .meta-row {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      /* ── INCL PRICE DISPLAY ── */
+      .incl-price-display {
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--accent);
+        font-family: "Montserrat", sans-serif;
+        line-height: 1.2;
+        padding: 8px 0 2px;
+      }
+
+      /* ── OUT OF STOCK BANNER ── */
+      .oos-banner {
+        background: #fff5f5;
+        border-left: 3px solid var(--red);
+        padding: 8px 14px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        color: var(--red);
+        text-transform: uppercase;
+        display: none;
+      }
+      .oos-banner.show {
+        display: block;
+      }
+
       /* ── CARD FOOTER ── */
       .card-footer {
         padding: 14px 20px;
@@ -577,14 +663,7 @@
         font-size: 10px;
         font-weight: 500;
         color: var(--muted);
-        letter-spacing: 0.02em;
       }
-      .footer-hint span {
-        color: var(--text-secondary);
-        font-weight: 600;
-      }
-
-      /* Buttons */
       .edit-btn {
         background: transparent;
         border: 1.5px solid var(--accent);
@@ -608,7 +687,6 @@
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(208, 88, 24, 0.25);
       }
-
       .save-btn {
         background: var(--accent);
         border: none;
@@ -629,13 +707,11 @@
       .save-btn:hover {
         background: var(--accent2);
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(208, 88, 24, 0.25);
       }
       .save-btn:disabled {
         opacity: 0.5;
         cursor: not-allowed;
         transform: none;
-        box-shadow: none;
       }
       .save-btn.saving {
         background: var(--muted);
@@ -643,7 +719,6 @@
       .save-btn.saved-ok {
         background: var(--green);
       }
-
       .cancel-btn {
         background: transparent;
         border: 1.5px solid var(--border);
@@ -661,6 +736,45 @@
       .cancel-btn:hover {
         border-color: var(--text-secondary);
         color: var(--text-secondary);
+      }
+
+      .lock-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #aaa;
+        background: #f0f0ee;
+        border: 1px solid #ddd;
+        padding: 3px 10px;
+        border-radius: 2px;
+      }
+      .edit-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--accent);
+        background: var(--accent-soft);
+        border: 1px solid rgba(208, 88, 24, 0.25);
+        padding: 3px 10px;
+        border-radius: 2px;
+        animation: pulseEdit 2s ease-in-out infinite;
+      }
+      @keyframes pulseEdit {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.65;
+        }
       }
 
       /* ── SAVE ALL BAR ── */
@@ -686,7 +800,6 @@
         font-size: 11px;
         font-weight: 600;
         color: var(--text-secondary);
-        letter-spacing: 0.02em;
       }
       .save-all-hint span {
         color: var(--accent);
@@ -718,41 +831,6 @@
         opacity: 0.5;
         cursor: not-allowed;
         transform: none;
-        box-shadow: none;
-      }
-
-      /* ── TOAST ── */
-      #toast {
-        position: fixed;
-        bottom: 28px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(255, 255, 255, 0.97);
-        font-family: "Montserrat", sans-serif;
-        font-size: 11px;
-        font-weight: 600;
-        letter-spacing: 0.06em;
-        padding: 11px 24px;
-        z-index: 99999;
-        white-space: nowrap;
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
-        border-radius: 2px;
-        display: none;
-        border: 1px solid;
-        border-left: 3px solid;
-      }
-
-      .skeleton {
-        animation: shimmer 1.5s ease-in-out infinite;
-      }
-      @keyframes shimmer {
-        0%,
-        100% {
-          opacity: 0.5;
-        }
-        50% {
-          opacity: 1;
-        }
       }
 
       .live-badge {
@@ -793,57 +871,37 @@
         background: var(--green);
         animation: blink 2s infinite;
       }
-
-      /* Edit mode highlight on inputs */
-      .card-body:not(.locked) .input:not(:read-only),
-      .card-body:not(.locked) .textarea:not(:read-only) {
-        background: var(--bg2);
-        border-color: var(--border);
+      .skeleton {
+        animation: shimmer 1.5s ease-in-out infinite;
       }
-      .card-body:not(.locked) .input:not(:read-only):focus,
-      .card-body:not(.locked) .textarea:not(:read-only):focus {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 3px rgba(208, 88, 24, 0.1);
-      }
-
-      /* Lock icon badge */
-      .lock-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        font-size: 9px;
-        font-weight: 700;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: #aaa;
-        background: #f0f0ee;
-        border: 1px solid #ddd;
-        padding: 3px 10px;
-        border-radius: 2px;
-      }
-      .edit-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        font-size: 9px;
-        font-weight: 700;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--accent);
-        background: var(--accent-soft);
-        border: 1px solid rgba(208, 88, 24, 0.25);
-        padding: 3px 10px;
-        border-radius: 2px;
-        animation: pulseEdit 2s ease-in-out infinite;
-      }
-      @keyframes pulseEdit {
+      @keyframes shimmer {
         0%,
         100% {
-          opacity: 1;
+          opacity: 0.5;
         }
         50% {
-          opacity: 0.65;
+          opacity: 1;
         }
+      }
+
+      #toast {
+        position: fixed;
+        bottom: 28px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255, 255, 255, 0.97);
+        font-family: "Montserrat", sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        padding: 11px 24px;
+        z-index: 99999;
+        white-space: nowrap;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+        border-radius: 2px;
+        display: none;
+        border: 1px solid;
+        border-left: 3px solid;
       }
     </style>
   </head>
@@ -926,17 +984,29 @@
               >-- Create table CREATE TABLE IF NOT EXISTS part_config (
               part_type TEXT PRIMARY KEY, label TEXT NOT NULL, description TEXT,
               price INTEGER NOT NULL DEFAULT 0, gst_percent NUMERIC DEFAULT 18,
-              updated_at TIMESTAMPTZ DEFAULT now() ); ALTER TABLE part_config
-              ENABLE ROW LEVEL SECURITY; CREATE POLICY "public read" ON
-              part_config FOR SELECT USING (true); CREATE POLICY "auth write" ON
-              part_config FOR ALL USING (auth.role() = 'authenticated'); INSERT
-              INTO part_config (part_type, label, description, price) VALUES
-              ('frame','Rectangular Frame','Structural base for the
-              robot.',1200), ('motor','Motor Housing','Drive unit for
-              wheels.',2500), ('triangle_frame','Triangular Frame','Angular
-              brace for rigidity.',650), ('support_frame','Stress
-              Bridge','Cross-bridge span.',900), ('wheel','Wheel','Motor-driven
-              wheel.',1100) ON CONFLICT (part_type) DO NOTHING;</code
+              in_stock BOOLEAN DEFAULT true, weight_grams INTEGER DEFAULT 0, sku
+              TEXT DEFAULT '', lead_time_days INTEGER DEFAULT 7, updated_at
+              TIMESTAMPTZ DEFAULT now() ); ALTER TABLE part_config ENABLE ROW
+              LEVEL SECURITY; CREATE POLICY "public read" ON part_config FOR
+              SELECT USING (true); CREATE POLICY "auth write" ON part_config FOR
+              ALL USING (auth.role() = 'authenticated'); -- Add new columns if
+              table already exists ALTER TABLE part_config ADD COLUMN IF NOT
+              EXISTS in_stock BOOLEAN DEFAULT true; ALTER TABLE part_config ADD
+              COLUMN IF NOT EXISTS weight_grams INTEGER DEFAULT 0; ALTER TABLE
+              part_config ADD COLUMN IF NOT EXISTS sku TEXT DEFAULT ''; ALTER
+              TABLE part_config ADD COLUMN IF NOT EXISTS lead_time_days INTEGER
+              DEFAULT 7; -- Seed data INSERT INTO part_config
+              (part_type,label,description,price,gst_percent,weight_grams,sku,lead_time_days)
+              VALUES ('frame','Rectangular Frame','Structural base for the
+              robot.',2000,18,450,'BRC-FRAME-01',7), ('motor','Motor
+              Assembly','Drive unit for wheels.',5000,18,380,'BRC-MOTOR-01',10),
+              ('triangle_frame','Triangular Frame','Angular brace for
+              rigidity.',2000,18,180,'BRC-TFRAME-01',7),
+              ('support_frame','Stress Bridge','Cross-bridge
+              span.',2000,18,220,'BRC-SFRAME-01',7),
+              ('wheel','Wheel','Motor-driven
+              wheel.',6250,18,290,'BRC-WHEEL-01',10) ON CONFLICT (part_type) DO
+              NOTHING;</code
             >
           </div>
         </div>
@@ -997,51 +1067,65 @@
         "support_frame",
         "wheel",
       ];
-      const FALLBACK_CONFIGS = {
+      const FALLBACK = {
         frame: {
           label: "Rectangular Frame",
-          description:
-            "Structural base for the robot. Connects to other frames via corner sockets.",
-          price: 1200,
+          description: "Structural base for the robot.",
+          price: 2000,
           gst_percent: 18,
+          in_stock: true,
+          weight_grams: 450,
+          sku: "BRC-FRAME-01",
+          lead_time_days: 7,
         },
         motor: {
-          label: "Motor Housing",
-          description:
-            "Drive unit for wheels. Mounts on motor sockets around the frame perimeter.",
-          price: 2500,
+          label: "Motor Assembly",
+          description: "Drive unit for wheels.",
+          price: 5000,
           gst_percent: 18,
+          in_stock: true,
+          weight_grams: 380,
+          sku: "BRC-MOTOR-01",
+          lead_time_days: 10,
         },
         triangle_frame: {
           label: "Triangular Frame",
-          description:
-            "Angular brace for added structural rigidity. Required before placing Stress Bridges.",
-          price: 650,
+          description: "Angular brace for rigidity.",
+          price: 2000,
           gst_percent: 18,
+          in_stock: true,
+          weight_grams: 180,
+          sku: "BRC-TFRAME-01",
+          lead_time_days: 7,
         },
         support_frame: {
           label: "Stress Bridge",
-          description:
-            "Cross-bridge connecting two triangular frames. Needs: 2 Triangular Frames.",
-          price: 900,
+          description: "Cross-bridge span.",
+          price: 2000,
           gst_percent: 18,
+          in_stock: true,
+          weight_grams: 220,
+          sku: "BRC-SFRAME-01",
+          lead_time_days: 7,
         },
         wheel: {
           label: "Wheel",
-          description:
-            "Motor-driven wheel assembly. Needs: free motor socket on a frame.",
-          price: 1100,
+          description: "Motor-driven wheel.",
+          price: 6250,
           gst_percent: 18,
+          in_stock: true,
+          weight_grams: 290,
+          sku: "BRC-WHEEL-01",
+          lead_time_days: 10,
         },
       };
 
-      let dbValues = {}; // saved values from DB
-      let editValues = {}; // current input values
-      // editingState[pt] = true means card is unlocked
+      let dbValues = {};
+      let editValues = {};
       const editingState = {};
       PART_ORDER.forEach((pt) => (editingState[pt] = false));
 
-      /* ── AUTH ── */
+      // ── AUTH ──
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -1101,101 +1185,145 @@
         loadConfig();
       }
 
-      /* ── LOAD ── */
+      // ── LOAD ──
       async function loadConfig() {
-        const { data, error } = await supabase.from("part_config").select("*");
+        const { data } = await supabase.from("part_config").select("*");
         if (!data || data.length === 0) {
           renderCards(null);
           return;
         }
         data.forEach((row) => {
-          dbValues[row.part_type] = {
-            label: row.label,
-            description: row.description || "",
-            price: row.price,
-            gst_percent: row.gst_percent ?? 18,
-          };
+          dbValues[row.part_type] = row;
         });
         renderCards(dbValues);
       }
 
-      /* ── RENDER ── */
+      // ── RENDER ──
       function renderCards(values) {
         const grid = document.getElementById("components-grid");
         grid.innerHTML = "";
         editValues = {};
         for (const pt of PART_ORDER) {
-          const fallback = FALLBACK_CONFIGS[pt];
+          const fb = FALLBACK[pt];
           const db = values?.[pt] ?? {};
-          const current = {
-            label: db.label ?? fallback.label,
-            description: db.description ?? fallback.description,
-            price: db.price ?? fallback.price,
-            gst_percent: db.gst_percent ?? 18,
+          const cur = {
+            label: db.label ?? fb.label,
+            description: db.description ?? fb.description,
+            price: db.price ?? fb.price,
+            gst_percent: db.gst_percent ?? fb.gst_percent,
+            in_stock: db.in_stock ?? fb.in_stock,
+            weight_grams: db.weight_grams ?? fb.weight_grams,
+            sku: db.sku ?? fb.sku,
+            lead_time_days: db.lead_time_days ?? fb.lead_time_days,
           };
-          editValues[pt] = { ...current };
-          grid.appendChild(buildCard(pt, current));
+          editValues[pt] = { ...cur };
+          grid.appendChild(buildCard(pt, cur));
         }
       }
 
-      /* ── BUILD CARD ── */
-      function buildCard(pt, current) {
+      // ── BUILD CARD ──
+      function buildCard(pt, cur) {
         const card = document.createElement("div");
         card.className = "component-card";
         card.id = `card-${pt}`;
 
-        const inclPrice = Math.round(
-          current.price * (1 + current.gst_percent / 100),
-        );
+        const inclPrice = Math.round(cur.price * (1 + cur.gst_percent / 100));
+        const stockChecked = cur.in_stock ? "checked" : "";
+        const stockColor = cur.in_stock ? "var(--green)" : "var(--red)";
+        const stockLabel = cur.in_stock ? "In Stock" : "Out of Stock";
 
         card.innerHTML = `
+          <!-- OOS Banner -->
+          <div class="oos-banner ${cur.in_stock ? "" : "show"}" id="oos-banner-${pt}">
+            ⚠ This part is marked OUT OF STOCK — it will be disabled in the configurator
+          </div>
+
+          <!-- Header -->
           <div class="card-header">
             <div class="card-glyph">${PART_GLYPHS[pt] ?? "◈"}</div>
             <div class="card-type-info">
               <div class="card-type-key">${pt}</div>
-              <div class="card-type-name" id="card-name-${pt}">${current.label}</div>
+              <div class="card-type-name" id="card-name-${pt}">${esc(cur.label)}</div>
             </div>
-            <div class="card-status" id="status-${pt}">
+
+            <!-- Stock toggle -->
+            <div class="stock-toggle-wrap" id="stock-wrap-${pt}">
+              <span class="stock-label" id="stock-label-${pt}" style="color:${stockColor}">${stockLabel}</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="stock-${pt}" ${stockChecked} disabled />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="card-status" id="status-${pt}" style="margin-left:16px;">
               <div class="status-dot locked" id="status-dot-${pt}"></div>
-              <div class="status-text" id="status-text-${pt}">Locked</div>
+              <div class="status-text"       id="status-text-${pt}">Locked</div>
             </div>
           </div>
 
+          <!-- Body -->
           <div class="card-body locked" id="body-${pt}">
+
+            <!-- Row 1: Label + Description -->
             <div class="field">
               <label class="field-lbl">Display Label</label>
-              <input class="input" id="label-${pt}" type="text" value="${esc(current.label)}" placeholder="Part name" readonly />
-              <div style="font-size:9px;color:var(--muted);margin-top:2px;">Shown in sidebar buttons &amp; inventory</div>
+              <input class="input" id="label-${pt}" type="text" value="${esc(cur.label)}" placeholder="Part name" readonly />
+              <div class="field-hint">Shown in sidebar buttons &amp; inventory</div>
             </div>
             <div class="field">
               <label class="field-lbl">Tooltip Description</label>
-              <textarea class="textarea" id="desc-${pt}" placeholder="Tooltip…" readonly>${esc(current.description)}</textarea>
-              <div style="font-size:9px;color:var(--muted);margin-top:2px;">Shown on hover in the 3D configurator</div>
+              <textarea class="textarea" id="desc-${pt}" placeholder="Tooltip…" readonly>${esc(cur.description)}</textarea>
+              <div class="field-hint">Shown on hover in the 3D configurator</div>
             </div>
-            <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
-              <div class="field" style="flex:2;min-width:160px;">
-                <label class="field-lbl">Unit Price (₹)</label>
-                <div class="price-input-wrap">
-                  <span class="price-prefix">₹</span>
-                  <input class="input price-input" id="price-${pt}" type="number" min="0" step="50" value="${current.price}" placeholder="0" readonly />
+
+            <!-- Row 2: Price + GST + Incl Price -->
+            <div style="grid-column:1/-1;">
+              <div class="price-row">
+                <div class="field">
+                  <label class="field-lbl">Unit Price (₹)</label>
+                  <div class="price-input-wrap">
+                    <span class="price-prefix">₹</span>
+                    <input class="input price-input" id="price-${pt}" type="number" min="0" step="50" value="${cur.price}" readonly />
+                  </div>
+                  <div class="field-hint">Base price before GST</div>
                 </div>
-                <div style="font-size:9px;color:var(--muted);margin-top:2px;">Base price before GST</div>
-              </div>
-              <div class="field" style="flex:1;min-width:100px;">
-                <label class="field-lbl">GST (%)</label>
-                <input class="input" id="gst-${pt}" type="number" min="0" max="100" step="1" value="${current.gst_percent}" placeholder="18" style="width:100%;" readonly />
-                <div style="font-size:9px;color:var(--muted);margin-top:2px;">Tax rate</div>
-              </div>
-              <div style="flex:2;min-width:160px;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:2px;">
-                <label class="field-lbl">Price incl. GST</label>
-                <div id="price-gst-display-${pt}" style="font-size:22px;font-weight:800;color:var(--accent);font-family:'Montserrat',sans-serif;line-height:1.2;padding:8px 0 2px;">
-                  ₹${inclPrice.toLocaleString("en-IN")}
+                <div class="field narrow">
+                  <label class="field-lbl">GST (%)</label>
+                  <input class="input" id="gst-${pt}" type="number" min="0" max="100" step="1" value="${cur.gst_percent}" readonly />
+                  <div class="field-hint">Tax rate</div>
                 </div>
-                <div style="font-size:9px;color:var(--muted);">Shown in configurator &amp; orders</div>
+                <div class="field" style="justify-content:flex-end;">
+                  <label class="field-lbl">Price incl. GST</label>
+                  <div class="incl-price-display" id="price-gst-display-${pt}">₹${inclPrice.toLocaleString("en-IN")}</div>
+                  <div class="field-hint">Shown in configurator &amp; orders</div>
+                </div>
               </div>
             </div>
+
+            <!-- Row 3: SKU + Lead time + Weight -->
+            <div style="grid-column:1/-1;">
+              <div class="meta-row">
+                <div class="field">
+                  <label class="field-lbl">SKU / Part Number</label>
+                  <input class="input" id="sku-${pt}" type="text" value="${esc(cur.sku)}" placeholder="e.g. BRC-FRAME-01" readonly />
+                  <div class="field-hint">Internal part reference for fulfilment</div>
+                </div>
+                <div class="field">
+                  <label class="field-lbl">Lead Time (days)</label>
+                  <input class="input" id="lead-${pt}" type="number" min="1" max="365" step="1" value="${cur.lead_time_days}" readonly />
+                  <div class="field-hint">Days to manufacture &amp; dispatch</div>
+                </div>
+                <div class="field">
+                  <label class="field-lbl">Weight (grams)</label>
+                  <input class="input" id="weight-${pt}" type="number" min="0" step="10" value="${cur.weight_grams}" readonly />
+                  <div class="field-hint">Used for total build weight calc</div>
+                </div>
+              </div>
+            </div>
+
           </div>
 
+          <!-- Footer -->
           <div class="card-footer" id="footer-${pt}">
             <div class="footer-hint" id="footer-hint-${pt}">
               <span class="lock-badge">🔒 Locked — click Edit to change values</span>
@@ -1206,18 +1334,34 @@
           </div>
         `;
 
-        // Wire listeners
-        const labelEl = card.querySelector(`#label-${pt}`);
-        const descEl = card.querySelector(`#desc-${pt}`);
-        const priceEl = card.querySelector(`#price-${pt}`);
-        const gstEl = card.querySelector(`#gst-${pt}`);
+        // ── Wire inputs ──
+        const get = (id) => card.querySelector(`#${id}`);
+        const labelEl = get(`label-${pt}`);
+        const descEl = get(`desc-${pt}`);
+        const priceEl = get(`price-${pt}`);
+        const gstEl = get(`gst-${pt}`);
+        const skuEl = get(`sku-${pt}`);
+        const leadEl = get(`lead-${pt}`);
+        const weightEl = get(`weight-${pt}`);
+        const stockEl = get(`stock-${pt}`);
 
         const updateGSTDisplay = () => {
           const base = parseInt(priceEl.value) || 0;
           const gst = parseFloat(gstEl.value) || 0;
-          const incl = Math.round(base * (1 + gst / 100));
-          const el = card.querySelector(`#price-gst-display-${pt}`);
-          if (el) el.textContent = "₹" + incl.toLocaleString("en-IN");
+          get(`price-gst-display-${pt}`).textContent =
+            "₹" + Math.round(base * (1 + gst / 100)).toLocaleString("en-IN");
+        };
+
+        const updateStockUI = () => {
+          const inStock = stockEl.checked;
+          get(`stock-label-${pt}`).textContent = inStock
+            ? "In Stock"
+            : "Out of Stock";
+          get(`stock-label-${pt}`).style.color = inStock
+            ? "var(--green)"
+            : "var(--red)";
+          const banner = get(`oos-banner-${pt}`);
+          if (banner) banner.classList.toggle("show", !inStock);
         };
 
         const onChange = () => {
@@ -1226,57 +1370,67 @@
             description: descEl.value.trim(),
             price: parseInt(priceEl.value) || 0,
             gst_percent: parseFloat(gstEl.value) || 0,
+            in_stock: stockEl.checked,
+            weight_grams: parseInt(weightEl.value) || 0,
+            sku: skuEl.value.trim(),
+            lead_time_days: parseInt(leadEl.value) || 1,
           };
           updateGSTDisplay();
-          // live update card name
-          card.querySelector(`#card-name-${pt}`).textContent =
+          get(`card-name-${pt}`).textContent =
             labelEl.value || editValues[pt].label;
         };
 
-        [labelEl, descEl, priceEl, gstEl].forEach((el) =>
-          el.addEventListener("input", onChange),
+        [labelEl, descEl, priceEl, gstEl, skuEl, leadEl, weightEl].forEach(
+          (el) => el.addEventListener("input", onChange),
         );
+        stockEl.addEventListener("change", () => {
+          updateStockUI();
+          onChange();
+        });
 
-        // Edit button
-        card
-          .querySelector(`#edit-btn-${pt}`)
-          .addEventListener("click", () => enterEditMode(pt));
+        get(`edit-btn-${pt}`).addEventListener("click", () =>
+          enterEditMode(pt),
+        );
 
         return card;
       }
 
-      /* ── EDIT MODE ── */
+      // ── ENTER EDIT MODE ──
       function enterEditMode(pt) {
         editingState[pt] = true;
-
-        const body = document.getElementById(`body-${pt}`);
         const card = document.getElementById(`card-${pt}`);
+        const body = document.getElementById(`body-${pt}`);
         const dot = document.getElementById(`status-dot-${pt}`);
         const text = document.getElementById(`status-text-${pt}`);
         const hint = document.getElementById(`footer-hint-${pt}`);
         const btnRow = document.getElementById(`btn-row-${pt}`);
 
-        // Unlock inputs
         body.classList.remove("locked");
         card.classList.add("is-editing");
-        [`label-${pt}`, `desc-${pt}`, `price-${pt}`, `gst-${pt}`].forEach(
-          (id) => {
-            const el = document.getElementById(id);
-            el.removeAttribute("readonly");
-          },
-        );
+
+        [
+          `label-${pt}`,
+          `desc-${pt}`,
+          `price-${pt}`,
+          `gst-${pt}`,
+          `sku-${pt}`,
+          `lead-${pt}`,
+          `weight-${pt}`,
+        ].forEach((id) => {
+          document.getElementById(id)?.removeAttribute("readonly");
+        });
+        // Enable stock toggle
+        const stockEl = document.getElementById(`stock-${pt}`);
+        if (stockEl) stockEl.disabled = false;
 
         dot.className = "status-dot editing";
         text.className = "status-text editing";
         text.textContent = "Editing";
-
         hint.innerHTML = `<span class="edit-badge">✏ Editing — save to lock values</span>`;
 
         btnRow.innerHTML = `
           <button class="cancel-btn" id="cancel-btn-${pt}">Cancel</button>
-          <button class="save-btn" id="save-btn-${pt}">💾 Save & Lock</button>
-        `;
-
+          <button class="save-btn"   id="save-btn-${pt}">💾 Save &amp; Lock</button>`;
         document
           .getElementById(`cancel-btn-${pt}`)
           .addEventListener("click", () => cancelEdit(pt));
@@ -1285,39 +1439,54 @@
           .addEventListener("click", () => savePart(pt));
 
         updateSaveAllBar();
-
-        // Focus first field
         setTimeout(() => document.getElementById(`label-${pt}`)?.focus(), 50);
       }
 
-      /* ── CANCEL EDIT ── */
+      // ── CANCEL ──
       function cancelEdit(pt) {
         editingState[pt] = false;
+        const orig = dbValues[pt] ?? FALLBACK[pt];
 
-        const orig = dbValues[pt] ?? FALLBACK_CONFIGS[pt];
-        // Restore values
         document.getElementById(`label-${pt}`).value = orig.label;
         document.getElementById(`desc-${pt}`).value = orig.description || "";
         document.getElementById(`price-${pt}`).value = orig.price;
         document.getElementById(`gst-${pt}`).value = orig.gst_percent ?? 18;
+        document.getElementById(`sku-${pt}`).value = orig.sku ?? "";
+        document.getElementById(`lead-${pt}`).value = orig.lead_time_days ?? 7;
+        document.getElementById(`weight-${pt}`).value = orig.weight_grams ?? 0;
+
+        const stockEl = document.getElementById(`stock-${pt}`);
+        if (stockEl) {
+          stockEl.checked = orig.in_stock ?? true;
+          stockEl.disabled = true;
+        }
+
         editValues[pt] = { ...orig };
 
-        // Update GST display
         const inclPrice = Math.round(
-          orig.price * (1 + (orig.gst_percent ?? 18) / 100),
+          (orig.price || 0) * (1 + (orig.gst_percent || 18) / 100),
         );
         const gstDisp = document.getElementById(`price-gst-display-${pt}`);
         if (gstDisp)
           gstDisp.textContent = "₹" + inclPrice.toLocaleString("en-IN");
-
-        // Update card name
         document.getElementById(`card-name-${pt}`).textContent = orig.label;
+
+        // Update stock UI
+        const slbl = document.getElementById(`stock-label-${pt}`);
+        if (slbl) {
+          slbl.textContent =
+            (orig.in_stock ?? true) ? "In Stock" : "Out of Stock";
+          slbl.style.color =
+            (orig.in_stock ?? true) ? "var(--green)" : "var(--red)";
+        }
+        const banner = document.getElementById(`oos-banner-${pt}`);
+        if (banner) banner.classList.toggle("show", !(orig.in_stock ?? true));
 
         lockCard(pt);
         updateSaveAllBar();
       }
 
-      /* ── LOCK CARD ── */
+      // ── LOCK CARD ──
       function lockCard(pt) {
         const body = document.getElementById(`body-${pt}`);
         const card = document.getElementById(`card-${pt}`);
@@ -1327,19 +1496,24 @@
         const btnRow = document.getElementById(`btn-row-${pt}`);
 
         body.classList.add("locked");
-        card.classList.remove("is-editing");
-        card.classList.remove("is-saved");
-
-        [`label-${pt}`, `desc-${pt}`, `price-${pt}`, `gst-${pt}`].forEach(
-          (id) => {
-            document.getElementById(id)?.setAttribute("readonly", "");
-          },
-        );
+        card.classList.remove("is-editing", "is-saved");
+        [
+          `label-${pt}`,
+          `desc-${pt}`,
+          `price-${pt}`,
+          `gst-${pt}`,
+          `sku-${pt}`,
+          `lead-${pt}`,
+          `weight-${pt}`,
+        ].forEach((id) => {
+          document.getElementById(id)?.setAttribute("readonly", "");
+        });
+        const stockEl = document.getElementById(`stock-${pt}`);
+        if (stockEl) stockEl.disabled = true;
 
         dot.className = "status-dot locked";
         text.className = "status-text";
         text.textContent = "Locked";
-
         hint.innerHTML = `<span class="lock-badge">🔒 Locked — click Edit to change values</span>`;
         btnRow.innerHTML = `<button class="edit-btn" id="edit-btn-${pt}">✏ Edit</button>`;
         document
@@ -1347,7 +1521,7 @@
           .addEventListener("click", () => enterEditMode(pt));
       }
 
-      /* ── SAVE ── */
+      // ── SAVE ──
       async function savePart(pt) {
         const saveBtn = document.getElementById(`save-btn-${pt}`);
         const card = document.getElementById(`card-${pt}`);
@@ -1358,19 +1532,21 @@
         saveBtn.textContent = "Saving…";
         saveBtn.className = "save-btn saving";
 
-        const { error } = await supabase
-          .from("part_config")
-          .upsert(
-            {
-              part_type: pt,
-              label: vals.label,
-              description: vals.description,
-              price: vals.price,
-              gst_percent: vals.gst_percent ?? 18,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "part_type" },
-          );
+        const { error } = await supabase.from("part_config").upsert(
+          {
+            part_type: pt,
+            label: vals.label,
+            description: vals.description,
+            price: vals.price,
+            gst_percent: vals.gst_percent ?? 18,
+            in_stock: vals.in_stock ?? true,
+            weight_grams: vals.weight_grams ?? 0,
+            sku: vals.sku ?? "",
+            lead_time_days: vals.lead_time_days ?? 7,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "part_type" },
+        );
 
         if (error) {
           showToast(`⚠ Save failed: ${error.message}`, "error");
@@ -1382,34 +1558,28 @@
 
         dbValues[pt] = { ...vals };
         editingState[pt] = false;
-
-        // Brief saved flash
         card.classList.add("is-saved");
-        const dot = document.getElementById(`status-dot-${pt}`);
-        const text = document.getElementById(`status-text-${pt}`);
-        dot.className = "status-dot saved";
-        text.className = "status-text saved";
-        text.textContent = "Saved ✓";
-
+        document.getElementById(`status-dot-${pt}`).className =
+          "status-dot saved";
+        document.getElementById(`status-text-${pt}`).className =
+          "status-text saved";
+        document.getElementById(`status-text-${pt}`).textContent = "Saved ✓";
         showToast(`✓ ${vals.label} saved & locked`, "success");
-
         setTimeout(() => {
           lockCard(pt);
           updateSaveAllBar();
         }, 1200);
-
         updateSaveAllBar();
       }
 
-      /* ── SAVE ALL ── */
+      // ── SAVE ALL ──
       document
         .getElementById("save-all-btn")
         .addEventListener("click", async () => {
           const btn = document.getElementById("save-all-btn");
           btn.disabled = true;
           btn.textContent = "Saving…";
-          const editingParts = PART_ORDER.filter((pt) => editingState[pt]);
-          for (const pt of editingParts) {
+          for (const pt of PART_ORDER.filter((p) => editingState[p])) {
             await savePart(pt);
             await new Promise((r) => setTimeout(r, 200));
           }
@@ -1417,9 +1587,8 @@
           updateSaveAllBar();
         });
 
-      /* ── SAVE ALL BAR ── */
       function updateSaveAllBar() {
-        const editing = PART_ORDER.filter((pt) => editingState[pt]);
+        const editing = PART_ORDER.filter((p) => editingState[p]);
         const bar = document.getElementById("save-all-bar");
         const count = document.getElementById("dirty-count");
         const btn = document.getElementById("save-all-btn");
@@ -1428,27 +1597,20 @@
         bar.classList.toggle("visible", editing.length > 0);
       }
 
-      /* ── SQL TOGGLE ── */
       window.toggleSQL = function () {
         const block = document.getElementById("sql-block");
         const btn = document.getElementById("sql-toggle");
-        const visible = block.style.display !== "none";
-        block.style.display = visible ? "none" : "block";
-        btn.textContent = visible ? "▶ Show SQL" : "▼ Hide SQL";
+        const vis = block.style.display !== "none";
+        block.style.display = vis ? "none" : "block";
+        btn.textContent = vis ? "▶ Show SQL" : "▼ Hide SQL";
       };
 
-      /* ── TOAST ── */
       function showToast(msg, type = "info") {
         const el = document.getElementById("toast");
-        const colors = {
-          success: "#1a8a3a",
-          error: "#cc2200",
-          info: "#999999",
-        };
-        const c = colors[type] || colors.info;
-        el.style.borderColor = c;
-        el.style.borderLeftColor = c;
-        el.style.color = c;
+        const c =
+          { success: "#1a8a3a", error: "#cc2200", info: "#999" }[type] ||
+          "#999";
+        el.style.borderColor = el.style.borderLeftColor = el.style.color = c;
         el.textContent = msg;
         el.style.display = "block";
         el.style.opacity = "1";
@@ -1463,7 +1625,6 @@
         }, 3000);
       }
 
-      /* ── HELPER ── */
       function esc(str) {
         return String(str ?? "")
           .replace(/&/g, "&amp;")
