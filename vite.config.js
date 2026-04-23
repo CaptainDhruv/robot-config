@@ -7,6 +7,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, "index.html"),
         configurator: resolve(__dirname, "configurator.html"),
+        presetViewer: resolve(__dirname, "preset-viewer.html"),
       },
     },
   },

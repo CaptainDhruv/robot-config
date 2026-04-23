@@ -1,5 +1,8 @@
 {
   "buildCommand": "vite build",
   "outputDirectory": "dist",
-  "framework": "vite"
+  "framework": "vite",
+  "rewrites": [
+    { "source": "/preset-viewer.html", "destination": "/preset-viewer.html" }
+  ]
 }
