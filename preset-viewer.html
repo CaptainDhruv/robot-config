@@ -35,7 +35,7 @@
       }
       #viewer-title {
         font-family: "Orbitron", sans-serif;
-        font-size: 12px;
+        font-size: 16px;
         font-weight: 700;
         letter-spacing: 0.2em;
         color: #ffffff;
@@ -113,39 +113,36 @@
         flex-shrink: 0;
         background: #0a1018;
         border-bottom: 1px solid rgba(208, 88, 24, 0.2);
-        padding: 8px 24px;
+        padding: 12px 24px;
         display: flex;
         align-items: center;
-        gap: 20px;
+        gap: 28px;
         flex-wrap: wrap;
-      }
-      .price-item {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
       }
       .price-label {
         font-family: "Orbitron", sans-serif;
-        font-size: 7px;
+        font-size: 11px;
         font-weight: 700;
-        letter-spacing: 0.22em;
-        color: #384858;
+        letter-spacing: 0.18em;
+        color: #6a8098;
         text-transform: uppercase;
+        margin-bottom: 4px;
       }
       .price-value {
         font-family: "Orbitron", sans-serif;
-        font-size: 14px;
+        font-size: 22px;
         font-weight: 900;
         color: #ffffff;
         letter-spacing: 0.06em;
       }
       .price-value.accent {
         color: #d05818;
+        font-size: 22px;
       }
       .price-sep {
         width: 1px;
-        height: 30px;
-        background: rgba(208, 88, 24, 0.15);
+        height: 42px;
+        background: rgba(208, 88, 24, 0.2);
         flex-shrink: 0;
       }
       #loading-prices {
@@ -333,14 +330,16 @@
       .rpt-table-card table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 14px;
+        font-size: 15px;
       }
       .rpt-table-card td {
-        padding: 6px 10px;
+        padding: 9px 12px;
         border-bottom: 1px solid #e5e5e5;
         font-family: "Oswald", sans-serif;
         font-weight: 400;
         letter-spacing: 0.04em;
+        vertical-align: middle;
+        line-height: 1;
       }
       .rpt-table-card tr:last-child td {
         border-bottom: none;
@@ -356,6 +355,8 @@
         background: #fff5f5 !important;
         border-top: 2px solid #cc2200 !important;
         border-bottom: none !important;
+        vertical-align: middle !important;
+        line-height: 1 !important;
       }
       .rpt-weight-total td {
         font-family: "Oswald", sans-serif !important;
@@ -365,6 +366,8 @@
         background: #eaf4fb !important;
         border-top: 2px solid #2e86c1 !important;
         border-bottom: none !important;
+        vertical-align: middle !important;
+        line-height: 1 !important;
       }
       .rpt-footer {
         border-top: 1px solid #ccc;
@@ -1106,9 +1109,9 @@
           manifestRows += `<tr>
       <td>${PART_LABELS_DB[type].toUpperCase()}</td>
       <td style="text-align:center">${qty}</td>
-      <td style="text-align:right;font-family:'Oswald',sans-serif;color:#cc2200">
-        ₹${sub.toLocaleString("en-IN")}
-      </td>
+     <td style="text-align:right;font-family:'Oswald',sans-serif;color:#cc2200;font-weight:700;font-size:16px">
+  ₹${sub.toLocaleString("en-IN")}
+</td>
     </tr>`;
         });
 
@@ -1126,7 +1129,7 @@
           weightRows += `<tr>
       <td>${PART_LABELS_DB[type].toUpperCase()}</td>
       <td style="text-align:center">${qty}</td>
-      <td style="text-align:right;color:#555">${unitG} g ea</td>
+      <td style="text-align:right;color:#555">${unitG} g</td>
       <td style="text-align:right;font-family:'Oswald',sans-serif;font-weight:600;color:#1a5276">${lineDisp}</td>
     </tr>`;
         });
