@@ -49,7 +49,6 @@
         margin-top: 4px;
         text-transform: uppercase;
       }
-
       .hdr-btn {
         font-family: "Orbitron", sans-serif;
         font-size: 9px;
@@ -102,7 +101,6 @@
         box-shadow: none;
         transform: none;
       }
-
       #btn-group {
         display: flex;
         gap: 10px;
@@ -167,12 +165,242 @@
         }
       }
 
-      /* ── PDF FRAME ── */
-      #pdf-frame {
+      /* ── REPORT AREA ── */
+      #report-area {
         flex: 1;
-        width: 100%;
-        border: none;
+        overflow-y: auto;
+        background: #e8edf2;
+      }
+      #report-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 12px;
+        color: #384858;
+        letter-spacing: 0.1em;
+        animation: blink 1.2s step-end infinite;
+      }
+
+      /* ── REPORT HTML (inside #report-area) ── */
+      .report-wrap {
         background: #fff;
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 22px 28px;
+        font-family: "Oswald", sans-serif;
+        color: #111;
+      }
+      .rpt-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding-bottom: 14px;
+        border-bottom: 3px solid #1a1a1a;
+        margin-bottom: 18px;
+      }
+      .rpt-title {
+        font-family: "Oswald", sans-serif;
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        color: #111;
+        line-height: 1;
+        text-transform: uppercase;
+      }
+      .rpt-subtitle {
+        font-family: "Oswald", sans-serif;
+        font-size: 11px;
+        font-weight: 300;
+        color: #666;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        margin-top: 6px;
+      }
+      .rpt-meta {
+        text-align: right;
+        font-family: "Oswald", sans-serif;
+        font-size: 11px;
+        font-weight: 400;
+        color: #555;
+        line-height: 1.8;
+        letter-spacing: 0.06em;
+      }
+      .rpt-main-view {
+        width: 100%;
+        border: 2px solid #222;
+        margin-bottom: 8px;
+        background: #ffffff;
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .rpt-main-view img {
+        display: block;
+        max-height: 480px;
+        max-width: 100%;
+        object-fit: contain;
+        margin: 0 auto;
+        background: #ffffff;
+      }
+      .rpt-view-label {
+        position: absolute;
+        top: 10px;
+        left: 14px;
+        font-family: "Oswald", sans-serif;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.22em;
+        color: #fff;
+        background: rgba(0, 0, 0, 0.6);
+        padding: 3px 12px;
+        text-transform: uppercase;
+      }
+      .rpt-section-title {
+        font-family: "Oswald", sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        color: #111;
+        text-transform: uppercase;
+        border-left: 4px solid #cc2200;
+        padding-left: 10px;
+        margin-bottom: 10px;
+        margin-top: 16px;
+      }
+      .rpt-angles-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+      .rpt-angle-card {
+        border: 1.5px solid #222;
+        background: #ffffff;
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .rpt-angle-label {
+        font-family: "Oswald", sans-serif;
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: #fff;
+        background: rgba(0, 0, 0, 0.65);
+        padding: 3px 10px;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 2;
+      }
+      .rpt-angle-card img {
+        width: 100%;
+        display: block;
+        max-height: 300px;
+        object-fit: contain;
+        background: #ffffff;
+        margin: 0 auto;
+      }
+      .rpt-tables-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-bottom: 16px;
+      }
+      .rpt-table-card {
+        border: 1.5px solid #222;
+      }
+      .rpt-table-header {
+        background: #1a1a1a;
+        color: #cc2200;
+        font-family: "Oswald", sans-serif;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 0.2em;
+        padding: 7px 12px;
+        text-transform: uppercase;
+      }
+      .rpt-table-header.weight {
+        color: #2e86c1;
+      }
+      .rpt-table-card table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+      .rpt-table-card td {
+        padding: 6px 10px;
+        border-bottom: 1px solid #e5e5e5;
+        font-family: "Oswald", sans-serif;
+        font-weight: 400;
+        letter-spacing: 0.04em;
+      }
+      .rpt-table-card tr:last-child td {
+        border-bottom: none;
+      }
+      .rpt-table-card tr:nth-child(even) td {
+        background: #fafafa;
+      }
+      .rpt-subtotal td {
+        font-family: "Oswald", sans-serif !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        color: #cc2200 !important;
+        background: #fff5f5 !important;
+        border-top: 2px solid #cc2200 !important;
+        border-bottom: none !important;
+      }
+      .rpt-weight-total td {
+        font-family: "Oswald", sans-serif !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        color: #1a5276 !important;
+        background: #eaf4fb !important;
+        border-top: 2px solid #2e86c1 !important;
+        border-bottom: none !important;
+      }
+      .rpt-footer {
+        border-top: 1px solid #ccc;
+        padding-top: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-family: "Oswald", sans-serif;
+        font-size: 10px;
+        font-weight: 300;
+        color: #888;
+        letter-spacing: 0.1em;
+        margin-top: 16px;
+        text-transform: uppercase;
+      }
+
+      /* ── PRINT ── */
+      @media print {
+        #viewer-header,
+        #price-strip,
+        #addr-overlay,
+        #order-confirm {
+          display: none !important;
+        }
+        #report-area {
+          overflow: visible;
+          height: auto;
+        }
+        body {
+          height: auto;
+          overflow: visible;
+        }
+        .report-wrap {
+          max-width: 100%;
+          padding: 12px 16px;
+        }
       }
 
       /* ── ADDRESS OVERLAY ── */
@@ -190,7 +418,6 @@
       #addr-overlay.visible {
         display: flex;
       }
-
       .addr-card {
         width: min(560px, 92vw);
         background: #18202e;
@@ -256,8 +483,6 @@
         display: inline-block;
         flex-shrink: 0;
       }
-
-      /* shared field styles injected via JS */
       .addr-field {
         display: flex;
         flex-direction: column;
@@ -325,11 +550,6 @@
         font-size: 14px;
         pointer-events: none;
       }
-      .addr-row-2 {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 14px;
-      }
       .addr-row-3 {
         display: grid;
         grid-template-columns: 1fr 1fr 1fr;
@@ -393,7 +613,6 @@
         transform: none;
       }
       @media (max-width: 540px) {
-        .addr-row-2,
         .addr-row-3,
         .addr-phone-row {
           grid-template-columns: 1fr;
@@ -474,7 +693,6 @@
         color: #d05818;
         background: transparent;
         cursor: pointer;
-        transition: all 0.12s;
       }
       .confirm-close:hover {
         background: #d05818;
@@ -503,8 +721,10 @@
       <div id="loading-prices">FETCHING LIVE PRICES...</div>
     </div>
 
-    <!-- PDF EMBED -->
-    <iframe id="pdf-frame" id="pdf-frame"></iframe>
+    <!-- DYNAMIC REPORT -->
+    <div id="report-area">
+      <div id="report-loading">GENERATING REPORT...</div>
+    </div>
 
     <!-- ADDRESS OVERLAY -->
     <div id="addr-overlay">
@@ -516,7 +736,6 @@
         </div>
         <div class="addr-body">
           <div class="addr-section-title">Delivery Address</div>
-
           <div class="addr-field">
             <label class="addr-label"
               >Full Name <span style="color: #d05818">*</span></label
@@ -530,7 +749,6 @@
             />
             <span class="addr-rule-hint">Letters and spaces only</span>
           </div>
-
           <div class="addr-field">
             <label class="addr-label"
               >PIN Code <span style="color: #d05818">*</span></label
@@ -547,7 +765,6 @@
               >6-digit PIN — auto-fills city/state</span
             >
           </div>
-
           <div class="addr-field">
             <label class="addr-label"
               >Address Line 1 <span style="color: #d05818">*</span></label
@@ -580,7 +797,6 @@
               autocomplete="address-line3"
             />
           </div>
-
           <div class="addr-row-3" style="margin-bottom: 14px">
             <div class="addr-field" style="margin-bottom: 0">
               <label class="addr-label"
@@ -653,7 +869,6 @@
               </div>
             </div>
           </div>
-
           <div class="addr-phone-row" style="margin-bottom: 14px">
             <div class="addr-field" style="margin-bottom: 0">
               <label class="addr-label"
@@ -684,7 +899,6 @@
               <span class="addr-rule-hint">Digits only</span>
             </div>
           </div>
-
           <div class="addr-btn-row">
             <span
               style="
@@ -729,60 +943,73 @@
     <script type="module">
       import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-      // ── Pull Supabase config from your existing env / hardcode here ──
-      // Replace these with your actual values from supabaseClient.js
       const SUPABASE_URL = "https://paxeivuabqbfodnjxfpw.supabase.co";
       const SUPABASE_ANON_KEY =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBheGVpdnVhYnFiZm9kbmp4ZnB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNDQwMTAsImV4cCI6MjA4OTgyMDAxMH0.iit20CxI6S04wEJgsPRmEyf3oziSD4e9T2SjJGlHiVQ";
       const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      // ── Preset part counts ───────────────────────────────────────────
+
       const PRESET_PARTS = {
         scout: {
           frame: 4,
+          motor: 4,
           triangle_frame: 4,
           support_frame: 2,
-          motor: 4,
           wheel: 4,
         },
         combat: {
           frame: 6,
+          motor: 8,
           triangle_frame: 4,
           support_frame: 2,
-          motor: 8,
           wheel: 8,
         },
       };
+      const PRESET_LABELS = { scout: "Scout Config", combat: "Combat Config" };
+      const PRESET_DIMS = {
+        scout: "W 55.0cm × D 63.8cm × H 26.8cm",
+        combat: "W 55.0cm × D 85.1cm × H 26.8cm",
+      };
+      const PRESET_WEIGHT = { scout: "5.64 kg", combat: "9.22 kg" };
 
-      const PRESET_LABELS = {
-        scout: "Scout Config",
-        combat: "Combat Config",
+      const PART_WEIGHTS = {
+        frame: 450,
+        motor: 380,
+        triangle_frame: 180,
+        support_frame: 220,
+        wheel: 290,
+      };
+      const PART_LABELS_DB = {
+        frame: "Rectangular Frame",
+        motor: "Motor Assembly",
+        triangle_frame: "Triangular Frame",
+        support_frame: "Stress Bridge",
+        wheel: "Wheel",
       };
 
-      const PDF_PATHS = {
-        scout: "/scoutconfig.pdf",
-        combat: "/combatconfig.pdf",
-      };
-
-      // ── Read URL param ───────────────────────────────────────────────
       const config =
         new URLSearchParams(window.location.search).get("config") ?? "scout";
       const parts = PRESET_PARTS[config] ?? PRESET_PARTS.scout;
       const label = PRESET_LABELS[config] ?? "Config";
-      const pdfPath = PDF_PATHS[config] ?? PDF_PATHS.scout;
+      const dims = PRESET_DIMS[config] ?? "";
+      const weight = PRESET_WEIGHT[config] ?? "";
+      const orderRef = "MK1-" + Date.now().toString(36).toUpperCase().slice(-8);
+      const now = new Date().toLocaleString();
 
-      // ── Set header & PDF ─────────────────────────────────────────────
+      const IMGS = {
+        iso: `/assets/${config}-iso.png`,
+        top: `/assets/${config}-top.png`,
+        side: `/assets/${config}-side.png`,
+        front: `/assets/${config}-front.png`,
+      };
+
       document.getElementById("viewer-title").textContent =
         label + " · Design Summary";
-      document.getElementById("pdf-frame").src = pdfPath;
-      document.getElementById("btn-pdf").onclick = () =>
-        window.open(pdfPath, "_blank");
 
-      // ── Fetch prices from Supabase ───────────────────────────────────
       let priceMap = {};
       let totalCost = 0;
-      let totalParts = Object.values(parts).reduce((a, b) => a + b, 0);
-      const orderRef = "MK1-" + Date.now().toString(36).toUpperCase().slice(-8);
+      const totalParts = Object.values(parts).reduce((a, b) => a + b, 0);
 
+      // ── Load prices & build everything ──────────────────────────────
       async function loadPrices() {
         try {
           const { data, error } = await supabase
@@ -808,7 +1035,7 @@
             "support_frame",
             "wheel",
           ];
-          const partLabels = {
+          const stripLabels = {
             frame: "Rect. Frame",
             motor: "Motor",
             triangle_frame: "Tri. Frame",
@@ -828,42 +1055,170 @@
               sep.className = "price-sep";
               strip.appendChild(sep);
             }
-
             const item = document.createElement("div");
             item.className = "price-item";
             item.innerHTML = `
-        <span class="price-label">${qty}× ${partLabels[type]}</span>
-        <span class="price-value">₹${sub.toLocaleString("en-IN")}</span>
-      `;
+        <span class="price-label">${qty}× ${stripLabels[type]}</span>
+        <span class="price-value">₹${sub.toLocaleString("en-IN")}</span>`;
             strip.appendChild(item);
           });
 
-          // Total
-          const sep = document.createElement("div");
-          sep.className = "price-sep";
-          strip.appendChild(sep);
+          const sep2 = document.createElement("div");
+          sep2.className = "price-sep";
+          strip.appendChild(sep2);
           const totalItem = document.createElement("div");
           totalItem.className = "price-item";
           totalItem.innerHTML = `
       <span class="price-label">Total (incl. GST)</span>
-      <span class="price-value accent">₹${totalCost.toLocaleString("en-IN")}</span>
-    `;
+      <span class="price-value accent">₹${totalCost.toLocaleString("en-IN")}</span>`;
           strip.appendChild(totalItem);
 
           document.getElementById("addr-total-display").textContent =
             "₹" + totalCost.toLocaleString("en-IN");
+          document.getElementById("btn-order").disabled = false;
 
-          // Enable order button
-          const orderBtn = document.getElementById("btn-order");
-          orderBtn.disabled = false;
+          buildReport();
         } catch (e) {
           document.getElementById("price-strip").innerHTML =
-            `<span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#cc2200;letter-spacing:0.1em">⚠ Could not load prices — check Supabase config</span>`;
+            `<span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#cc2200;letter-spacing:0.1em">⚠ Could not load prices</span>`;
           console.error("[PRICES]", e);
         }
       }
 
+      // ── Build dynamic HTML report ────────────────────────────────────
+      function buildReport() {
+        // Manifest rows
+        let manifestRows = "";
+        let computedTotal = 0;
+        const order = [
+          "frame",
+          "motor",
+          "triangle_frame",
+          "support_frame",
+          "wheel",
+        ];
+        order.forEach((type) => {
+          const qty = parts[type] ?? 0;
+          if (!qty) return;
+          const unitPrice = priceMap[type] ?? 0;
+          const sub = unitPrice * qty;
+          computedTotal += sub;
+          manifestRows += `<tr>
+      <td>${PART_LABELS_DB[type].toUpperCase()}</td>
+      <td style="text-align:center">${qty}</td>
+      <td style="text-align:right;font-family:'Oswald',sans-serif;color:#cc2200">
+        ₹${sub.toLocaleString("en-IN")}
+      </td>
+    </tr>`;
+        });
+
+        // Weight rows
+        let weightRows = "";
+        let totalGrams = 0;
+        order.forEach((type) => {
+          const qty = parts[type] ?? 0;
+          if (!qty) return;
+          const unitG = PART_WEIGHTS[type] ?? 0;
+          const lineG = unitG * qty;
+          totalGrams += lineG;
+          const lineDisp =
+            lineG >= 1000 ? `${(lineG / 1000).toFixed(2)} kg` : `${lineG} g`;
+          weightRows += `<tr>
+      <td>${PART_LABELS_DB[type].toUpperCase()}</td>
+      <td style="text-align:center">${qty}</td>
+      <td style="text-align:right;color:#555">${unitG} g ea</td>
+      <td style="text-align:right;font-family:'Oswald',sans-serif;font-weight:600;color:#1a5276">${lineDisp}</td>
+    </tr>`;
+        });
+        const totalWeightDisp =
+          totalGrams >= 1000
+            ? `${(totalGrams / 1000).toFixed(2)} kg`
+            : `${totalGrams} g`;
+
+        const html = `
+    <div class="report-wrap" id="printable-report">
+      <div class="rpt-header">
+        <div>
+          <div class="rpt-title">ROBOT CONFIGURATOR</div>
+          <div class="rpt-subtitle">Design Report · MK-1 Unit · ${orderRef}</div>
+        </div>
+        <div class="rpt-meta">
+          Generated: ${now}<br>
+          Parts: ${totalParts} · Weight: ${totalWeightDisp}<br>
+          Dimensions: ${dims}
+        </div>
+      </div>
+
+      <div class="rpt-main-view">
+        <div class="rpt-view-label">◈ Isometric View</div>
+        <img src="${IMGS.iso}" alt="Isometric View"/>
+      </div>
+
+      <div class="rpt-section-title">◼ ORTHOGRAPHIC VIEWS WITH DIMENSIONS</div>
+      <div class="rpt-angles-grid">
+        <div class="rpt-angle-card">
+          <div class="rpt-angle-label">TOP VIEW</div>
+          <img src="${IMGS.top}" alt="Top View"/>
+        </div>
+        <div class="rpt-angle-card">
+          <div class="rpt-angle-label">SIDE VIEW</div>
+          <img src="${IMGS.side}" alt="Side View"/>
+        </div>
+        <div class="rpt-angle-card">
+          <div class="rpt-angle-label">FRONT VIEW</div>
+          <img src="${IMGS.front}" alt="Front View"/>
+        </div>
+      </div>
+
+      <div class="rpt-section-title">◼ COMPONENT DATA</div>
+      <div class="rpt-tables-row">
+        <div class="rpt-table-card">
+          <div class="rpt-table-header">Component Manifest</div>
+          <table>
+            <tr>
+              <td><strong>Type</strong></td>
+              <td style="text-align:center"><strong>Qty</strong></td>
+              <td style="text-align:right"><strong>Cost</strong></td>
+            </tr>
+            ${manifestRows}
+            <tr class="rpt-subtotal">
+              <td colspan="2">TOTAL COST</td>
+              <td style="text-align:right">₹${computedTotal.toLocaleString("en-IN")}</td>
+            </tr>
+          </table>
+        </div>
+        <div class="rpt-table-card">
+          <div class="rpt-table-header weight">Weight Breakdown</div>
+          <table>
+            <tr>
+              <td><strong>Type</strong></td>
+              <td style="text-align:center"><strong>Qty</strong></td>
+              <td style="text-align:right"><strong>Unit</strong></td>
+              <td style="text-align:right"><strong>Total</strong></td>
+            </tr>
+            ${weightRows}
+            <tr class="rpt-weight-total">
+              <td colspan="3">TOTAL WEIGHT</td>
+              <td style="text-align:right">${totalWeightDisp}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="rpt-footer">
+        <span>ROBOT CONFIGURATOR v1.0 — UNIT MK-1</span>
+        <span>${label.toUpperCase()}</span>
+        <span>${now}</span>
+      </div>
+    </div>`;
+
+        document.getElementById("report-area").innerHTML = html;
+      }
+
       loadPrices();
+
+      // ── Save as PDF ──────────────────────────────────────────────────
+      document.getElementById("btn-pdf").onclick = () => window.print();
 
       // ── PIN auto-fill ────────────────────────────────────────────────
       document.getElementById("f-pin").addEventListener("input", async () => {
@@ -879,9 +1234,9 @@
             document.getElementById("f-city").value =
               po.Block !== "NA" ? po.Block : po.Division;
             document.getElementById("f-district").value = po.District;
-            const stateEl = document.getElementById("f-state");
-            Array.from(stateEl.options).forEach((o) => {
-              if (o.value === po.State) stateEl.value = po.State;
+            const st = document.getElementById("f-state");
+            Array.from(st.options).forEach((o) => {
+              if (o.value === po.State) st.value = po.State;
             });
           }
         } catch (e) {
@@ -889,18 +1244,16 @@
         }
       });
 
-      // ── Open/close address overlay ───────────────────────────────────
+      // ── Address overlay ──────────────────────────────────────────────
       document.getElementById("btn-order").onclick = () =>
         document.getElementById("addr-overlay").classList.add("visible");
-
       document.getElementById("addr-cancel").onclick = () =>
         document.getElementById("addr-overlay").classList.remove("visible");
 
-      // ── Submit ───────────────────────────────────────────────────────
+      // ── Submit order ─────────────────────────────────────────────────
       document.getElementById("addr-submit").onclick = async () => {
         const get = (id) => document.getElementById(id);
         let valid = true;
-
         const fields = [
           {
             id: "f-name",
@@ -913,17 +1266,13 @@
           { id: "f-state", check: (v) => v.length > 0 },
           { id: "f-phone", check: (v) => v.replace(/\D/g, "").length >= 7 },
         ];
-
         fields.forEach(({ id, check }) => {
           const el = get(id);
           if (!check(el.value.trim())) {
             el.classList.add("err");
             valid = false;
-          } else {
-            el.classList.remove("err");
-          }
+          } else el.classList.remove("err");
         });
-
         if (!valid) return;
 
         const submitBtn = get("addr-submit");
@@ -936,7 +1285,6 @@
           countryCode + get("f-phone").value.replace(/\D/g, "");
 
         try {
-          // ── Save order to Supabase ─────────────────────────────────
           const { data: order, error: orderErr } = await supabase
             .from("orders")
             .insert({
@@ -956,17 +1304,8 @@
             })
             .select()
             .single();
-
           if (orderErr) throw orderErr;
 
-          // ── Save order parts ───────────────────────────────────────
-          const PART_LABELS_DB = {
-            frame: "Rectangular Frame",
-            motor: "Motor Assembly",
-            triangle_frame: "Triangular Frame",
-            support_frame: "Stress Bridge",
-            wheel: "Wheel",
-          };
           const partRows = Object.entries(parts).map(([type, qty]) => ({
             order_id: order.id,
             part_type: type,
@@ -977,7 +1316,6 @@
           }));
           await supabase.from("order_parts").insert(partRows);
 
-          // ── Razorpay ───────────────────────────────────────────────
           await loadRazorpay();
           const rzpRes = await fetch("/api/create-order", {
             method: "POST",
@@ -990,13 +1328,6 @@
           });
           const rzpData = await rzpRes.json();
           if (!rzpData?.id) throw new Error("No Razorpay order ID");
-
-          const addrLines = [
-            get("f-line1").value.trim(),
-            get("f-line2").value.trim(),
-            get("f-line3").value.trim(),
-            `${get("f-city").value.trim()}, ${get("f-state").value.trim()} — ${get("f-pin").value.trim()}`,
-          ].filter(Boolean);
 
           document.getElementById("addr-overlay").classList.remove("visible");
 
@@ -1051,7 +1382,6 @@
         });
       }
 
-      // Remove err class on input
       document.querySelectorAll(".addr-input,.addr-select").forEach((el) => {
         el.addEventListener("input", () => el.classList.remove("err"));
         el.addEventListener("change", () => el.classList.remove("err"));
