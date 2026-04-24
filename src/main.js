@@ -2339,25 +2339,12 @@ function showAddressOverlay() {
       });
 
       backdrop.remove();
-
-      try {
-        await initiateRazorpayPayment({
-          savedOrder,
-          orderRef,
-          totalCost,
-          totalParts,
-          customerName,
-          customerPhone: fPhone.inp.value.replace(/\D/g, "").slice(-10),
-          addrLines,
-        });
-      } catch (payErr) {
-        console.warn("[PAYMENT]", payErr.message);
-      }
+      showOrderConfirmOverlay(addrLines, orderRef);
+      uploadPrintReport(savedOrder.id, orderRef);
     } catch (err) {
       console.error("[ORDER SAVE ERROR]", err);
       const msg = err?.message ?? String(err);
       showHudMessage("⚠ " + msg.slice(0, 80));
-      alert("Order save failed:\n\n" + msg);
       submitBtn.disabled = false;
       submitBtn.innerHTML = `<span>▶</span> CONFIRM ORDER`;
     }
@@ -2379,14 +2366,7 @@ function showAddressOverlay() {
    ORDER CONFIRMATION OVERLAY
    ========================================================= */
 
-function showOrderConfirmOverlay(
-  addrLines,
-  orderRef,
-  totalCost,
-  totalParts,
-  paymentResult,
-  savedOrder,
-) {
+function showOrderConfirmOverlay(addrLines, orderRef) {
   const existing = document.getElementById("order-confirm-overlay");
   if (existing) existing.remove();
 
@@ -2411,141 +2391,30 @@ function showOrderConfirmOverlay(
     border: "1.5px solid rgba(208,88,24,0.3)",
     borderLeft: "3px solid #d05818",
     clipPath: "polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%)",
-    boxShadow: "0 0 60px rgba(0,0,0,0.7),0 0 40px rgba(208,88,24,0.08)",
+    boxShadow: "0 0 60px rgba(0,0,0,0.7)",
     padding: "40px 44px 36px",
     textAlign: "center",
     position: "relative",
   });
 
-  const al = document.createElement("div");
-  Object.assign(al.style, {
-    position: "absolute",
-    top: "0",
-    left: "0",
-    right: "0",
-    height: "2px",
-    background: "linear-gradient(90deg,transparent,#d05818,transparent)",
-  });
-  card.appendChild(al);
+  card.innerHTML = `
+    <div style="font-family:'Orbitron',sans-serif;font-size:44px;color:#d05818;margin-bottom:14px;text-shadow:0 0 40px rgba(208,88,24,0.5)">✓</div>
+    <div style="font-family:'Orbitron',sans-serif;font-size:17px;font-weight:900;letter-spacing:0.2em;color:#d8e8f4;margin-bottom:10px">ORDER RECEIVED</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:#8aacbf;letter-spacing:0.1em;line-height:1.8;margin-bottom:24px">
+      We'll get back to you shortly<br>to confirm your order.
+    </div>
+    <div style="background:#111820;border:1px solid #2a3848;border-left:3px solid rgba(208,88,24,0.4);padding:14px 18px;text-align:left;margin-bottom:18px">
+      <div style="font-family:'Orbitron',sans-serif;font-size:7px;font-weight:700;letter-spacing:0.3em;color:#d05818;margin-bottom:10px">SHIPPING TO</div>
+      ${addrLines.map((l) => `<div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:#8aacbf;letter-spacing:0.04em;line-height:1.8">${l}</div>`).join("")}
+    </div>
+    <div style="font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.2em;color:#384858;margin-bottom:24px">
+      ORDER REF: ${orderRef}
+    </div>
+    <button onclick="window.location.reload()" style="background:#d05818;border:none;color:#fff;font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.2em;padding:11px 28px;cursor:pointer;text-transform:uppercase">
+      START NEW BUILD
+    </button>
+  `;
 
-  const icon = document.createElement("div");
-  icon.textContent = "✓";
-  Object.assign(icon.style, {
-    fontFamily: "'Orbitron',sans-serif",
-    fontSize: "44px",
-    color: "#d05818",
-    lineHeight: "1",
-    marginBottom: "14px",
-    textShadow: "0 0 40px rgba(208,88,24,0.5)",
-  });
-
-  const title = document.createElement("div");
-  title.textContent = "ORDER PLACED";
-  Object.assign(title.style, {
-    fontFamily: "'Orbitron',sans-serif",
-    fontSize: "17px",
-    fontWeight: "900",
-    letterSpacing: "0.2em",
-    color: "#d8e8f4",
-    marginBottom: "8px",
-  });
-
-  const sub = document.createElement("div");
-  sub.textContent = "Your MK-1 build has been submitted for production.";
-  Object.assign(sub.style, {
-    fontFamily: "'Share Tech Mono',monospace",
-    fontSize: "10px",
-    color: "#384858",
-    letterSpacing: "0.1em",
-    lineHeight: "1.6",
-    marginBottom: "24px",
-  });
-
-  const addrBox = document.createElement("div");
-  Object.assign(addrBox.style, {
-    background: "#111820",
-    border: "1px solid #2a3848",
-    borderLeft: "3px solid rgba(208,88,24,0.4)",
-    padding: "14px 18px",
-    textAlign: "left",
-    marginBottom: "18px",
-  });
-  const addrLbl = document.createElement("div");
-  addrLbl.textContent = "SHIPPING TO";
-  Object.assign(addrLbl.style, {
-    fontFamily: "'Orbitron',sans-serif",
-    fontSize: "7px",
-    fontWeight: "700",
-    letterSpacing: "0.3em",
-    color: "#d05818",
-    marginBottom: "10px",
-  });
-  addrBox.appendChild(addrLbl);
-  addrLines.forEach((line) => {
-    const p = document.createElement("div");
-    p.textContent = line;
-    Object.assign(p.style, {
-      fontFamily: "'Share Tech Mono',monospace",
-      fontSize: "12px",
-      color: "#8aacbf",
-      letterSpacing: "0.04em",
-      lineHeight: "1.8",
-    });
-    addrBox.appendChild(p);
-  });
-
-  const refEl = document.createElement("div");
-  const paymentLine = paymentResult?.razorpay_payment_id
-    ? `<br><span style="font-size:9px;color:#2a6848;letter-spacing:0.1em;font-family:'Share Tech Mono',monospace">✓ PAYMENT ID: ${paymentResult.razorpay_payment_id}</span>`
-    : `<br><span style="font-size:9px;color:#cc4422;letter-spacing:0.1em;font-family:'Share Tech Mono',monospace">⚠ PAYMENT PENDING</span>`;
-  refEl.innerHTML = `ORDER REF: ${orderRef}${paymentLine}${savedOrder ? `<br><span style="font-size:8px;color:#2a3848;letter-spacing:0.12em">DB ID: ${savedOrder.id}</span>` : ""}`;
-  Object.assign(refEl.style, {
-    fontFamily: "'Orbitron',sans-serif",
-    fontSize: "9px",
-    fontWeight: "700",
-    letterSpacing: "0.2em",
-    color: "#384858",
-    marginBottom: "24px",
-    lineHeight: "1.8",
-  });
-
-  const closeBtn = document.createElement("button");
-  closeBtn.className = "addr-btn addr-btn-submit";
-  closeBtn.style.margin = "0 auto";
-  closeBtn.style.justifyContent = "center";
-  closeBtn.textContent = "START NEW BUILD";
-  closeBtn.onclick = () => window.location.reload();
-
-  const printBtn = document.createElement("button");
-  printBtn.className = "addr-btn";
-  Object.assign(printBtn.style, {
-    margin: "0 auto",
-    justifyContent: "center",
-    background: "transparent",
-    borderColor: "#2a6868",
-    color: "#4a9898",
-    boxShadow: "4px 4px 0 #0e2626",
-  });
-  printBtn.innerHTML = `<span style="margin-right:8px">▤</span> PRINT DESIGN SUMMARY`;
-  printBtn.onclick = () => printDesign();
-
-  const btnGroup = document.createElement("div");
-  Object.assign(btnGroup.style, {
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-    width: "100%",
-    alignItems: "center",
-  });
-  btnGroup.appendChild(closeBtn);
-  btnGroup.appendChild(printBtn);
-
-  card.appendChild(icon);
-  card.appendChild(title);
-  card.appendChild(sub);
-  card.appendChild(addrBox);
-  card.appendChild(refEl);
-  card.appendChild(btnGroup);
   backdrop.appendChild(card);
   document.body.appendChild(backdrop);
 }
@@ -2569,7 +2438,7 @@ async function saveOrderToSupabase({
 }) {
   const amountNum = parseFloat(String(totalCost).replace(/[^0-9.]/g, "")) || 0;
 
-  const { data: order, error: orderErr } = await supabase
+  const { data: orderArr, error: orderErr } = await supabase
     .from("orders")
     .insert({
       order_ref: orderRef,
@@ -2585,8 +2454,9 @@ async function saveOrderToSupabase({
       parts_count: totalParts,
       status: "pending",
     })
-    .select()
-    .single();
+    .select();
+
+  const order = orderArr?.[0] ?? null;
 
   if (orderErr) {
     console.error("[SUPABASE ORDER ERROR]", orderErr);
@@ -7948,155 +7818,3 @@ function renderComponentPreview() {
 /* =========================================================
    RAZORPAY PAYMENT
    ========================================================= */
-
-async function loadRazorpayScript() {
-  if (window.Razorpay) return;
-  return new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload = resolve;
-    script.onerror = () => reject(new Error("Failed to load Razorpay script"));
-    document.head.appendChild(script);
-  });
-}
-
-async function initiateRazorpayPayment({
-  savedOrder,
-  orderRef,
-  totalCost,
-  totalParts,
-  customerName,
-  customerPhone,
-  addrLines,
-}) {
-  await loadRazorpayScript();
-
-  const amountNum = parseFloat(String(totalCost).replace(/[^0-9.]/g, "")) || 0;
-
-  showHudMessage("CONNECTING TO PAYMENT GATEWAY...");
-
-  let razorpayOrderId;
-  let razorpayKey;
-  try {
-    const rzpRes = await fetch("/api/create-order", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        amount: amountNum,
-        currency: "INR",
-        receipt: orderRef,
-      }),
-    });
-    const rawText = await rzpRes.text();
-    if (!rawText || rawText.trim() === "") {
-      throw new Error(
-        `/api/create-order returned empty response (HTTP ${rzpRes.status}). Check your server function is deployed.`,
-      );
-    }
-    let fnData;
-    try {
-      fnData = JSON.parse(rawText);
-    } catch {
-      throw new Error(
-        `/api/create-order returned non-JSON: ${rawText.slice(0, 120)}`,
-      );
-    }
-    if (!rzpRes.ok)
-      throw new Error(fnData?.error ?? `API error ${rzpRes.status}`);
-    if (!fnData?.id) throw new Error("No order ID returned from Razorpay");
-
-    razorpayOrderId = fnData.id;
-    razorpayKey = fnData.key_id;
-    showHudMessage("GATEWAY CONNECTED ✓");
-  } catch (err) {
-    showHudMessage("⚠ Payment init failed: " + err.message.slice(0, 60));
-    throw err;
-  }
-
-  return new Promise((resolve, reject) => {
-    const options = {
-      key: razorpayKey,
-      amount: Math.round(amountNum * 100),
-      currency: "INR",
-      name: "Robot Configurator",
-      description: `MK-1 Build · ${orderRef}`,
-      order_id: razorpayOrderId,
-      prefill: {
-        name: customerName,
-        contact: "+91" + customerPhone,
-      },
-      notes: {
-        order_ref: orderRef,
-        db_order_id: String(savedOrder.id),
-      },
-      theme: {
-        color: "#d05818",
-      },
-      modal: {
-        backdropclose: false,
-        escape: false,
-        confirm_close: true,
-        ondismiss: async () => {
-          showHudMessage("⚠ Payment cancelled");
-          await supabase.from("orders").delete().eq("id", savedOrder.id);
-          reject(new Error("Payment dismissed by user"));
-        },
-      },
-
-      handler: async function (response) {
-        showHudMessage("PAYMENT RECEIVED — CONFIRMING...");
-        console.log("[RAZORPAY] Payment response:", response);
-
-        try {
-          const { error: updateErr } = await supabase
-            .from("orders")
-            .update({
-              status: "paid",
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            })
-            .eq("id", savedOrder.id);
-          if (updateErr) {
-            console.error("[RAZORPAY] DB update error:", updateErr);
-            showHudMessage(
-              "⚠ Payment received but DB update failed: " + updateErr.message,
-            );
-          } else {
-            console.log("[RAZORPAY] DB updated successfully to PAID");
-            showHudMessage("✓ Order marked as PAID");
-          }
-        } catch (dbErr) {
-          console.error("[RAZORPAY] DB update failed:", dbErr);
-        }
-
-        showHudMessage("GENERATING DESIGN REPORT...");
-        await uploadPrintReport(savedOrder.id, orderRef);
-
-        showHudMessage("PAYMENT SUCCESSFUL ✓");
-
-        showOrderConfirmOverlay(
-          addrLines,
-          orderRef,
-          totalCost,
-          totalParts,
-          response,
-          savedOrder,
-        );
-
-        resolve(response);
-      },
-    };
-
-    const rzp = new window.Razorpay(options);
-
-    rzp.on("payment.failed", async (response) => {
-      const errDesc = response?.error?.description ?? "Payment failed";
-      showHudMessage("⚠ " + errDesc);
-      await supabase.from("orders").delete().eq("id", savedOrder.id);
-      reject(new Error(errDesc));
-    });
-
-    rzp.open();
-  });
-}

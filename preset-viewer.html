@@ -1004,10 +1004,10 @@
       const now = new Date().toLocaleString();
 
       const IMGS = {
-        iso: `/assets/${config}-iso.png`,
-        top: `/assets/${config}-top.png`,
-        side: `/assets/${config}-side.png`,
-        front: `/assets/${config}-front.png`,
+        iso: `${window.location.origin}/assets/${config}-iso.png`,
+        top: `${window.location.origin}/assets/${config}-top.png`,
+        side: `${window.location.origin}/assets/${config}-side.png`,
+        front: `${window.location.origin}/assets/${config}-front.png`,
       };
 
       document.getElementById("viewer-title").textContent =
@@ -1324,71 +1324,51 @@
           }));
           await supabase.from("order_parts").insert(partRows);
 
-          await loadRazorpay();
-          const rzpRes = await fetch("/api/create-order", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              amount: totalCost,
-              currency: "INR",
-              receipt: orderRef,
-            }),
-          });
-          const rzpData = await rzpRes.json();
-          if (!rzpData?.id) throw new Error("No Razorpay order ID");
-
           document.getElementById("addr-overlay").classList.remove("visible");
+          document.getElementById("confirm-ref").innerHTML =
+            `ORDER REF: ${orderRef}`;
+          document.getElementById("order-confirm").classList.add("visible");
 
-          new window.Razorpay({
-            key: rzpData.key_id,
-            amount: Math.round(totalCost * 100),
-            currency: "INR",
-            name: "Robot Configurator",
-            description: `${label} · ${orderRef}`,
-            order_id: rzpData.id,
-            prefill: { name: customerName, contact: customerPhone },
-            theme: { color: "#d05818" },
-            modal: {
-              backdropclose: false,
-              ondismiss: async () => {
-                await supabase.from("orders").delete().eq("id", order.id);
-              },
-            },
-            handler: async (response) => {
-              await supabase
-                .from("orders")
-                .update({
-                  status: "paid",
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                })
-                .eq("id", order.id);
-
-              document.getElementById("confirm-ref").innerHTML =
-                `ORDER REF: ${orderRef}<br>
-           <span style="font-size:9px;color:#2a6848">✓ PAYMENT ID: ${response.razorpay_payment_id}</span>`;
-              document.getElementById("order-confirm").classList.add("visible");
-            },
-          }).open();
+          // ── Save report to Supabase ──────────────────────────────
+          try {
+            const reportHTML = document.getElementById("report-area").innerHTML;
+            const blob = new Blob(
+              [
+                `<html><head><meta charset="UTF-8"/></head><body>${reportHTML}</body></html>`,
+              ],
+              { type: "text/html" },
+            );
+            const filePath = `orders/${order.id}/${orderRef}_report.html`;
+            const { error: uploadErr } = await supabase.storage
+              .from("reports")
+              .upload(filePath, blob, {
+                contentType: "text/html",
+                upsert: true,
+              });
+            if (!uploadErr) {
+              const { data: urlData } = await supabase.storage
+                .from("reports")
+                .createSignedUrl(filePath, 60 * 60 * 24 * 365);
+              if (urlData?.signedUrl) {
+                await supabase.from("print_reports").upsert(
+                  {
+                    order_id: order.id,
+                    storage_path: filePath,
+                    public_url: urlData.signedUrl,
+                  },
+                  { onConflict: "order_id" },
+                );
+              }
+            }
+          } catch (e) {
+            console.error("[REPORT]", e);
+          }
         } catch (err) {
           console.error("[ORDER]", err);
-          alert("Order failed: " + (err.message ?? String(err)));
           submitBtn.disabled = false;
           submitBtn.textContent = "▶ Confirm Order";
         }
       };
-
-      function loadRazorpay() {
-        if (window.Razorpay) return Promise.resolve();
-        return new Promise((res, rej) => {
-          const s = document.createElement("script");
-          s.src = "https://checkout.razorpay.com/v1/checkout.js";
-          s.onload = res;
-          s.onerror = rej;
-          document.head.appendChild(s);
-        });
-      }
 
       document.querySelectorAll(".addr-input,.addr-select").forEach((el) => {
         el.addEventListener("input", () => el.classList.remove("err"));

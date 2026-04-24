@@ -340,7 +340,6 @@
         justify-content: space-between;
         padding: 0 36px;
       }
-      /* warning stripe under topbar */
       .topbar::after {
         content: "";
         position: absolute;
@@ -488,7 +487,6 @@
       .hero-title span {
         color: var(--accent);
       }
-      /* blinking cursor */
       .hero-title::after {
         content: "_";
         color: var(--accent);
@@ -589,26 +587,26 @@
       .section-label {
         display: flex;
         align-items: center;
-        gap: 10px;
-        font-size: 8px;
+        gap: 12px;
+        font-size: 13px; /* increased from 8px */
         font-weight: 800;
         letter-spacing: 0.26em;
         text-transform: uppercase;
         color: var(--text);
-        margin-bottom: 24px;
+        margin-bottom: 28px;
         animation: fadeUp 0.6s ease 0.3s both;
       }
       .section-label::before {
         content: "";
         display: block;
-        width: 3px;
-        height: 14px;
+        width: 4px; /* slightly wider bar */
+        height: 20px; /* taller bar */
         background: var(--accent);
         border-radius: 2px;
       }
       .section-label-num {
         font-family: "Share Tech Mono", monospace;
-        font-size: 9px;
+        font-size: 12px; /* increased from 9px */
         color: var(--muted);
         margin-left: 4px;
       }
@@ -623,7 +621,6 @@
         position: relative;
       }
 
-      /* connector line between cards */
       .cards::before {
         content: "";
         position: absolute;
@@ -669,7 +666,6 @@
         );
       }
 
-      /* card inner grid */
       .card::before {
         content: "";
         position: absolute;
@@ -692,7 +688,6 @@
         opacity: 0;
       }
 
-      /* rivet dots */
       .card .rivet {
         position: absolute;
         width: 7px;
@@ -722,7 +717,6 @@
         background: rgba(208, 88, 24, 0.08);
       }
 
-      /* large watermark num */
       .card-num {
         position: absolute;
         bottom: 14px;
@@ -735,41 +729,6 @@
         pointer-events: none;
         user-select: none;
         z-index: 0;
-      }
-
-      .card-badge {
-        position: relative;
-        z-index: 1;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-family: "Share Tech Mono", monospace;
-        font-size: 8px;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-        padding: 3px 9px;
-        border: 1px solid;
-        margin-bottom: 16px;
-        border-radius: 2px;
-      }
-      .card-badge::before {
-        content: "";
-        width: 4px;
-        height: 4px;
-        border-radius: 50%;
-        background: currentColor;
-        display: block;
-        flex-shrink: 0;
-      }
-      .badge-accent {
-        color: var(--accent);
-        background: var(--accent-softer);
-        border-color: rgba(208, 88, 24, 0.25);
-      }
-      .badge-blue {
-        color: #1a6abf;
-        background: rgba(26, 106, 191, 0.06);
-        border-color: rgba(26, 106, 191, 0.2);
       }
 
       .card-icon {
@@ -805,7 +764,6 @@
         text-transform: uppercase;
       }
 
-      /* signal bars */
       .card-signal {
         position: absolute;
         top: 30px;
@@ -845,7 +803,6 @@
         transform: translate(3px, -3px);
       }
 
-      /* dashed bottom spec strip */
       .card-spec {
         position: absolute;
         bottom: 0;
@@ -897,7 +854,6 @@
         justify-content: center;
         gap: 28px;
       }
-      /* warning stripe above footer */
       .footer::before {
         content: "";
         position: absolute;
@@ -1008,12 +964,6 @@
     <!-- ── TOPBAR ─────────────────────────────────── -->
     <div class="topbar">
       <div class="topbar-left">
-        <img
-          class="topbar-logo-img"
-          src="data:image/jpeg;base64,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"
-          alt="Vanora"
-        />
-        <div class="topbar-divider"></div>
         <div class="topbar-name">
           <span class="topbar-name-main">Blackburn</span>
           <span class="topbar-name-sub">◈ Robot Configurator</span>
@@ -1051,7 +1001,6 @@
           <div class="rivet br"></div>
           <div class="card-num">01</div>
 
-          <div class="card-badge badge-accent">Preset · 01</div>
           <span class="card-icon">⬡</span>
           <div class="card-title">Standard Configuration</div>
           <div class="card-desc">4 wheels</div>
@@ -1066,7 +1015,6 @@
           <div class="rivet br"></div>
           <div class="card-num">02</div>
 
-          <div class="card-badge badge-blue">Preset · 02</div>
           <span class="card-icon">▲</span>
           <div class="card-title">Extended Configuration</div>
           <div class="card-desc">8 wheels</div>
@@ -1081,7 +1029,6 @@
           <div class="rivet br"></div>
           <div class="card-num" style="color: rgba(208, 88, 24, 0.07)">03</div>
 
-          <div class="card-badge badge-accent">Custom Build</div>
           <span class="card-icon" style="color: var(--accent); opacity: 1"
             >◈</span
           >
@@ -1178,7 +1125,6 @@
         cy = 70,
         r = 60;
       let angle = 0;
-      // blips
       const blips = [
         { a: 0.4, d: 0.45 },
         { a: 1.9, d: 0.7 },
@@ -1187,7 +1133,6 @@
       ];
       function drawRadar() {
         ctx.clearRect(0, 0, 140, 140);
-        // rings
         for (let i = 1; i <= 3; i++) {
           ctx.beginPath();
           ctx.arc(cx, cy, r * (i / 3), 0, Math.PI * 2);
@@ -1195,7 +1140,6 @@
           ctx.lineWidth = 1;
           ctx.stroke();
         }
-        // cross hairs
         ctx.strokeStyle = "rgba(208,88,24,0.25)";
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -1206,8 +1150,6 @@
         ctx.moveTo(cx, cy - r);
         ctx.lineTo(cx, cy + r);
         ctx.stroke();
-        // sweep gradient
-        const sweep = ctx.createConicalGradient ? null : null;
         ctx.save();
         ctx.translate(cx, cy);
         ctx.rotate(angle);
@@ -1221,7 +1163,6 @@
         ctx.fillStyle = g;
         ctx.fill();
         ctx.restore();
-        // blips
         blips.forEach((b) => {
           const da =
             (((angle - b.a) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
@@ -1241,5 +1182,8 @@
       }
       drawRadar();
     </script>
+
+    <!-- radar canvas (kept for JS reference) -->
+    <canvas id="radar-canvas" width="140" height="140"></canvas>
   </body>
 </html>

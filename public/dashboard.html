@@ -404,26 +404,48 @@
         border-color: var(--green);
         background: var(--green-bg);
       }
-      .pay-badge-captured {
-        color: var(--green);
-        border-color: var(--green);
-        background: var(--green-bg);
+
+      /* ── Status dropdown ── */
+      .status-select {
+        font-family: "Montserrat", sans-serif;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        padding: 5px 8px;
+        border: 1.5px solid var(--border);
+        border-radius: 2px;
+        background: var(--bg3);
+        color: var(--text);
+        cursor: pointer;
+        outline: none;
+        transition: border-color 0.15s;
+        text-transform: uppercase;
+        min-width: 110px;
       }
-      .pay-badge-pending {
-        color: var(--yellow);
+      .status-select:focus {
+        border-color: var(--accent);
+      }
+      .status-select.status-pending {
         border-color: var(--yellow);
+        color: var(--yellow);
         background: var(--yellow-bg);
       }
-      .pay-badge-failed {
-        color: var(--red);
-        border-color: var(--red);
-        background: var(--red-bg);
+      .status-select.status-confirmed {
+        border-color: var(--blue);
+        color: var(--blue);
+        background: var(--blue-bg);
       }
-      .pay-badge-none {
-        color: var(--muted);
-        border-color: var(--border);
-        background: transparent;
+      .status-select.status-paid {
+        border-color: var(--green);
+        color: var(--green);
+        background: var(--green-bg);
       }
+      .status-select.status-delivered {
+        border-color: var(--green);
+        color: var(--green);
+        background: var(--green-bg);
+      }
+
       .tracking-input {
         width: 130px;
         font-family: "Montserrat", sans-serif;
@@ -868,13 +890,14 @@
     </style>
   </head>
   <body>
+    <!-- LOGIN -->
     <div id="login-screen">
       <div class="login-card">
         <div class="login-badge">◈ Robot Configurator</div>
         <div class="login-title">Company <span>Dashboard</span></div>
         <div class="field-group">
-          <label class="field-label">Email Address</label
-          ><input
+          <label class="field-label">Email Address</label>
+          <input
             class="field-input"
             id="login-email"
             type="email"
@@ -883,8 +906,8 @@
           />
         </div>
         <div class="field-group">
-          <label class="field-label">Password</label
-          ><input
+          <label class="field-label">Password</label>
+          <input
             class="field-input"
             id="login-password"
             type="password"
@@ -899,12 +922,13 @@
       </div>
     </div>
 
+    <!-- DASHBOARD -->
     <div id="dashboard">
       <div class="dash-topbar">
         <div class="dash-logo">
           <div class="dash-logo-wrap">
-            <span>Robot Configurator</span
-            ><span class="dash-logo-sub">◈ Company Dashboard</span>
+            <span>Robot Configurator</span>
+            <span class="dash-logo-sub">◈ Company Dashboard</span>
           </div>
         </div>
         <nav style="display: flex; gap: 8px">
@@ -915,34 +939,38 @@
           <a href="deleted-orders.html" class="nav-pill">🗑 Bin</a>
         </nav>
         <div class="dash-user">
-          <span class="realtime-dot"></span
-          ><span id="user-email-display">—</span
-          ><button class="logout-btn" onclick="handleLogout()">Sign Out</button>
+          <span class="realtime-dot"></span>
+          <span id="user-email-display">—</span>
+          <button class="logout-btn" onclick="handleLogout()">Sign Out</button>
         </div>
       </div>
+
       <div class="dash-body">
+        <!-- STATS -->
         <div class="stats-row">
           <div class="stat-card">
             <div class="stat-value" id="stat-total">—</div>
             <div class="stat-label">Total Orders</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value" id="stat-confirmed">—</div>
+            <div class="stat-value" id="stat-delivered">—</div>
             <div class="stat-label">Delivered</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value" id="stat-paid">—</div>
-            <div class="stat-label">Paid</div>
+            <div class="stat-value" id="stat-confirmed">—</div>
+            <div class="stat-label">Confirmed</div>
           </div>
           <div class="stat-card">
             <div class="stat-value stat-accent" id="stat-revenue">—</div>
             <div class="stat-label">Total Revenue</div>
           </div>
         </div>
+
         <div class="section-header">
           <div class="section-title">All Orders</div>
           <button class="refresh-btn" onclick="loadOrders()">⟳ Refresh</button>
         </div>
+
         <div class="search-filter-bar">
           <div class="search-wrap">
             <span class="search-icon">🔍</span>
@@ -950,7 +978,7 @@
               class="search-input"
               id="search-input"
               type="text"
-              placeholder="Search by name, phone, order ID, payment ID, city…"
+              placeholder="Search by name, phone, order ID, city…"
               oninput="applyFilters()"
             />
             <button
@@ -1000,6 +1028,7 @@
           </div>
           <div class="results-count" id="results-count"></div>
         </div>
+
         <div class="orders-table-wrap">
           <table>
             <thead>
@@ -1011,9 +1040,7 @@
                 <th>Date</th>
                 <th>Parts</th>
                 <th>Total</th>
-                <th>Payment</th>
-                <th>Payment ID</th>
-                <th>Order Status</th>
+                <th>Status</th>
                 <th>Delivered</th>
                 <th>Tracking ID</th>
                 <th>Actions</th>
@@ -1021,11 +1048,13 @@
             </thead>
             <tbody id="orders-tbody">
               <tr class="loading-row">
-                <td colspan="13">Loading orders...</td>
+                <td colspan="11">Loading orders...</td>
               </tr>
             </tbody>
           </table>
         </div>
+
+        <!-- ORDER DETAIL PANEL -->
         <div id="order-detail">
           <div class="detail-header">
             <div class="detail-title" id="detail-title">ORDER DETAILS</div>
@@ -1036,9 +1065,9 @@
               <div class="detail-section-title">Customer &amp; Address</div>
               <div id="detail-customer"></div>
               <div class="detail-section-title" style="margin-top: 24px">
-                Payment
+                Order Info
               </div>
-              <div id="detail-payment"></div>
+              <div id="detail-order-info"></div>
             </div>
             <div>
               <div class="detail-section-title">Parts Breakdown</div>
@@ -1062,6 +1091,7 @@
       </div>
     </div>
 
+    <!-- DELETE CONFIRM DIALOG -->
     <div id="confirm-dialog">
       <div class="confirm-card">
         <div class="confirm-icon">⚠</div>
@@ -1100,7 +1130,6 @@
         realtimeChannel = null,
         activeDateDays = "all";
 
-      // ── All window.* assignments use function expressions defined right here ─
       window.handleLogin = handleLogin;
       window.handleLogout = handleLogout;
       window.loadOrders = loadOrders;
@@ -1109,18 +1138,60 @@
       window.applyFilters = applyFilters;
       window.clearSearch = clearSearch;
       window.selectOrder = selectOrder;
-      // NOTE: window.confirmDelete, window.markDelivered, window.autoSaveTracking,
-      // and window.printDispatchReport are assigned as function expressions below —
-      // do NOT add early references to them here.
 
-      window.markDelivered = async function (id, delivered) {
+      // ── Update order status dropdown ────────────────────────────────────────
+      window.updateOrderStatus = async function (id, newStatus) {
+        const updates = { status: newStatus };
+        if (newStatus === "delivered") {
+          updates.delivered = true;
+          updates.delivered_at = new Date().toISOString();
+        } else if (newStatus !== "delivered") {
+          // only clear delivered flag if moving away from delivered
+          const order = allOrders.find((o) => o.id === id);
+          if (order?.delivered && newStatus !== "delivered") {
+            updates.delivered = false;
+            updates.delivered_at = null;
+          }
+        }
         const { error } = await supabase
           .from("orders")
-          .update({
-            delivered,
-            delivered_at: delivered ? new Date().toISOString() : null,
-            status: delivered ? "delivered" : "paid",
-          })
+          .update(updates)
+          .eq("id", id);
+        if (error) {
+          showToast("⚠ Could not update status", "error");
+          await loadOrders();
+          return;
+        }
+        const order = allOrders.find((o) => o.id === id);
+        if (order) {
+          order.status = newStatus;
+          if (newStatus === "delivered") {
+            order.delivered = true;
+            order.delivered_at = new Date().toISOString();
+          }
+        }
+        applyFilters();
+        updateStats(allOrders);
+        // update select colour
+        const sel = document.getElementById(`status-${id}`);
+        if (sel) applySelectColor(sel, newStatus);
+        showToast(`✓ Status updated to ${newStatus}`, "success");
+      };
+
+      function applySelectColor(sel, status) {
+        sel.className = `status-select status-${status}`;
+      }
+
+      // ── Delivered checkbox ──────────────────────────────────────────────────
+      window.markDelivered = async function (id, delivered) {
+        const updates = {
+          delivered,
+          delivered_at: delivered ? new Date().toISOString() : null,
+          status: delivered ? "delivered" : "confirmed",
+        };
+        const { error } = await supabase
+          .from("orders")
+          .update(updates)
           .eq("id", id);
         if (error) {
           showToast("⚠ Could not update delivery status", "error");
@@ -1130,8 +1201,8 @@
         const order = allOrders.find((o) => o.id === id);
         if (order) {
           order.delivered = delivered;
-          order.delivered_at = delivered ? new Date().toISOString() : null;
-          order.order_status = delivered ? "delivered" : "paid";
+          order.delivered_at = updates.delivered_at;
+          order.status = updates.status;
         }
         applyFilters();
         updateStats(allOrders);
@@ -1141,6 +1212,7 @@
         );
       };
 
+      // ── Tracking ID auto-save ───────────────────────────────────────────────
       window.autoSaveTracking = async function (id, value) {
         const trimmed = value.trim();
         const order = allOrders.find((o) => o.id === id);
@@ -1157,13 +1229,14 @@
         showToast("✓ Tracking ID saved", "success");
       };
 
+      // ── Delete confirm ──────────────────────────────────────────────────────
       window.confirmDelete = function (id, orderRef) {
         pendingDeleteId = id;
         document.getElementById("confirm-order-ref").textContent = orderRef;
         document.getElementById("confirm-dialog").classList.add("visible");
       };
 
-      // ── Print — window.open FIRST (must be sync on click, no await before it) ─
+      // ── Print dispatch report ───────────────────────────────────────────────
       window.printDispatchReport = async function (orderId, reportUrl) {
         const win = window.open("", "_blank", "width=1100,height=900");
         if (!win) {
@@ -1224,17 +1297,23 @@
             if (res.ok) {
               const html = await res.text(),
                 doc = new DOMParser().parseFromString(html, "text/html");
-              const mi = doc.querySelector(".main-view-wrap img");
+              const mi = doc.querySelector(
+                ".main-view-wrap img, .rpt-main-view img",
+              );
               if (mi) mainImgSrc = mi.getAttribute("src");
-              doc.querySelectorAll(".angle-card").forEach((card) => {
-                const l = card.querySelector(".angle-label"),
-                  i = card.querySelector("img");
-                if (i)
-                  viewImgs.push({
-                    label: l?.textContent?.trim() ?? "",
-                    src: i.getAttribute("src"),
-                  });
-              });
+              doc
+                .querySelectorAll(".angle-card, .rpt-angle-card")
+                .forEach((card) => {
+                  const l = card.querySelector(
+                      ".angle-label, .rpt-angle-label",
+                    ),
+                    i = card.querySelector("img");
+                  if (i)
+                    viewImgs.push({
+                      label: l?.textContent?.trim() ?? "",
+                      src: i.getAttribute("src"),
+                    });
+                });
               const me = doc.querySelector(".print-meta");
               if (me) {
                 const dm = me.textContent.match(/Dimensions:\s*(.+)/);
@@ -1301,7 +1380,7 @@ tfoot td{padding:9px 8px;color:#111;font-weight:700;text-align:center}tfoot td:f
 </style></head><body>
 <div class="bill-header">
   <div><div class="bill-brand">Robot <span>Configurator</span></div><div class="bill-brand-sub">◈ Unit MK-1 — Dispatch Summary</div></div>
-  <div class="bill-meta"><div><strong>Order Ref:</strong> ${order.order_ref}</div><div><strong>Date:</strong> ${placed}</div><div><strong>Status:</strong> ${order.order_status?.toUpperCase() ?? "—"}</div></div>
+  <div class="bill-meta"><div><strong>Order Ref:</strong> ${order.order_ref}</div><div><strong>Date:</strong> ${placed}</div><div><strong>Status:</strong> ${(order.status || "pending").toUpperCase()}</div></div>
 </div>
 <div class="info-grid">
   <div>
@@ -1314,8 +1393,7 @@ tfoot td{padding:9px 8px;color:#111;font-weight:700;text-align:center}tfoot td:f
     <div class="sec-title">Order Info</div>
     <div class="info-row"><span class="info-key">Order ID</span><span class="info-val">${order.order_ref}</span></div>
     <div class="info-row"><span class="info-key">Total Parts</span><span class="info-val">${order.parts_count}</span></div>
-    <div class="info-row"><span class="info-key">Payment</span><span class="info-val">${order.payment_status?.toUpperCase() ?? "PENDING"}</span></div>
-    <div class="info-row"><span class="info-key">Payment ID</span><span class="info-val">${order.razorpay_payment_id || "—"}</span></div>
+    <div class="info-row"><span class="info-key">Status</span><span class="info-val">${(order.status || "pending").toUpperCase()}</span></div>
     ${trackingLine}
   </div>
 </div>
@@ -1424,14 +1502,14 @@ tfoot td{padding:9px 8px;color:#111;font-weight:700;text-align:center}tfoot td:f
 
       async function loadOrders() {
         document.getElementById("orders-tbody").innerHTML =
-          '<tr class="loading-row"><td colspan="13">Loading...</td></tr>';
+          '<tr class="loading-row"><td colspan="11">Loading...</td></tr>';
         const { data, error } = await supabase
-          .from("orders_with_payment")
+          .from("orders")
           .select("*")
           .order("created_at", { ascending: false });
         if (error) {
           document.getElementById("orders-tbody").innerHTML =
-            `<tr class="loading-row"><td colspan="13">Error: ${error.message}</td></tr>`;
+            `<tr class="loading-row"><td colspan="11">Error: ${error.message}</td></tr>`;
           return;
         }
         allOrders = data || [];
@@ -1475,10 +1553,8 @@ tfoot td{padding:9px 8px;color:#111;font-weight:700;text-align:center}tfoot td:f
               o.customer_phone,
               o.city,
               o.state,
-              o.razorpay_payment_id,
-              o.razorpay_order_id,
               o.order_status,
-              o.payment_status,
+              o.status,
               o.address_line1,
               o.address_line2,
               o.address_line3,
@@ -1504,7 +1580,7 @@ tfoot td{padding:9px 8px;color:#111;font-weight:700;text-align:center}tfoot td:f
         const tbody = document.getElementById("orders-tbody");
         if (!orders.length) {
           tbody.innerHTML =
-            '<tr class="loading-row"><td colspan="13">No orders yet</td></tr>';
+            '<tr class="loading-row"><td colspan="11">No orders yet</td></tr>';
           return;
         }
         tbody.innerHTML = orders
@@ -1513,14 +1589,40 @@ tfoot td{padding:9px 8px;color:#111;font-weight:700;text-align:center}tfoot td:f
               dateStyle: "short",
               timeStyle: "short",
             });
-            const payId = o.razorpay_payment_id
-              ? `<span title="${o.razorpay_payment_id}" style="color:var(--text-secondary)">${o.razorpay_payment_id.slice(0, 16)}…</span>`
-              : '<span style="color:var(--muted)">—</span>';
             const selected = o.id === selectedOrderId ? "selected-row" : "";
+            const currentStatus = o.status || "pending";
             const isDelivered = o.delivered === true;
-            const deliveredCell = `<td onclick="event.stopPropagation()"><label class="delivered-label ${isDelivered ? "is-delivered" : "not-delivered"}"><input type="checkbox" class="delivered-check" ${isDelivered ? "checked" : ""} onchange="event.stopPropagation();window.markDelivered('${o.id}',this.checked)"/>${isDelivered ? "✓ Done" : "Pending"}</label></td>`;
-            const trackingCell = `<td onclick="event.stopPropagation()"><input type="text" class="tracking-input" id="ti-${o.id}" placeholder="Enter tracking ID" value="${o.tracking_id ? o.tracking_id.replace(/"/g, "&quot;") : ""}" onblur="window.autoSaveTracking('${o.id}',this.value)"/></td>`;
-            const actionsCell = `<td onclick="event.stopPropagation()"><button class="action-btn action-btn-delete" onclick="event.stopPropagation();window.confirmDelete('${o.id}','${o.order_ref}')">✕ Delete</button></td>`;
+
+            const statusCell = `<td onclick="event.stopPropagation()">
+            <select id="status-${o.id}" class="status-select status-${currentStatus}"
+              onchange="event.stopPropagation();window.updateOrderStatus('${o.id}',this.value)">
+              <option value="pending"   ${currentStatus === "pending" ? "selected" : ""}>Pending</option>
+              <option value="confirmed" ${currentStatus === "confirmed" ? "selected" : ""}>Confirmed</option>
+              <option value="paid"      ${currentStatus === "paid" ? "selected" : ""}>Paid</option>
+              <option value="delivered" ${currentStatus === "delivered" ? "selected" : ""}>Delivered</option>
+            </select>
+          </td>`;
+
+            const deliveredCell = `<td onclick="event.stopPropagation()">
+            <label class="delivered-label ${isDelivered ? "is-delivered" : "not-delivered"}">
+              <input type="checkbox" class="delivered-check" ${isDelivered ? "checked" : ""}
+                onchange="event.stopPropagation();window.markDelivered('${o.id}',this.checked)"/>
+              ${isDelivered ? "✓ Done" : "Pending"}
+            </label>
+          </td>`;
+
+            const trackingCell = `<td onclick="event.stopPropagation()">
+            <input type="text" class="tracking-input" id="ti-${o.id}"
+              placeholder="Enter tracking ID"
+              value="${o.tracking_id ? o.tracking_id.replace(/"/g, "&quot;") : ""}"
+              onblur="window.autoSaveTracking('${o.id}',this.value)"/>
+          </td>`;
+
+            const actionsCell = `<td onclick="event.stopPropagation()">
+            <button class="action-btn action-btn-delete"
+              onclick="event.stopPropagation();window.confirmDelete('${o.id}','${o.order_ref}')">✕ Delete</button>
+          </td>`;
+
             return `<tr class="${selected}" data-id="${o.id}">
             <td style="font-weight:800;color:var(--accent)">${o.order_ref}</td>
             <td style="font-weight:600">${o.customer_name || "—"}</td>
@@ -1529,10 +1631,7 @@ tfoot td{padding:9px 8px;color:#111;font-weight:700;text-align:center}tfoot td:f
             <td style="color:var(--muted);font-size:10px">${date}</td>
             <td style="text-align:center;font-weight:700">${o.parts_count}</td>
             <td style="font-weight:700">₹${Number(o.total_amount).toLocaleString("en-IN")}</td>
-            <td>${badgeHTML(o.payment_status || "none", "pay")}</td>
-            <td style="font-size:10px">${payId}</td>
-            <td>${badgeHTML(o.order_status, "order")}</td>
-            ${deliveredCell}${trackingCell}${actionsCell}
+            ${statusCell}${deliveredCell}${trackingCell}${actionsCell}
           </tr>`;
           })
           .join("");
@@ -1588,10 +1687,7 @@ tfoot td{padding:9px 8px;color:#111;font-weight:700;text-align:center}tfoot td:f
           pin: order.pin,
           total_amount: order.total_amount,
           parts_count: order.parts_count,
-          status: order.order_status ?? order.status,
-          razorpay_order_id: order.razorpay_order_id,
-          razorpay_payment_id: order.razorpay_payment_id,
-          razorpay_signature: order.razorpay_signature,
+          status: order.status ?? "pending",
           created_at: order.created_at,
           deleted_at: new Date().toISOString(),
         });
@@ -1656,6 +1752,7 @@ tfoot td{padding:9px 8px;color:#111;font-weight:700;text-align:center}tfoot td:f
         document.getElementById("order-detail").style.display = "block";
         document.getElementById("detail-title").textContent =
           `Order — ${order.order_ref}`;
+
         const addr = [
           order.address_line1,
           order.address_line2,
@@ -1674,31 +1771,33 @@ tfoot td{padding:9px 8px;color:#111;font-weight:700;text-align:center}tfoot td:f
               `<div class="detail-row"><span class="detail-key">${k}</span><span class="detail-val">${v}</span></div>`,
           )
           .join("");
-        const pm = order.payment_method
-          ? {
-              card: "💳 Card",
-              upi: "⚡ UPI",
-              netbanking: "🏦 Net Banking",
-              wallet: "👛 Wallet",
-            }[order.payment_method] || order.payment_method
-          : "—";
-        document.getElementById("detail-payment").innerHTML = [
-          ["Status", badgeHTML(order.payment_status || "none", "pay")],
-          ["Method", pm],
-          ["Razorpay ID", order.razorpay_payment_id || "—"],
-          ["Order ID", order.razorpay_order_id || "—"],
-          [
-            "Captured",
-            order.captured_at
-              ? new Date(order.captured_at).toLocaleString("en-IN")
-              : "—",
-          ],
-        ]
-          .map(
-            ([k, v]) =>
-              `<div class="detail-row"><span class="detail-key">${k}</span><span class="detail-val">${v}</span></div>`,
-          )
-          .join("");
+
+        const currentStatus = order.status || "pending";
+        document.getElementById("detail-order-info").innerHTML = `
+          <div class="detail-row">
+            <span class="detail-key">Status</span>
+            <span class="detail-val">
+              <select class="status-select status-${currentStatus}" style="font-size:11px"
+                onchange="window.updateOrderStatus('${order.id}',this.value);this.className='status-select status-'+this.value">
+                <option value="pending"   ${currentStatus === "pending" ? "selected" : ""}>Pending</option>
+                <option value="confirmed" ${currentStatus === "confirmed" ? "selected" : ""}>Confirmed</option>
+                <option value="paid"      ${currentStatus === "paid" ? "selected" : ""}>Paid</option>
+                <option value="delivered" ${currentStatus === "delivered" ? "selected" : ""}>Delivered</option>
+              </select>
+            </span>
+          </div>
+          ${[
+            ["Order Ref", order.order_ref],
+            ["Parts", order.parts_count],
+            ["Total", `₹${Number(order.total_amount).toLocaleString("en-IN")}`],
+            ["Delivered", order.delivered ? "✓ Yes" : "No"],
+          ]
+            .map(
+              ([k, v]) =>
+                `<div class="detail-row"><span class="detail-key">${k}</span><span class="detail-val">${v}</span></div>`,
+            )
+            .join("")}`;
+
         const { data: parts } = await supabase
           .from("order_parts")
           .select("*")
@@ -1728,9 +1827,19 @@ tfoot td{padding:9px 8px;color:#111;font-weight:700;text-align:center}tfoot td:f
         } else {
           partsBody.innerHTML = `<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">No parts data</td></tr>`;
         }
-        const hasReport = Boolean(order.report_url);
+
+        let reportUrl = null;
+        try {
+          const { data: reportData } = await supabase
+            .from("print_reports")
+            .select("public_url")
+            .eq("order_id", id)
+            .maybeSingle();
+          reportUrl = reportData?.public_url ?? null;
+        } catch (_) {}
+        const hasReport = Boolean(reportUrl);
         document.getElementById("detail-report-section").innerHTML =
-          `<div style="display:flex;gap:10px;flex-wrap:wrap;"><button class="report-btn" onclick="window.printDispatchReport('${order.id}',${hasReport ? `'${order.report_url}'` : "null"})">🖨 &nbsp; PRINT DISPATCH REPORT</button>${!hasReport ? `<span style="font-size:10px;color:var(--muted);align-self:center;letter-spacing:0.06em;">⚠ Design images not yet generated — bill only</span>` : ""}</div>`;
+          `<div style="display:flex;gap:10px;flex-wrap:wrap;"><button class="report-btn" onclick="window.printDispatchReport('${order.id}',${hasReport ? `'${reportUrl}'` : "null"})">🖨 &nbsp; PRINT DISPATCH REPORT</button>${!hasReport ? `<span style="font-size:10px;color:var(--muted);align-self:center;letter-spacing:0.06em;">⚠ Design images not yet generated — bill only</span>` : ""}</div>`;
         document
           .getElementById("order-detail")
           .scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1744,15 +1853,13 @@ tfoot td{padding:9px 8px;color:#111;font-weight:700;text-align:center}tfoot td:f
 
       function updateStats(orders) {
         document.getElementById("stat-total").textContent = orders.length;
+        document.getElementById("stat-delivered").textContent = orders.filter(
+          (o) => o.status === "delivered" || o.delivered === true,
+        ).length;
         document.getElementById("stat-confirmed").textContent = orders.filter(
-          (o) => o.delivered === true,
+          (o) => o.status === "confirmed",
         ).length;
-        document.getElementById("stat-paid").textContent = orders.filter(
-          (o) => o.payment_status === "captured",
-        ).length;
-        const revenue = orders
-          .filter((o) => o.payment_status === "captured")
-          .reduce((s, o) => s + Number(o.total_amount), 0);
+        const revenue = orders.reduce((s, o) => s + Number(o.total_amount), 0);
         document.getElementById("stat-revenue").textContent =
           revenue > 0 ? `₹${revenue.toLocaleString("en-IN")}` : "₹0";
       }
@@ -1817,28 +1924,6 @@ tfoot td{padding:9px 8px;color:#111;font-weight:700;text-align:center}tfoot td:f
           return c(Math.floor(n / 10000000)) + "Crore " + c(n % 10000000);
         }
         return c(Math.floor(n)).trim() || "Zero";
-      }
-
-      function badgeHTML(status, kind) {
-        const oc = {
-          confirmed: "badge-confirmed",
-          paid: "badge-paid",
-          pending: "badge-pending",
-          failed: "badge-failed",
-          cancelled: "badge-cancelled",
-          delivered: "badge-delivered",
-        };
-        const pc = {
-          captured: "pay-badge-captured",
-          pending: "pay-badge-pending",
-          failed: "pay-badge-failed",
-          none: "pay-badge-none",
-        };
-        const cls =
-          kind === "pay"
-            ? pc[status] || "pay-badge-none"
-            : oc[status] || "badge-pending";
-        return `<span class="badge ${cls}">${status || "—"}</span>`;
       }
     </script>
   </body>
