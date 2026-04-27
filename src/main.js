@@ -6756,11 +6756,11 @@ function initWeightSection() {
       #weight-body{overflow:hidden;transition:max-height 0.25s ease,opacity 0.2s ease;max-height:300px;opacity:1}
       #weight-body.collapsed{max-height:0;opacity:0}
       #weight-rows{padding:4px 12px 10px;display:flex;flex-direction:column;gap:3px}
-      .weight-row{display:flex;align-items:center;justify-content:space-between;padding:5px 10px;background:#1a2636;border:1px solid #263848;border-left:2px solid rgba(208,88,24,0.5);clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,0 100%);font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:0.04em}
-      .weight-row-label{color:#6a8098;text-transform:uppercase;font-size:9px;letter-spacing:0.08em;display:flex;align-items:center;gap:6px}
-      .weight-row-qty{font-size:8px;color:#384858;background:#111820;border:1px solid #2a3848;padding:1px 5px;letter-spacing:0.06em}
-      .weight-row-val{color:#8aacbf;font-size:10px;letter-spacing:0.06em}
-      .weight-row-unit{color:#384858;font-size:8px;margin-left:2px}
+     .weight-row{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:#1e2836;border:1px solid #2e4058;font-family:'Oswald',sans-serif;font-size:13px;font-weight:400;letter-spacing:0.06em;margin-bottom:3px;}
+      .weight-row-label{color:#e8f4ff;font-size:13px;font-weight:400;letter-spacing:0.06em;display:flex;align-items:center;gap:6px;flex:1 1 auto;min-width:0;}
+      .weight-row-qty{font-size:11px;color:#8aacbf;background:#111820;border:1px solid #2a3848;padding:1px 5px;letter-spacing:0.06em;font-family:'Oswald',sans-serif;flex-shrink:0;}
+      .weight-row-val{color:#ffffff;font-size:14px;font-weight:600;letter-spacing:0.06em;display:block;}
+      .weight-row-unit{color:#6a8098;font-size:10px;font-weight:300;margin-left:2px;display:block;text-transform:uppercase;}
       #weight-total-row{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;margin:0 12px 10px;background:rgba(208,88,24,0.06);border:1px solid rgba(208,88,24,0.25);border-left:3px solid #d05818}
       #weight-total-label{font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.18em;color:#6a8098;text-transform:uppercase}
       #weight-total-value{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;color:#d8e8f4;letter-spacing:0.06em}
@@ -6861,7 +6861,7 @@ function updateWeightDisplay() {
       justifyContent: "space-between",
       alignItems: "center",
       padding: "7px 10px",
-      background: "#1e2836",
+      background: "#1e2c3e",
       border: "1px solid #2e4058",
       borderLeft: `3px solid ${color}`,
       marginBottom: "3px",
@@ -6870,12 +6870,11 @@ function updateWeightDisplay() {
     row.innerHTML = `
       <span style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:400;letter-spacing:0.06em;color:#e8f4ff;display:flex;align-items:center;gap:6px;min-width:0;flex:1 1 auto;">
         <span style="font-size:11px;color:#8aacbf;background:#111820;border:1px solid #2a3848;padding:1px 5px;letter-spacing:0.06em;font-family:'Oswald',sans-serif;flex-shrink:0;">${qty}×</span>
-        <span style="white-space:normal;overflow-wrap:break-word;line-height:1.2;min-width:0;flex:1 1 auto;">${label}</span>
+      <span style="white-space:normal;overflow-wrap:break-word;line-height:1.2;min-width:0;flex:1 1 auto;color:#e8f4ff;">${label}</span>
       </span>
       <span style="text-align:right;flex-shrink:0;margin-left:8px;">
        <span style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;letter-spacing:0.06em;color:#ffffff;display:block;">${totalDisp}</span>
-<span style="font-family:'Oswald',sans-serif;font-size:10px;font-weight:300;letter-spacing:0.08em;color:#6a8098;display:block;text-transform:uppercase;">${unitDisp}</span>
-      </span>
+<span style="font-family:'Oswald',sans-serif;font-size:10px;font-weight:300;letter-spacing:0.08em;color:#8aacbf;display:block;text-transform:uppercase;">${unitDisp}</span>      </span>
     `;
     rowsEl.appendChild(row);
   }
