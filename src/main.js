@@ -4066,7 +4066,7 @@ function rebuildSocketMarkers() {
     });
   }
 
-  const FRAME_JOINT_DIST = 0.25;
+  const FRAME_JOINT_DIST = 0.45;
   const mountFrameSockets = [];
   scene.traverse((o) => {
     if (!o.name || !o.name.startsWith("SOCKET_FRAME")) return;
@@ -4928,6 +4928,12 @@ function onMouseMove(e) {
     const { mountPos } = computeFrameSnapPosition(socket);
     ghost.position.copy(mountPos);
     ghost.rotation.set(0, 0, 0);
+    const wouldIntersect = wouldFrameIntersectExistingFrame(mountPos);
+    ghost.traverse((o) => {
+      if (!o.isMesh) return;
+      o.material.color.set(wouldIntersect ? 0xff2200 : 0xffffff);
+      o.material.opacity = wouldIntersect ? 0.35 : 0.45;
+    });
     return;
   }
 
@@ -5208,6 +5214,11 @@ function onClick(e) {
     }
     const socket = frameHitObj.object.userData.socket;
     if (usedSockets.has(socket.uuid)) return;
+    const { mountPos: previewPos } = computeFrameSnapPosition(socket);
+    if (wouldFrameIntersectExistingFrame(previewPos)) {
+      showHudMessage("⚠ Frame would intersect an existing frame");
+      return;
+    }
     placeFrame(socket);
     restartPlacementMode("frame");
     checkQueuedIntent();
@@ -5419,6 +5430,24 @@ function wouldFrameIntersectSupport(socket, rotationSteps) {
     const supportBox = new THREE.Box3().setFromObject(o);
     supportBox.expandByScalar(-0.04);
     if (frameBox.intersectsBox(supportBox)) intersects = true;
+  });
+  return intersects;
+}
+
+function wouldFrameIntersectExistingFrame(mountPos) {
+  const tempFrame = frameTemplate.clone(true);
+  tempFrame.position.copy(mountPos);
+  tempFrame.rotation.set(0, 0, 0);
+  tempFrame.updateMatrixWorld(true);
+  const newBox = new THREE.Box3().setFromObject(tempFrame);
+  newBox.expandByScalar(-0.06);
+  let intersects = false;
+  scene.traverse((o) => {
+    if (intersects || !o.userData?.isMount || o.userData.type !== "frame")
+      return;
+    const existingBox = new THREE.Box3().setFromObject(o);
+    existingBox.expandByScalar(-0.06);
+    if (newBox.intersectsBox(existingBox)) intersects = true;
   });
   return intersects;
 }

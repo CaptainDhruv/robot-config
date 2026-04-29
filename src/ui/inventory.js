@@ -53,7 +53,6 @@ function render() {
       border: 1px solid #2e4058;
       border-left: 3px solid ${colour};
       margin-bottom: 3px;
-      clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
       transition: background 0.15s;
     `;
 
