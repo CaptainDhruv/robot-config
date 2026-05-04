@@ -20,8 +20,6 @@
         flex-direction: column;
         overflow: hidden;
       }
-
-      /* ── HEADER ── */
       #viewer-header {
         flex-shrink: 0;
         background: #111111;
@@ -107,8 +105,6 @@
         align-items: center;
         flex-wrap: wrap;
       }
-
-      /* ── PRICE STRIP ── */
       #price-strip {
         flex-shrink: 0;
         background: #0a1018;
@@ -163,8 +159,6 @@
           opacity: 0.2;
         }
       }
-
-      /* ── REPORT AREA ── */
       #report-area {
         flex: 1;
         overflow-y: auto;
@@ -181,8 +175,6 @@
         letter-spacing: 0.1em;
         animation: blink 1.2s step-end infinite;
       }
-
-      /* ── REPORT HTML (inside #report-area) ── */
       .report-wrap {
         background: #fff;
         max-width: 960px;
@@ -357,8 +349,6 @@
         background: #fff5f5 !important;
         border-top: 2px solid #cc2200 !important;
         border-bottom: none !important;
-        vertical-align: middle !important;
-        line-height: 1 !important;
       }
       .rpt-weight-total td {
         font-family: "Oswald", sans-serif !important;
@@ -368,8 +358,6 @@
         background: #eaf4fb !important;
         border-top: 2px solid #2e86c1 !important;
         border-bottom: none !important;
-        vertical-align: middle !important;
-        line-height: 1 !important;
       }
       .rpt-footer {
         border-top: 1px solid #ccc;
@@ -385,8 +373,6 @@
         margin-top: 16px;
         text-transform: uppercase;
       }
-
-      /* ── PRINT ── */
       @media print {
         #viewer-header,
         #price-strip,
@@ -408,7 +394,7 @@
         }
       }
 
-      /* ── ADDRESS OVERLAY ── */
+      /* ADDRESS OVERLAY */
       #addr-overlay {
         position: fixed;
         inset: 0;
@@ -624,7 +610,7 @@
         }
       }
 
-      /* ── ORDER CONFIRM ── */
+      /* ORDER CONFIRM */
       #order-confirm {
         position: fixed;
         inset: 0;
@@ -669,23 +655,33 @@
         font-weight: 900;
         letter-spacing: 0.2em;
         color: #d8e8f4;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
       }
+
+      /* FIX: text is now readable white instead of dark #384858 */
       .confirm-sub {
         font-family: "Share Tech Mono", monospace;
-        font-size: 10px;
-        color: #384858;
-        letter-spacing: 0.1em;
-        line-height: 1.6;
-        margin-bottom: 24px;
+        font-size: 11px;
+        color: #c8d8e8;
+        letter-spacing: 0.08em;
+        line-height: 1.7;
+        margin-bottom: 20px;
       }
       .confirm-ref {
         font-family: "Orbitron", sans-serif;
         font-size: 9px;
         letter-spacing: 0.2em;
-        color: #384858;
-        margin-bottom: 24px;
+        color: #8aacbf;
+        margin-bottom: 28px;
         line-height: 1.8;
+      }
+
+      /* NEW: two-button row */
+      .confirm-btn-row {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
       }
       .confirm-close {
         font-family: "Orbitron", sans-serif;
@@ -693,20 +689,44 @@
         font-weight: 700;
         letter-spacing: 0.2em;
         text-transform: uppercase;
-        padding: 11px 26px;
+        padding: 11px 20px;
+        border: 1.5px solid #2a3848;
+        color: #8aacbf;
+        background: transparent;
+        cursor: pointer;
+        transition: all 0.12s;
+      }
+      .confirm-close:hover {
+        background: #1e2838;
+        border-color: #8aacbf;
+        color: #fff;
+      }
+      .confirm-save-pdf {
+        font-family: "Orbitron", sans-serif;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        padding: 11px 20px;
         border: 1.5px solid #d05818;
         color: #d05818;
         background: transparent;
         cursor: pointer;
+        box-shadow: 4px 4px 0 #5a2008;
+        transition: all 0.12s;
+        display: flex;
+        align-items: center;
+        gap: 7px;
       }
-      .confirm-close:hover {
+      .confirm-save-pdf:hover {
         background: #d05818;
         color: #0e1018;
+        box-shadow: 6px 6px 0 #5a2008;
+        transform: translate(-2px, -2px);
       }
     </style>
   </head>
   <body>
-    <!-- HEADER -->
     <div id="viewer-header">
       <div>
         <div id="viewer-title">— CONFIG</div>
@@ -721,12 +741,10 @@
       </div>
     </div>
 
-    <!-- PRICE STRIP -->
     <div id="price-strip">
       <div id="loading-prices">FETCHING LIVE PRICES...</div>
     </div>
 
-    <!-- DYNAMIC REPORT -->
     <div id="report-area">
       <div id="report-loading">GENERATING REPORT...</div>
     </div>
@@ -933,15 +951,26 @@
         <div class="confirm-icon">✓</div>
         <div class="confirm-title">ORDER PLACED</div>
         <div class="confirm-sub">
-          Your MK-1 build has been submitted for production.
+          Your build has been submitted for production.<br />
+          We'll be in touch shortly to confirm your order.
         </div>
         <div class="confirm-ref" id="confirm-ref"></div>
-        <button
-          class="confirm-close"
-          onclick="window.location.href = './index.html'"
-        >
-          ← Back to Home
-        </button>
+        <div class="confirm-btn-row">
+          <button class="confirm-save-pdf" id="confirm-save-pdf">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"
+              />
+            </svg>
+            Save Design Summary
+          </button>
+          <button
+            class="confirm-close"
+            onclick="window.location.href = './index.html'"
+          >
+            ← Back to Home
+          </button>
+        </div>
       </div>
     </div>
 
@@ -977,8 +1006,6 @@
         scout: "W 55.0cm × D 63.8cm × H 26.8cm",
         combat: "W 55.0cm × D 85.1cm × H 26.8cm",
       };
-      const PRESET_WEIGHT = { scout: "5.64 kg", combat: "9.22 kg" };
-
       const PART_WEIGHTS = {
         frame: 450,
         motor: 380,
@@ -999,10 +1026,8 @@
       const parts = PRESET_PARTS[config] ?? PRESET_PARTS.scout;
       const label = PRESET_LABELS[config] ?? "Config";
       const dims = PRESET_DIMS[config] ?? "";
-      const weight = PRESET_WEIGHT[config] ?? "";
       const orderRef = "MK1-" + Date.now().toString(36).toUpperCase().slice(-8);
       const now = new Date().toLocaleString();
-
       const IMGS = {
         iso: `${window.location.origin}/assets/${config}-iso.png`,
         top: `${window.location.origin}/assets/${config}-top.png`,
@@ -1013,29 +1038,26 @@
       document.getElementById("viewer-title").textContent =
         label + " · Design Summary";
 
-      let priceMap = {};
-      let totalCost = 0;
+      let priceMap = {},
+        totalCost = 0;
       const totalParts = Object.values(parts).reduce((a, b) => a + b, 0);
 
-      // ── Load prices & build everything ──────────────────────────────
       async function loadPrices() {
         try {
           const { data, error } = await supabase
             .from("part_config")
             .select("*");
           if (error) throw error;
-
           data.forEach((row) => {
-            const base = parseFloat(row.price) || 0;
-            const gst = parseFloat(row.gst_percent) || 0;
-            priceMap[row.part_type] = Math.round(base * (1 + gst / 100));
+            priceMap[row.part_type] = Math.round(
+              (parseFloat(row.price) || 0) *
+                (1 + (parseFloat(row.gst_percent) || 0) / 100),
+            );
           });
 
-          // Build price strip
           const strip = document.getElementById("price-strip");
           strip.innerHTML = "";
           totalCost = 0;
-
           const order = [
             "frame",
             "motor",
@@ -1054,37 +1076,27 @@
           order.forEach((type, i) => {
             const qty = parts[type] ?? 0;
             if (!qty) return;
-            const unitPrice = priceMap[type] ?? 0;
-            const sub = unitPrice * qty;
+            const sub = (priceMap[type] ?? 0) * qty;
             totalCost += sub;
-
             if (i > 0) {
-              const sep = document.createElement("div");
-              sep.className = "price-sep";
-              strip.appendChild(sep);
+              const s = document.createElement("div");
+              s.className = "price-sep";
+              strip.appendChild(s);
             }
             const item = document.createElement("div");
-            item.className = "price-item";
-            item.innerHTML = `
-        <span class="price-label">${qty}× ${stripLabels[type]}</span>
-        <span class="price-value">₹${sub.toLocaleString("en-IN")}</span>`;
+            item.innerHTML = `<span class="price-label">${qty}× ${stripLabels[type]}</span><span class="price-value">₹${sub.toLocaleString("en-IN")}</span>`;
             strip.appendChild(item);
           });
-
-          const sep2 = document.createElement("div");
-          sep2.className = "price-sep";
-          strip.appendChild(sep2);
-          const totalItem = document.createElement("div");
-          totalItem.className = "price-item";
-          totalItem.innerHTML = `
-      <span class="price-label">Total (incl. GST)</span>
-      <span class="price-value accent">₹${totalCost.toLocaleString("en-IN")}</span>`;
-          strip.appendChild(totalItem);
+          const sep = document.createElement("div");
+          sep.className = "price-sep";
+          strip.appendChild(sep);
+          const tot = document.createElement("div");
+          tot.innerHTML = `<span class="price-label">Total (incl. GST)</span><span class="price-value accent">₹${totalCost.toLocaleString("en-IN")}</span>`;
+          strip.appendChild(tot);
 
           document.getElementById("addr-total-display").textContent =
             "₹" + totalCost.toLocaleString("en-IN");
           document.getElementById("btn-order").disabled = false;
-
           buildReport();
         } catch (e) {
           document.getElementById("price-strip").innerHTML =
@@ -1093,11 +1105,7 @@
         }
       }
 
-      // ── Build dynamic HTML report ────────────────────────────────────
       function buildReport() {
-        // Manifest rows
-        let manifestRows = "";
-        let computedTotal = 0;
         const order = [
           "frame",
           "motor",
@@ -1105,130 +1113,72 @@
           "support_frame",
           "wheel",
         ];
+        let manifestRows = "",
+          computedTotal = 0,
+          weightRows = "",
+          totalGrams = 0;
+
         order.forEach((type) => {
           const qty = parts[type] ?? 0;
           if (!qty) return;
           const unitPrice = priceMap[type] ?? 0;
           const sub = unitPrice * qty;
           computedTotal += sub;
-          manifestRows += `<tr>
-      <td>${PART_LABELS_DB[type].toUpperCase()}</td>
-      <td style="text-align:center">${qty}</td>
-     <td style="text-align:right;font-family:'Oswald',sans-serif;color:#cc2200;font-weight:700;font-size:16px">
-  ₹${sub.toLocaleString("en-IN")}
-</td>
-    </tr>`;
-        });
-
-        // Weight rows
-        let weightRows = "";
-        let totalGrams = 0;
-        order.forEach((type) => {
-          const qty = parts[type] ?? 0;
-          if (!qty) return;
+          manifestRows += `<tr><td>${PART_LABELS_DB[type].toUpperCase()}</td><td style="text-align:center">${qty}</td><td style="text-align:right;color:#cc2200;font-weight:700">₹${sub.toLocaleString("en-IN")}</td></tr>`;
           const unitG = PART_WEIGHTS[type] ?? 0;
           const lineG = unitG * qty;
           totalGrams += lineG;
           const lineDisp =
             lineG >= 1000 ? `${(lineG / 1000).toFixed(2)} kg` : `${lineG} g`;
-          weightRows += `<tr>
-      <td>${PART_LABELS_DB[type].toUpperCase()}</td>
-      <td style="text-align:center">${qty}</td>
-      <td style="text-align:right;color:#555">${unitG} g</td>
-      <td style="text-align:right;font-family:'Oswald',sans-serif;font-weight:600;color:#1a5276">${lineDisp}</td>
-    </tr>`;
+          weightRows += `<tr><td>${PART_LABELS_DB[type].toUpperCase()}</td><td style="text-align:center">${qty}</td><td style="text-align:right;color:#555">${unitG} g</td><td style="text-align:right;font-weight:600;color:#1a5276">${lineDisp}</td></tr>`;
         });
         const totalWeightDisp =
           totalGrams >= 1000
             ? `${(totalGrams / 1000).toFixed(2)} kg`
             : `${totalGrams} g`;
 
-        const html = `
-    <div class="report-wrap" id="printable-report">
-      <div class="rpt-header">
-        <div>
-          <div class="rpt-title">ROBOT CONFIGURATOR</div>
-          <div class="rpt-subtitle">Design Report · MK-1 Unit · ${orderRef}</div>
-        </div>
-        <div class="rpt-meta">
-          Generated: ${now}<br>
-          Parts: ${totalParts} · Weight: ${totalWeightDisp}<br>
-          Dimensions: ${dims}
-        </div>
-      </div>
-
-    <div class="rpt-section-title">◼ ORTHOGRAPHIC VIEWS WITH DIMENSIONS</div>
-
-      <div class="rpt-main-view">
-        <div class="rpt-view-label">◈ Isometric View</div>
-        <img src="${IMGS.iso}" alt="Isometric View"/>
-      </div>
-      <div class="rpt-angles-grid">
-        <div class="rpt-angle-card">
-          <div class="rpt-angle-label">TOP VIEW</div>
-          <img src="${IMGS.top}" alt="Top View"/>
-        </div>
-        <div class="rpt-angle-card">
-          <div class="rpt-angle-label">SIDE VIEW</div>
-          <img src="${IMGS.side}" alt="Side View"/>
-        </div>
-        <div class="rpt-angle-card">
-          <div class="rpt-angle-label">FRONT VIEW</div>
-          <img src="${IMGS.front}" alt="Front View"/>
-        </div>
-      </div>
-
-      <div class="rpt-section-title">◼ COMPONENT DATA</div>
-      <div class="rpt-tables-row">
-        <div class="rpt-table-card">
-          <div class="rpt-table-header">Component Manifest</div>
-          <table>
-            <tr>
-              <td><strong>Type</strong></td>
-              <td style="text-align:center"><strong>Qty</strong></td>
-              <td style="text-align:right"><strong>Cost</strong></td>
-            </tr>
-            ${manifestRows}
-            <tr class="rpt-subtotal">
-              <td colspan="2">TOTAL COST</td>
-              <td style="text-align:right">₹${computedTotal.toLocaleString("en-IN")}</td>
-            </tr>
-          </table>
-        </div>
-        <div class="rpt-table-card">
-          <div class="rpt-table-header weight">Weight Breakdown</div>
-          <table>
-            <tr>
-              <td><strong>Type</strong></td>
-              <td style="text-align:center"><strong>Qty</strong></td>
-              <td style="text-align:right"><strong>Unit</strong></td>
-              <td style="text-align:right"><strong>Total</strong></td>
-            </tr>
-            ${weightRows}
-            <tr class="rpt-weight-total">
-              <td colspan="3">TOTAL WEIGHT</td>
-              <td style="text-align:right">${totalWeightDisp}</td>
-            </tr>
-          </table>
-        </div>
-      </div>
-
-      <div class="rpt-footer">
-        <span>ROBOT CONFIGURATOR v1.0 — UNIT MK-1</span>
-        <span>${label.toUpperCase()}</span>
-        <span>${now}</span>
-      </div>
-    </div>`;
-
-        document.getElementById("report-area").innerHTML = html;
+        document.getElementById("report-area").innerHTML = `
+<div class="report-wrap" id="printable-report">
+  <div class="rpt-header">
+    <div><div class="rpt-title">ROBOT CONFIGURATOR</div><div class="rpt-subtitle">Design Report · MK-1 Unit · ${orderRef}</div></div>
+    <div class="rpt-meta">Generated: ${now}<br>Parts: ${totalParts} · Weight: ${totalWeightDisp}<br>Dimensions: ${dims}</div>
+  </div>
+  <div class="rpt-section-title">◼ ORTHOGRAPHIC VIEWS WITH DIMENSIONS</div>
+  <div class="rpt-main-view"><div class="rpt-view-label">◈ Isometric View</div><img src="${IMGS.iso}" alt="Isometric View"/></div>
+  <div class="rpt-angles-grid">
+    <div class="rpt-angle-card"><div class="rpt-angle-label">TOP VIEW</div><img src="${IMGS.top}"/></div>
+    <div class="rpt-angle-card"><div class="rpt-angle-label">SIDE VIEW</div><img src="${IMGS.side}"/></div>
+    <div class="rpt-angle-card"><div class="rpt-angle-label">FRONT VIEW</div><img src="${IMGS.front}"/></div>
+  </div>
+  <div class="rpt-section-title">◼ COMPONENT DATA</div>
+  <div class="rpt-tables-row">
+    <div class="rpt-table-card">
+      <div class="rpt-table-header">Component Manifest</div>
+      <table><tr><td><strong>Type</strong></td><td style="text-align:center"><strong>Qty</strong></td><td style="text-align:right"><strong>Cost</strong></td></tr>
+      ${manifestRows}
+      <tr class="rpt-subtotal"><td colspan="2">TOTAL COST</td><td style="text-align:right">₹${computedTotal.toLocaleString("en-IN")}</td></tr></table>
+    </div>
+    <div class="rpt-table-card">
+      <div class="rpt-table-header weight">Weight Breakdown</div>
+      <table><tr><td><strong>Type</strong></td><td style="text-align:center"><strong>Qty</strong></td><td style="text-align:right"><strong>Unit</strong></td><td style="text-align:right"><strong>Total</strong></td></tr>
+      ${weightRows}
+      <tr class="rpt-weight-total"><td colspan="3">TOTAL WEIGHT</td><td style="text-align:right">${totalWeightDisp}</td></tr></table>
+    </div>
+  </div>
+  <div class="rpt-footer"><span>ROBOT CONFIGURATOR v1.0 — UNIT MK-1</span><span>${label.toUpperCase()}</span><span>${now}</span></div>
+</div>`;
       }
 
       loadPrices();
 
-      // ── Save as PDF ──────────────────────────────────────────────────
+      // Header PDF button
       document.getElementById("btn-pdf").onclick = () => window.print();
 
-      // ── PIN auto-fill ────────────────────────────────────────────────
+      // Save Design Summary from confirm screen — triggers browser print/save PDF
+      document.getElementById("confirm-save-pdf").onclick = () =>
+        window.print();
+
+      // PIN auto-fill
       document.getElementById("f-pin").addEventListener("input", async () => {
         const pin = document.getElementById("f-pin").value.trim();
         if (pin.length !== 6 || !/^\d{6}$/.test(pin)) return;
@@ -1252,17 +1202,15 @@
         }
       });
 
-      // ── Address overlay ──────────────────────────────────────────────
       document.getElementById("btn-order").onclick = () =>
         document.getElementById("addr-overlay").classList.add("visible");
       document.getElementById("addr-cancel").onclick = () =>
         document.getElementById("addr-overlay").classList.remove("visible");
 
-      // ── Submit order ─────────────────────────────────────────────────
       document.getElementById("addr-submit").onclick = async () => {
         const get = (id) => document.getElementById(id);
         let valid = true;
-        const fields = [
+        [
           {
             id: "f-name",
             check: (v) => v.length >= 2 && /^[a-zA-Z\s'.]+$/.test(v),
@@ -1273,8 +1221,7 @@
           { id: "f-district", check: (v) => v.length > 0 },
           { id: "f-state", check: (v) => v.length > 0 },
           { id: "f-phone", check: (v) => v.replace(/\D/g, "").length >= 7 },
-        ];
-        fields.forEach(({ id, check }) => {
+        ].forEach(({ id, check }) => {
           const el = get(id);
           if (!check(el.value.trim())) {
             el.classList.add("err");
@@ -1314,27 +1261,27 @@
             .single();
           if (orderErr) throw orderErr;
 
-          const partRows = Object.entries(parts).map(([type, qty]) => ({
-            order_id: order.id,
-            part_type: type,
-            part_label: PART_LABELS_DB[type] ?? type,
-            quantity: qty,
-            unit_cost: priceMap[type] ?? 0,
-            total_cost: (priceMap[type] ?? 0) * qty,
-          }));
-          await supabase.from("order_parts").insert(partRows);
+          await supabase.from("order_parts").insert(
+            Object.entries(parts).map(([type, qty]) => ({
+              order_id: order.id,
+              part_type: type,
+              part_label: PART_LABELS_DB[type] ?? type,
+              quantity: qty,
+              unit_cost: priceMap[type] ?? 0,
+              total_cost: (priceMap[type] ?? 0) * qty,
+            })),
+          );
 
           document.getElementById("addr-overlay").classList.remove("visible");
           document.getElementById("confirm-ref").innerHTML =
             `ORDER REF: ${orderRef}`;
           document.getElementById("order-confirm").classList.add("visible");
 
-          // ── Save report to Supabase ──────────────────────────────
+          // Save report to Supabase storage
           try {
-            const reportHTML = document.getElementById("report-area").innerHTML;
             const blob = new Blob(
               [
-                `<html><head><meta charset="UTF-8"/></head><body>${reportHTML}</body></html>`,
+                `<html><head><meta charset="UTF-8"/></head><body>${document.getElementById("report-area").innerHTML}</body></html>`,
               ],
               { type: "text/html" },
             );

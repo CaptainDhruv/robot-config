@@ -2410,13 +2410,36 @@ function showOrderConfirmOverlay(addrLines, orderRef) {
     <div style="font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.2em;color:#384858;margin-bottom:24px">
       ORDER REF: ${orderRef}
     </div>
-    <button onclick="window.location.reload()" style="background:#d05818;border:none;color:#fff;font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.2em;padding:11px 28px;cursor:pointer;text-transform:uppercase">
-      START NEW BUILD
-    </button>
+   <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+      <button id="confirm-save-pdf-btn" style="background:transparent;border:1.5px solid #d05818;color:#d05818;font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.18em;padding:11px 20px;cursor:pointer;text-transform:uppercase;box-shadow:4px 4px 0 #5a2008;display:flex;align-items:center;gap:7px;transition:all 0.12s">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+        Save Design Summary
+      </button>
+      <button onclick="window.location.reload()" style="background:#d05818;border:1.5px solid #d05818;color:#fff;font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.2em;padding:11px 20px;cursor:pointer;text-transform:uppercase;box-shadow:4px 4px 0 #5a2008;transition:all 0.12s">
+        Start New Build
+      </button>
+    </div>
   `;
 
   backdrop.appendChild(card);
   document.body.appendChild(backdrop);
+  // Wire up the Save Design Summary button
+  const pdfBtn = document.getElementById("confirm-save-pdf-btn");
+  if (pdfBtn) {
+    pdfBtn.addEventListener("click", () => printDesign());
+    pdfBtn.addEventListener("mouseover", () => {
+      pdfBtn.style.background = "#d05818";
+      pdfBtn.style.color = "#0e1018";
+      pdfBtn.style.boxShadow = "6px 6px 0 #5a2008";
+      pdfBtn.style.transform = "translate(-2px,-2px)";
+    });
+    pdfBtn.addEventListener("mouseout", () => {
+      pdfBtn.style.background = "transparent";
+      pdfBtn.style.color = "#d05818";
+      pdfBtn.style.boxShadow = "4px 4px 0 #5a2008";
+      pdfBtn.style.transform = "none";
+    });
+  }
 }
 
 /* =========================================================
