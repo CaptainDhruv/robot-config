@@ -7161,7 +7161,9 @@ function updateWeightDisplay() {
     const totalDisp =
       totalG >= 1000 ? `${(totalG / 1000).toFixed(2)} kg` : `${totalG} g`;
     const unitDisp =
-      unitG >= 1000 ? `${(unitG / 1000).toFixed(2)}kg ea` : `${unitG}g each`;
+      unitG >= 1000
+        ? `${(unitG / 1000).toFixed(2)} kg each`
+        : `${unitG} g each`;
 
     const row = document.createElement("div");
     row.dataset.partType = type;
