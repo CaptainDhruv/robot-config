@@ -1317,7 +1317,7 @@
               const me = doc.querySelector(".print-meta");
               if (me) {
                 const dm = me.textContent.match(/Dimensions:\s*(.+)/);
-                if (dm) dimensionsText = dm[1].trim();
+                if (dm) dimensionsText = dm[1].trim().replace(/\bD\b/g, "L");
               }
             }
           } catch (_) {}
@@ -1415,16 +1415,16 @@ tfoot td{padding:9px 8px;color:#111;font-weight:700;text-align:center}tfoot td:f
     <div><div class="design-title">ROBOT CONFIGURATOR</div><div class="design-sub">Design Report · MK-1 Unit · ${order.order_ref}</div></div>
     <div class="design-meta">Generated: ${now}<br>Order Ref: ${order.order_ref}</div>
   </div>
-  ${mainImgSrc ? `<div class="main-view"><div class="view-label-badge">◈ Isometric View</div><img src="${mainImgSrc}"/></div>` : ""}
-  ${
-    viewImgs.length > 0
-      ? `<div style="font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:.2em;color:#111;text-transform:uppercase;border-left:4px solid #cc2200;padding-left:10px;margin:16px 0 12px">◼ ORTHOGRAPHIC VIEWS</div>
+ ${
+   viewImgs.length > 0
+     ? `<div style="font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;letter-spacing:.2em;color:#111;text-transform:uppercase;border-left:4px solid #cc2200;padding-left:10px;margin:16px 0 12px">◼ ORTHOGRAPHIC VIEWS</div>
        <div class="views-row">${viewImgs.map((v) => `<div class="view-card"><div class="view-card-label">${v.label}</div><img src="${v.src}"/></div>`).join("")}</div>
        ${dimensionsText ? `<div class="dim-bar">⟷ &nbsp; ${dimensionsText}</div>` : ""}`
-      : !hasImages
-        ? `<div style="text-align:center;padding:40px;color:#777;font-size:13px;border:1.5px dashed #ccc;margin-bottom:20px">Design views not available for this order</div>`
-        : ""
-  }
+     : !hasImages
+       ? `<div style="text-align:center;padding:40px;color:#777;font-size:13px;border:1.5px dashed #ccc;margin-bottom:20px">Design views not available for this order</div>`
+       : ""
+ }
+  ${mainImgSrc ? `<div class="main-view"><div class="view-label-badge">◈ Isometric View</div><img src="${mainImgSrc}"/></div>` : ""}
   <div class="qc-section">
     <div class="qc-title">Quality Check &amp; Dispatch Clearance</div>
     <div class="qc-check-row"><div class="qc-checkbox"></div><div><div class="qc-check-text">All contents of this order have been verified and checked</div><div class="qc-check-sub">Components match the order manifest above. Quantities, parts, and condition confirmed prior to dispatch.</div></div></div>

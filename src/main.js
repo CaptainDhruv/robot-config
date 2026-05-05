@@ -2015,7 +2015,7 @@ function showAddressOverlay() {
     alignItems: "center",
     gap: "10px",
   });
-  secTitle.innerHTML = `<span style="width:3px;height:13px;background:#d05818;display:inline-block;flex-shrink:0"></span>Delivery Address`;
+  secTitle.innerHTML = `<span style="width:3px;height:13px;background:#d05818;display:inline-block;flex-shrink:0"></span>Shipping Address`;
   body.appendChild(secTitle);
 
   const mkField = (
@@ -2482,7 +2482,6 @@ function showOrderConfirmOverlay(addrLines, orderRef) {
     background: "#18202e",
     border: "1.5px solid rgba(208,88,24,0.3)",
     borderLeft: "3px solid #d05818",
-    clipPath: "polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%)",
     boxShadow: "0 0 60px rgba(0,0,0,0.7)",
     padding: "40px 44px 36px",
     textAlign: "center",
@@ -2740,7 +2739,7 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
       const label = (partLabelMap[t] ?? t.replace(/_/g, " ")).toUpperCase();
       const lineDisp =
         lineG >= 1000 ? `${(lineG / 1000).toFixed(2)} kg` : `${lineG} g`;
-      return `<tr><td>${label}</td><td style="text-align:center">${n}</td><td style="text-align:right;color:#555">${unitG} g ea</td><td style="text-align:right;font-family:'Oswald',sans-serif;font-weight:600;color:#1a5276">${lineDisp}</td></tr>`;
+      return `<tr><td>${label}</td><td style="text-align:center">${n}</td><td style="text-align:right;color:#555">${unitG} g</td><td style="text-align:right;font-family:'Oswald',sans-serif;font-weight:600;color:#1a5276">${lineDisp}</td></tr>`;
     })
     .join("");
 
@@ -3042,13 +3041,13 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
     </div>
   </div>
 
+ <div class="section-title">◼ ORTHOGRAPHIC VIEWS WITH DIMENSIONS</div>
+  <div class="angles-grid">${secondaryHTML}</div>
+
   <div class="main-view-wrap">
     <div class="main-view-label">◈ Isometric View</div>
     <img src="${mainShot}" alt="Isometric View"/>
   </div>
-
-  <div class="section-title">◼ ORTHOGRAPHIC VIEWS WITH DIMENSIONS</div>
-  <div class="angles-grid">${secondaryHTML}</div>
 
   <div class="section-title">◼ COMPONENT DATA</div>
   <div class="tables-row">
