@@ -597,51 +597,63 @@ function computeFrameSnapPosition(clickedSocket) {
   const socketWorldPos = new THREE.Vector3();
   clickedSocket.getWorldPosition(socketWorldPos);
 
-  const sockets = getFrameTemplateSocketOffsets();
-
-  const clickedSuffix = clickedSocket.name
-    .replace(/^SOCKET_FRAME_/i, "")
-    .toUpperCase();
-  const preferredSuffix = OPPOSITE_SOCKET_SUFFIX[clickedSuffix] ?? null;
-
-  let snapSocket = null;
-
-  if (preferredSuffix) {
-    snapSocket = sockets.find((s) => s.suffix === preferredSuffix) ?? null;
-  }
-
-  if (!snapSocket && sockets.length > 0) {
-    const centroid = new THREE.Vector3();
-    sockets.forEach((s) => centroid.add(s.localOffset));
-    centroid.divideScalar(sockets.length);
-
-    let maxDist = -1;
-    for (const s of sockets) {
-      const d = s.localOffset.distanceTo(centroid);
-      if (d > maxDist) {
-        maxDist = d;
-        snapSocket = s;
-      }
-    }
-  }
-
   let parentMount = clickedSocket.parent;
   while (parentMount && !parentMount.userData?.isMount) {
     parentMount = parentMount.parent;
   }
   const exactY = parentMount ? parentMount.position.y : baseFrameYLevel;
 
-  if (!snapSocket) {
-    return {
-      mountPos: new THREE.Vector3(socketWorldPos.x, exactY, socketWorldPos.z),
-    };
+  // Get outward direction from existing frame center → socket
+  let outDir = new THREE.Vector3(0, 0, 1);
+  let existingCenter = new THREE.Vector3(
+    socketWorldPos.x,
+    exactY,
+    socketWorldPos.z,
+  );
+
+  if (parentMount) {
+    parentMount.updateMatrixWorld(true);
+    const existingBox = new THREE.Box3().setFromObject(parentMount);
+    existingCenter = existingBox.getCenter(new THREE.Vector3());
+    outDir.subVectors(socketWorldPos, existingCenter);
+    outDir.y = 0;
+    if (outDir.lengthSq() > 0.001) outDir.normalize();
+    // Snap to nearest cardinal axis
+    if (Math.abs(outDir.x) >= Math.abs(outDir.z)) {
+      outDir.set(Math.sign(outDir.x), 0, 0);
+    } else {
+      outDir.set(0, 0, Math.sign(outDir.z));
+    }
   }
 
-  const mountPos = new THREE.Vector3(
-    socketWorldPos.x - snapSocket.localOffset.x,
-    exactY,
-    socketWorldPos.z - snapSocket.localOffset.z,
-  );
+  // Measure template frame bounding box
+  const tempFrame = frameTemplate.clone(true);
+  tempFrame.position.set(0, 0, 0);
+  tempFrame.rotation.set(0, 0, 0);
+  tempFrame.scale.set(1, 1, 1);
+  tempFrame.updateMatrixWorld(true);
+  const frameBox = new THREE.Box3().setFromObject(tempFrame);
+  const frameSize = frameBox.getSize(new THREE.Vector3());
+  const frameCenter = frameBox.getCenter(new THREE.Vector3());
+
+  const mountPos = new THREE.Vector3();
+
+  if (Math.abs(outDir.x) > 0.5) {
+    // Moving along X axis
+    // Forward: place frame starting at socket X position
+    mountPos.x =
+      socketWorldPos.x + outDir.x * (frameSize.x / 2) - frameCenter.x;
+    // Lateral: align center with existing frame's Z center
+    mountPos.z = existingCenter.z - frameCenter.z;
+  } else {
+    // Moving along Z axis
+    // Forward: place frame starting at socket Z position
+    mountPos.z =
+      socketWorldPos.z + outDir.z * (frameSize.z / 2) - frameCenter.z;
+    // Lateral: align center with existing frame's X center
+    mountPos.x = existingCenter.x - frameCenter.x;
+  }
+  mountPos.y = exactY;
 
   return { mountPos };
 }
