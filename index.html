@@ -588,7 +588,7 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        font-size: 13px; /* increased from 8px */
+        font-size: 13px;
         font-weight: 800;
         letter-spacing: 0.26em;
         text-transform: uppercase;
@@ -599,14 +599,14 @@
       .section-label::before {
         content: "";
         display: block;
-        width: 4px; /* slightly wider bar */
-        height: 20px; /* taller bar */
+        width: 4px;
+        height: 20px;
         background: var(--accent);
         border-radius: 2px;
       }
       .section-label-num {
         font-family: "Share Tech Mono", monospace;
-        font-size: 12px; /* increased from 9px */
+        font-size: 12px;
         color: var(--muted);
         margin-left: 4px;
       }
@@ -657,13 +657,7 @@
           transform 0.18s;
         overflow: hidden;
         z-index: 1;
-        clip-path: polygon(
-          0 0,
-          calc(100% - 16px) 0,
-          100% 16px,
-          100% 100%,
-          0 100%
-        );
+        /* clip-path removed — plain square corners */
       }
 
       .card::before {
@@ -702,7 +696,7 @@
       }
       .card .rivet.tr {
         top: 8px;
-        right: 20px;
+        right: 8px;
       }
       .card .rivet.bl {
         bottom: 8px;

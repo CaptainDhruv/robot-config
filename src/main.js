@@ -76,6 +76,7 @@ let supportFirstMarker = null;
 
 // ── Frame-on-support rotation ─────────────────────────────────────────────────
 let frameOnSupportRotationSteps = 0;
+let frameOnSupportBestRot = 0;
 let frameOnSupportAutoYaw = 0;
 let currentHoveredSupportSocket = null;
 
@@ -686,6 +687,19 @@ function computeMotorAutoYaw(socket) {
 /* =========================================================
    FRAME-ON-SUPPORT AUTO-ORIENTATION HELPER
    ========================================================= */
+function getExistingFrameYawOnSupportMount(supportMount, excludeSocketUuid) {
+  let existingYaw = null;
+  scene.traverse((o) => {
+    if (existingYaw !== null) return;
+    if (!o.userData?.isMount || o.userData.type !== "frame") return;
+    const fs = o.userData.socket;
+    if (!fs || fs.uuid === excludeSocketUuid) return;
+    let m = fs.parent;
+    while (m && !m.userData?.isMount) m = m.parent;
+    if (m === supportMount) existingYaw = o.rotation.y;
+  });
+  return existingYaw;
+}
 
 function computeFrameOnSupportSnap(socket, rotSteps) {
   scene.updateMatrixWorld(true);
@@ -743,45 +757,111 @@ function computeFrameOnSupportSnap(socket, rotSteps) {
     };
   }
 
-  const candidateAngles = [];
-  if (posSupB) {
-    const axisAngle = Math.atan2(posSupB.x - posSupA.x, posSupB.z - posSupA.z);
-    for (let i = 0; i < 4; i++)
-      candidateAngles.push(axisAngle + (i * Math.PI) / 2);
-  } else {
-    for (let i = 0; i < 4; i++) candidateAngles.push((i * Math.PI) / 2);
-  }
-
+  // ── Only generate angles that actually align a connector-pair with posA→posB ──
+  // ── Pair-based: rotate each (i,j) connector pair to align with posA→posB ──
+  // ── 4 axis-aligned candidates, farthest-connector error ──────────────────
+  // ── Try snapping each connector to posSupA AND posSupB, pick best total ──
   let bestError = Infinity,
     bestAngle = 0,
     bestSnapConn = rectConnectors[0];
-  for (const snapConn of rectConnectors) {
-    for (const angle of candidateAngles) {
-      const cos = Math.cos(angle),
-        sin = Math.sin(angle);
-      const rsX = cos * snapConn.x + sin * snapConn.z;
-      const rsZ = -sin * snapConn.x + cos * snapConn.z;
-      const mX = posSupA.x - rsX,
-        mZ = posSupA.z - rsZ;
-      let error = 0;
-      if (posSupB) {
-        let minDist = Infinity;
-        for (const c2 of rectConnectors) {
-          if (c2 === snapConn) continue;
-          const c2wX = mX + cos * c2.x + sin * c2.z;
-          const c2wZ = mZ + (-sin * c2.x + cos * c2.z);
-          const d = Math.hypot(c2wX - posSupB.x, c2wZ - posSupB.z);
-          if (d < minDist) minDist = d;
+
+  if (posSupB) {
+    // Try both anchor directions: snapConn→posSupA or snapConn→posSupB
+    for (const [anchorPos, targetPos] of [
+      [posSupA, posSupB],
+      [posSupB, posSupA],
+    ]) {
+      const axisAngle = Math.atan2(
+        targetPos.x - anchorPos.x,
+        targetPos.z - anchorPos.z,
+      );
+      for (let step = 0; step < 4; step++) {
+        const angle = axisAngle + step * (Math.PI / 2);
+        const cos = Math.cos(angle),
+          sin = Math.sin(angle);
+        for (const snapConn of rectConnectors) {
+          const rsX = cos * snapConn.x + sin * snapConn.z;
+          const rsZ = -sin * snapConn.x + cos * snapConn.z;
+          const mX = anchorPos.x - rsX,
+            mZ = anchorPos.z - rsZ;
+          let farDist = -1,
+            farConn = null;
+          for (const c2 of rectConnectors) {
+            if (c2 === snapConn) continue;
+            const d = Math.hypot(c2.x - snapConn.x, c2.z - snapConn.z);
+            if (d > farDist) {
+              farDist = d;
+              farConn = c2;
+            }
+          }
+          if (!farConn) continue;
+          const c2wX = mX + cos * farConn.x + sin * farConn.z;
+          const c2wZ = mZ + (-sin * farConn.x + cos * farConn.z);
+          // Total error: anchor landing + far connector landing
+          const anchorErr = 0; // anchor is exact by construction
+          const farErr = Math.hypot(c2wX - targetPos.x, c2wZ - targetPos.z);
+          // Also check anchor lands near posSupA (not posSupB)
+          const snapWorldX = anchorPos.x; // exact
+          const snapWorldZ = anchorPos.z;
+          const totalErr = farErr;
+          if (totalErr < bestError) {
+            bestError = totalErr;
+            bestAngle = angle;
+            // Always snap to posSupA as the mount anchor
+            const rsXa = cos * snapConn.x + sin * snapConn.z;
+            const rsZa = -sin * snapConn.x + cos * snapConn.z;
+            bestSnapConn = snapConn;
+            // Store which anchor we used
+            bestSnapConn = snapConn;
+            bestSnapConn._anchorPos = anchorPos;
+          }
         }
-        error = minDist;
-      }
-      if (error < bestError) {
-        bestError = error;
-        bestAngle = angle;
-        bestSnapConn = snapConn;
       }
     }
   }
+  // Re-resolve bestSnapConn anchor (posSupA is always the mount reference)
+  const _anchorPos = bestSnapConn?._anchorPos ?? posSupA;
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ── Lock to existing frame on same support ────────────────────────────────
+  if (parentMount) {
+    const existingYaw = getExistingFrameYawOnSupportMount(
+      parentMount,
+      socket.uuid,
+    );
+    if (existingYaw !== null) {
+      bestAngle = existingYaw;
+      if (posSupB && rectConnectors.length >= 2) {
+        let lockedBestConn = rectConnectors[0],
+          lockedBestErr = Infinity;
+        const cos0 = Math.cos(existingYaw),
+          sin0 = Math.sin(existingYaw);
+        for (let i = 0; i < rectConnectors.length; i++) {
+          for (let j = 0; j < rectConnectors.length; j++) {
+            if (i === j) continue;
+            const cA = rectConnectors[i],
+              cB = rectConnectors[j];
+            const rsAX = cos0 * cA.x + sin0 * cA.z;
+            const rsAZ = -sin0 * cA.x + cos0 * cA.z;
+            const rsBX = cos0 * cB.x + sin0 * cB.z;
+            const rsBZ = -sin0 * cB.x + cos0 * cB.z;
+            const mX = posSupA.x - rsAX,
+              mZ = posSupA.z - rsAZ;
+            const err = Math.hypot(
+              mX + rsBX - posSupB.x,
+              mZ + rsBZ - posSupB.z,
+            );
+            if (err < lockedBestErr) {
+              lockedBestErr = err;
+              lockedBestConn = cA;
+            }
+          }
+        }
+        bestSnapConn = lockedBestConn;
+      }
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
 
   const finalAngle = bestAngle + rotSteps * (Math.PI / 2);
   const cos = Math.cos(finalAngle),
@@ -4380,14 +4460,89 @@ function applySocketHighlights() {
    PLACEMENT MODES
    ========================================================= */
 
-function showRotationControls(mode) {
-  const el = document.getElementById("viewport-rot-controls");
-  if (el) el.style.display = "flex";
+function initRotationControls() {
+  if (document.getElementById("viewport-rot-controls")) return;
+  const el = document.createElement("div");
+  el.id = "viewport-rot-controls";
+  Object.assign(el.style, {
+    position: "absolute",
+    bottom: "60px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    display: "none",
+    alignItems: "center",
+    gap: "10px",
+    zIndex: "9500",
+    pointerEvents: "auto",
+  });
+  const style = document.createElement("style");
+  style.textContent = `
+    .vp-rot-btn {
+      background: rgba(12,18,28,0.97); border: 1.5px solid rgba(208,88,24,0.7);
+      color: #d05818; font-family: 'Orbitron', sans-serif; font-size: 10px;
+      font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+      padding: 9px 18px; cursor: pointer; display: flex; align-items: center;
+      gap: 8px; backdrop-filter: blur(6px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.6), 4px 4px 0 rgba(208,88,24,0.25);
+      transition: all 0.12s ease; user-select: none;
+    }
+    .vp-rot-btn:hover {
+      background: rgba(208,88,24,0.2); border-color: #d05818; color: #fff;
+      transform: translate(-1px,-1px);
+    }
+    .vp-rot-btn:active { transform: translate(1px,1px); }
+    .vp-rot-btn.arrow-key-pressed {
+      background: rgba(208,88,24,0.35) !important;
+      border-color: #ff9040 !important; color: #fff !important;
+    }
+    #vp-rot-label {
+      font-family: 'Share Tech Mono', monospace; font-size: 9px;
+      letter-spacing: 0.14em; color: #8aacbf; text-transform: uppercase;
+      padding: 5px 12px; border: 1px solid rgba(208,88,24,0.2);
+      background: rgba(12,18,28,0.85); backdrop-filter: blur(6px); white-space: nowrap;
+    }
+  `;
+  document.head.appendChild(style);
+  const leftBtn = document.createElement("button");
+  leftBtn.id = "arrowKeyLeft";
+  leftBtn.className = "vp-rot-btn";
+  leftBtn.innerHTML = `<span style="font-size:14px">◀</span> ROTATE L`;
+  leftBtn.addEventListener("click", () => fireArrow(-1));
+  const label = document.createElement("div");
+  label.id = "vp-rot-label";
+  label.textContent = "ROTATE  ·  ← →";
+  const rightBtn = document.createElement("button");
+  rightBtn.id = "arrowKeyRight";
+  rightBtn.className = "vp-rot-btn";
+  rightBtn.innerHTML = `ROTATE R <span style="font-size:14px">▶</span>`;
+  rightBtn.addEventListener("click", () => fireArrow(1));
+  el.appendChild(leftBtn);
+  el.appendChild(label);
+  el.appendChild(rightBtn);
+  const viewport =
+    document.getElementById("app")?.parentElement ?? document.body;
+  viewport.style.position = "relative";
+  viewport.appendChild(el);
 }
+
+function showRotationControls(mode) {
+  initRotationControls();
+  const el = document.getElementById("viewport-rot-controls");
+  if (!el) return;
+  el.style.display = "flex";
+  const label = document.getElementById("vp-rot-label");
+  if (label) {
+    if (mode === "frame") label.textContent = "FRAME ROTATION  ·  ← →";
+    else if (mode === "triangle") label.textContent = "FLIP 180°  ·  ← →";
+    else label.textContent = "ROTATE  ·  ← →";
+  }
+}
+
 function hideRotationControls() {
   const el = document.getElementById("viewport-rot-controls");
   if (el) el.style.display = "none";
 }
+
 function updateRotationDisplay() {}
 
 function flashArrowKey(direction) {
@@ -4469,10 +4624,12 @@ function startFramePlacement() {
   if (addFrameToSupportBtn) addFrameToSupportBtn.classList.add("active-mode");
   clearGhost();
   frameOnSupportRotationSteps = 0;
+  frameOnSupportBestRot = 0;
   frameHoverType = "frame";
   placementMode = "frame";
   document.body.classList.add("placement-mode");
   applySocketHighlights();
+  showRotationControls("frame");
   updateShortcutBar();
   updateLegendHighlight();
   showInstructionPanel("frame");
@@ -4910,12 +5067,43 @@ function onMouseMove(e) {
       frameHoverType = "support";
       const socket = supportHit.object.userData.socket;
       currentHoveredSupportSocket = socket;
-      const snap = computeFrameOnSupportSnap(
+
+      // Auto-find a non-intersecting rotation
+      let bestRot = frameOnSupportRotationSteps;
+      const currentSnap = computeFrameOnSupportSnap(
         socket,
         frameOnSupportRotationSteps,
       );
+      if (
+        wouldFrameIntersectExistingFrame(currentSnap.position) ||
+        wouldFrameIntersectSupport(socket, frameOnSupportRotationSteps)
+      ) {
+        for (let i = 1; i <= 3; i++) {
+          const tryRot = (frameOnSupportRotationSteps + i) % 4;
+          const trySnap = computeFrameOnSupportSnap(socket, tryRot);
+          if (
+            !wouldFrameIntersectExistingFrame(trySnap.position) &&
+            !wouldFrameIntersectSupport(socket, tryRot)
+          ) {
+            bestRot = tryRot;
+            break;
+          }
+        }
+      }
+
+      frameOnSupportBestRot = bestRot;
+      const snap = computeFrameOnSupportSnap(socket, bestRot);
       ghost.position.copy(snap.position);
       ghost.rotation.set(0, snap.rotation, 0);
+      // Tint green if valid, red if still intersecting
+      const stillBad =
+        wouldFrameIntersectExistingFrame(snap.position) ||
+        wouldFrameIntersectSupport(socket, bestRot);
+      ghost.traverse((o) => {
+        if (!o.isMesh) return;
+        o.material.color.set(stillBad ? 0xff2200 : 0x88ffaa);
+        o.material.opacity = stillBad ? 0.35 : 0.5;
+      });
       return;
     }
     if (frameHoverType === "support") frameHoverType = "frame";
@@ -5185,39 +5373,32 @@ function onClick(e) {
 
   if (placementMode === "frame") {
     const supportHit = raycaster.intersectObjects(frameOnSupportMarkers)[0];
-    if (supportHit) {
-      const socket = supportHit.object.userData.socket;
-      if (!usedSockets.has(socket.uuid)) {
-        if (wouldFrameIntersectSupport(socket, frameOnSupportRotationSteps)) {
-          showPopup(
-            "A Rectangular Frame cannot be placed here — it would intersect an existing Stress Bridge.\n\nRemove the Stress Bridge first, or choose a different socket.",
-          );
-          return;
-        }
-        placeFrameOnSupport(socket, frameOnSupportRotationSteps);
-        frameOnSupportRotationSteps = 0;
-        frameHoverType = "frame";
-        restartPlacementMode("frame");
-        checkQueuedIntent();
+    const _doPlaceOnSupport = (socket) => {
+      if (usedSockets.has(socket.uuid)) return;
+      const snap = computeFrameOnSupportSnap(socket, frameOnSupportBestRot);
+      if (
+        wouldFrameIntersectExistingFrame(snap.position) ||
+        wouldFrameIntersectSupport(socket, frameOnSupportBestRot)
+      ) {
+        showPopup(
+          "Cannot place Rectangular Frame here — it intersects with an existing part.\n\nUse ← → to rotate, or choose a different socket.",
+        );
+        return;
       }
+      placeFrameOnSupport(socket, frameOnSupportBestRot);
+      frameOnSupportRotationSteps = 0;
+      frameHoverType = "frame";
+      restartPlacementMode("frame");
+      checkQueuedIntent();
+    };
+
+    if (supportHit) {
+      _doPlaceOnSupport(supportHit.object.userData.socket);
       return;
     }
     const nearestSupport = findNearestMarkerOnScreen(frameOnSupportMarkers);
     if (nearestSupport) {
-      const socket = nearestSupport.userData.socket;
-      if (!usedSockets.has(socket.uuid)) {
-        if (wouldFrameIntersectSupport(socket, frameOnSupportRotationSteps)) {
-          showPopup(
-            "A Rectangular Frame cannot be placed here — it would intersect an existing Stress Bridge.\n\nRemove the Stress Bridge first, or choose a different socket.",
-          );
-          return;
-        }
-        placeFrameOnSupport(socket, frameOnSupportRotationSteps);
-        frameOnSupportRotationSteps = 0;
-        frameHoverType = "frame";
-        restartPlacementMode("frame");
-        checkQueuedIntent();
-      }
+      _doPlaceOnSupport(nearestSupport.userData.socket);
       return;
     }
     if (frameMarkers.length === 0) {
@@ -5239,7 +5420,9 @@ function onClick(e) {
     if (usedSockets.has(socket.uuid)) return;
     const { mountPos: previewPos } = computeFrameSnapPosition(socket);
     if (wouldFrameIntersectExistingFrame(previewPos)) {
-      showHudMessage("⚠ Frame would intersect an existing frame");
+      showPopup(
+        "BUILD VIOLATION — Cannot place Rectangular Frame here.\n\nThis position intersects an existing frame. Frames may only be chained end-to-end along the same axis.\n\nConnect to the front or rear socket of the chain instead.",
+      );
       return;
     }
     placeFrame(socket);
@@ -5463,13 +5646,13 @@ function wouldFrameIntersectExistingFrame(mountPos) {
   tempFrame.rotation.set(0, 0, 0);
   tempFrame.updateMatrixWorld(true);
   const newBox = new THREE.Box3().setFromObject(tempFrame);
-  newBox.expandByScalar(-0.06);
+  newBox.expandByScalar(-0.05);
   let intersects = false;
   scene.traverse((o) => {
     if (intersects || !o.userData?.isMount || o.userData.type !== "frame")
       return;
     const existingBox = new THREE.Box3().setFromObject(o);
-    existingBox.expandByScalar(-0.06);
+    existingBox.expandByScalar(-0.05);
     if (newBox.intersectsBox(existingBox)) intersects = true;
   });
   return intersects;
@@ -5712,44 +5895,107 @@ function placeFrameOnSupport(socket, rotationSteps) {
     pushUndo(mount, uuids, "frame");
     return;
   }
-  const candidateAngles = [];
-  if (posSupB) {
-    const axisAngle = Math.atan2(posSupB.x - posSupA.x, posSupB.z - posSupA.z);
-    for (let i = 0; i < 4; i++)
-      candidateAngles.push(axisAngle + (i * Math.PI) / 2);
-  } else {
-    for (let i = 0; i < 4; i++) candidateAngles.push((i * Math.PI) / 2);
-  }
+  // ── Only generate angles that actually align a connector-pair with posA→posB ──
+  // ── Pair-based: rotate each (i,j) connector pair to align with posA→posB ──
+  // ── 4 axis-aligned candidates, farthest-connector error ──────────────────
+  // ── Try snapping each connector to posSupA AND posSupB, pick best total ──
   let bestError = Infinity,
     bestAngle = 0,
     bestSnapConn = rectConnectors[0];
-  for (const snapConn of rectConnectors) {
-    for (const angle of candidateAngles) {
-      const cos = Math.cos(angle),
-        sin = Math.sin(angle);
-      const rsX = cos * snapConn.x + sin * snapConn.z,
-        rsZ = -sin * snapConn.x + cos * snapConn.z;
-      const mX = posSupA.x - rsX,
-        mZ = posSupA.z - rsZ;
-      let error = 0;
-      if (posSupB) {
-        let minDist = Infinity;
-        for (const c2 of rectConnectors) {
-          if (c2 === snapConn) continue;
-          const c2wX = mX + cos * c2.x + sin * c2.z,
-            c2wZ = mZ + (-sin * c2.x + cos * c2.z);
-          const d = Math.hypot(c2wX - posSupB.x, c2wZ - posSupB.z);
-          if (d < minDist) minDist = d;
+
+  if (posSupB) {
+    // Try both anchor directions: snapConn→posSupA or snapConn→posSupB
+    for (const [anchorPos, targetPos] of [
+      [posSupA, posSupB],
+      [posSupB, posSupA],
+    ]) {
+      const axisAngle = Math.atan2(
+        targetPos.x - anchorPos.x,
+        targetPos.z - anchorPos.z,
+      );
+      for (let step = 0; step < 4; step++) {
+        const angle = axisAngle + step * (Math.PI / 2);
+        const cos = Math.cos(angle),
+          sin = Math.sin(angle);
+        for (const snapConn of rectConnectors) {
+          const rsX = cos * snapConn.x + sin * snapConn.z;
+          const rsZ = -sin * snapConn.x + cos * snapConn.z;
+          const mX = anchorPos.x - rsX,
+            mZ = anchorPos.z - rsZ;
+          let farDist = -1,
+            farConn = null;
+          for (const c2 of rectConnectors) {
+            if (c2 === snapConn) continue;
+            const d = Math.hypot(c2.x - snapConn.x, c2.z - snapConn.z);
+            if (d > farDist) {
+              farDist = d;
+              farConn = c2;
+            }
+          }
+          if (!farConn) continue;
+          const c2wX = mX + cos * farConn.x + sin * farConn.z;
+          const c2wZ = mZ + (-sin * farConn.x + cos * farConn.z);
+          // Total error: anchor landing + far connector landing
+          const anchorErr = 0; // anchor is exact by construction
+          const farErr = Math.hypot(c2wX - targetPos.x, c2wZ - targetPos.z);
+          // Also check anchor lands near posSupA (not posSupB)
+          const snapWorldX = anchorPos.x; // exact
+          const snapWorldZ = anchorPos.z;
+          const totalErr = farErr;
+          if (totalErr < bestError) {
+            bestError = totalErr;
+            bestAngle = angle;
+            // Always snap to posSupA as the mount anchor
+            const rsXa = cos * snapConn.x + sin * snapConn.z;
+            const rsZa = -sin * snapConn.x + cos * snapConn.z;
+            bestSnapConn = snapConn;
+            // Store which anchor we used
+            bestSnapConn = snapConn;
+            bestSnapConn._anchorPos = anchorPos;
+          }
         }
-        error = minDist;
-      }
-      if (error < bestError) {
-        bestError = error;
-        bestAngle = angle;
-        bestSnapConn = snapConn;
       }
     }
   }
+  // Re-resolve bestSnapConn anchor (posSupA is always the mount reference)
+  const _anchorPos = bestSnapConn?._anchorPos ?? posSupA;
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ── Lock to existing frame on same support ────────────────────────────────
+  const existingPlacedYaw = getExistingFrameYawOnSupportMount(
+    parentMount,
+    socket.uuid,
+  );
+  if (existingPlacedYaw !== null) {
+    bestAngle = existingPlacedYaw;
+    if (posSupB && rectConnectors.length >= 2) {
+      let lockedBestConn = rectConnectors[0],
+        lockedBestErr = Infinity;
+      const cos0 = Math.cos(existingPlacedYaw),
+        sin0 = Math.sin(existingPlacedYaw);
+      for (let i = 0; i < rectConnectors.length; i++) {
+        for (let j = 0; j < rectConnectors.length; j++) {
+          if (i === j) continue;
+          const cA = rectConnectors[i],
+            cB = rectConnectors[j];
+          const rsAX = cos0 * cA.x + sin0 * cA.z;
+          const rsAZ = -sin0 * cA.x + cos0 * cA.z;
+          const rsBX = cos0 * cB.x + sin0 * cB.z;
+          const rsBZ = -sin0 * cB.x + cos0 * cB.z;
+          const mX = posSupA.x - rsAX,
+            mZ = posSupA.z - rsAZ;
+          const err = Math.hypot(mX + rsBX - posSupB.x, mZ + rsBZ - posSupB.z);
+          if (err < lockedBestErr) {
+            lockedBestErr = err;
+            lockedBestConn = cA;
+          }
+        }
+      }
+      bestSnapConn = lockedBestConn;
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   const finalAngle = bestAngle + rotationSteps * (Math.PI / 2);
   const cos = Math.cos(finalAngle),
     sin = Math.sin(finalAngle);
