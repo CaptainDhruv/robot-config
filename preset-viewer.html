@@ -1053,6 +1053,8 @@
               (parseFloat(row.price) || 0) *
                 (1 + (parseFloat(row.gst_percent) || 0) / 100),
             );
+            if (row.weight_grams != null)
+              PART_WEIGHTS[row.part_type] = row.weight_grams; // ← ADD THIS LINE
           });
 
           const strip = document.getElementById("price-strip");

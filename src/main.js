@@ -22,6 +22,7 @@ import {
   getPartMeta,
   getAllPrices,
   getAllLabels,
+  getAllWeights,
   buildTooltipHTML,
 } from "./partConfig.js";
 
@@ -1241,13 +1242,7 @@ async function init() {
   await getPartConfig(supabase);
 
   // Sync weights from DB on load
-  ["frame", "motor", "triangle_frame", "support_frame", "wheel"].forEach(
-    (type) => {
-      const meta = getPartMeta(type);
-      if (meta?.weight_grams) PART_WEIGHTS[type] = meta.weight_grams;
-    },
-  );
-
+  Object.assign(PART_WEIGHTS, getAllWeights());
   // ── COMPONENT BUTTON TOOLTIPS (reads live from partConfig) ────────
   const BTN_TO_TYPE = {
     addFrame: "frame",
@@ -4640,7 +4635,7 @@ function startFramePlacement() {
   placementMode = "frame";
   document.body.classList.add("placement-mode");
   applySocketHighlights();
-  showRotationControls("frame");
+
   updateShortcutBar();
   updateLegendHighlight();
   showInstructionPanel("frame");

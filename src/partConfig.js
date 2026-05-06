@@ -1,6 +1,6 @@
 /**
  * partConfig.js
- * Fetches component config (label, description, price, gst_percent) from Supabase.
+ * Fetches component config from Supabase.
  * Falls back to hardcoded defaults if the table is empty or unavailable.
  * getPrice() always returns the GST-inclusive price used in the configurator.
  */
@@ -12,6 +12,7 @@ const DEFAULTS = {
       "Structural base of the robot. Connects to other frames and supports motors.",
     price: 1200,
     gst_percent: 18,
+    weight_grams: 450,
   },
   motor: {
     label: "Motor Housing",
@@ -19,6 +20,7 @@ const DEFAULTS = {
       "Drive unit for wheels. Must be attached to a Rectangular Frame socket.",
     price: 2500,
     gst_percent: 18,
+    weight_grams: 380,
   },
   triangle_frame: {
     label: "Triangular Frame",
@@ -26,6 +28,7 @@ const DEFAULTS = {
       "Angular brace for structural support. Attaches to frame sockets.",
     price: 650,
     gst_percent: 18,
+    weight_grams: 180,
   },
   support_frame: {
     label: "Stress Bridge",
@@ -33,12 +36,14 @@ const DEFAULTS = {
       "Cross-bridge connecting two Triangle Frames. Requires 2 placed triangles.",
     price: 900,
     gst_percent: 18,
+    weight_grams: 220,
   },
   wheel: {
     label: "Wheel",
     description: "Motor-driven wheel assembly. Attaches to a Motor Housing.",
     price: 1100,
     gst_percent: 18,
+    weight_grams: 290,
   },
 };
 
@@ -50,7 +55,9 @@ export async function getPartConfig(supabase) {
   try {
     const { data, error } = await supabase
       .from("part_config")
-      .select("part_type, label, description, price, gst_percent");
+      .select(
+        "part_type, label, description, price, gst_percent, weight_grams",
+      );
 
     if (error) {
       console.warn("[partConfig] DB error, using defaults:", error.message);
@@ -69,6 +76,8 @@ export async function getPartConfig(supabase) {
         price: row.price ?? DEFAULTS[row.part_type]?.price ?? 0,
         gst_percent:
           row.gst_percent ?? DEFAULTS[row.part_type]?.gst_percent ?? 18,
+        weight_grams:
+          row.weight_grams ?? DEFAULTS[row.part_type]?.weight_grams ?? 0,
       };
     }
     _loaded = true;
@@ -136,7 +145,12 @@ export function getDescription(type) {
   return _cache[type]?.description ?? DEFAULTS[type]?.description ?? "";
 }
 
-/** Full meta { label, description, price, gst_percent } */
+/** Weight in grams */
+export function getWeight(type) {
+  return _cache[type]?.weight_grams ?? DEFAULTS[type]?.weight_grams ?? 0;
+}
+
+/** Full meta { label, description, price, gst_percent, weight_grams } */
 export function getPartMeta(type) {
   return {
     ...(_cache[type] ??
@@ -145,6 +159,7 @@ export function getPartMeta(type) {
         description: "",
         price: 0,
         gst_percent: 18,
+        weight_grams: 0,
       }),
   };
 }
@@ -165,6 +180,14 @@ export function getAllLabels() {
   const out = {};
   for (const type of Object.keys(_cache))
     out[type] = _cache[type].label ?? type;
+  return out;
+}
+
+/** Weights map: { frame: 450, motor: 380, ... } */
+export function getAllWeights() {
+  const out = {};
+  for (const type of Object.keys(_cache))
+    out[type] = _cache[type].weight_grams ?? DEFAULTS[type]?.weight_grams ?? 0;
   return out;
 }
 
