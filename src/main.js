@@ -1644,24 +1644,6 @@ function bindUI() {
         0,
       );
     }
-    if (placementMode === "frame") {
-      frameOnSupportRotationSteps += dir;
-      const deg = (((frameOnSupportRotationSteps % 4) + 4) % 4) * 90;
-      showHudMessage(`Frame rotation on support: ${deg}°`);
-      updateShortcutBar();
-      if (
-        ghost &&
-        frameHoverType === "support" &&
-        currentHoveredSupportSocket
-      ) {
-        const snap = computeFrameOnSupportSnap(
-          currentHoveredSupportSocket,
-          frameOnSupportRotationSteps,
-        );
-        ghost.position.copy(snap.position);
-        ghost.rotation.set(0, snap.rotation, 0);
-      }
-    }
   }
 
   if (arrowLeft) arrowLeft.addEventListener("click", () => fireArrow(-1));
@@ -2941,7 +2923,7 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
 
   <div class="print-header">
     <div>
-      <div class="print-title">ROBOT CONFIGURATOR</div>
+      <div class="print-title">BLACKBURN CHASSIS CONFIGURATOR</div>
       <div class="print-subtitle">Design Report · MK-1 Unit · ${orderRef}</div>
     </div>
 <div class="print-meta">
@@ -2998,7 +2980,7 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
   </div>
 
   <div class="print-footer">
-    <span>ROBOT CONFIGURATOR v1.0 — UNIT MK-1</span>
+<span>BLACKBURN CHASSIS CONFIGURATOR v1.0 — UNIT MK-1</span>
     <span>ORDER REF: ${orderRef}</span>
     <span>${now}</span>
   </div>
@@ -6165,24 +6147,6 @@ function onKeyDown(e) {
         triangleAutoBaseYaw + triangleManualRotSteps * Math.PI,
         0,
       );
-    }
-    if (placementMode === "frame") {
-      frameOnSupportRotationSteps += dir;
-      const deg = (((frameOnSupportRotationSteps % 4) + 4) % 4) * 90;
-      showHudMessage(`Frame rotation on support: ${deg}°`);
-      updateShortcutBar();
-      if (
-        ghost &&
-        frameHoverType === "support" &&
-        currentHoveredSupportSocket
-      ) {
-        const snap = computeFrameOnSupportSnap(
-          currentHoveredSupportSocket,
-          frameOnSupportRotationSteps,
-        );
-        ghost.position.copy(snap.position);
-        ghost.rotation.set(0, snap.rotation, 0);
-      }
     }
   }
   if (e.key === "Numpad1" || (e.key === "1" && e.altKey))
