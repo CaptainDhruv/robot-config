@@ -1234,6 +1234,20 @@ async function init() {
 
   // Sync weights from DB on load
   Object.assign(PART_WEIGHTS, getAllWeights());
+
+  // Sync button labels from DB
+  const BTN_LABEL_MAP = {
+    addFrame: "frame",
+    addMotor: "motor",
+    addWheelBtn: "wheel",
+    addTriangle: "triangle_frame",
+    addSupportFrame: "support_frame",
+  };
+  Object.entries(BTN_LABEL_MAP).forEach(([btnId, type]) => {
+    const btn = document.getElementById(btnId);
+    const labelEl = btn?.querySelector(".btn-label");
+    if (labelEl) labelEl.textContent = getLabel(type);
+  });
   // ── COMPONENT BUTTON TOOLTIPS (reads live from partConfig) ────────
   const BTN_TO_TYPE = {
     addFrame: "frame",
@@ -1312,6 +1326,11 @@ async function init() {
   // Subscribe to live admin changes — updates basket/weight/tooltips instantly
   subscribePartConfig(supabase, () => {
     Object.assign(PART_WEIGHTS, getAllWeights());
+    Object.entries(BTN_LABEL_MAP).forEach(([btnId, type]) => {
+      const btn = document.getElementById(btnId);
+      const labelEl = btn?.querySelector(".btn-label");
+      if (labelEl) labelEl.textContent = getLabel(type);
+    });
     updateWeightDisplay();
     updateBasketTotals();
     refreshInventory();
