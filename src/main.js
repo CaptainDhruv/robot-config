@@ -2923,7 +2923,7 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
 
   <div class="print-header">
     <div>
-      <div class="print-title">BLACKBURN CHASSIS CONFIGURATOR</div>
+      <div class="print-title">ROBOT CONFIGURATOR</div>
       <div class="print-subtitle">Design Report · MK-1 Unit · ${orderRef}</div>
     </div>
 <div class="print-meta">
@@ -2980,7 +2980,7 @@ function buildFullReportHTML(screenshots, angleLabels, orderRef) {
   </div>
 
   <div class="print-footer">
-<span>BLACKBURN CHASSIS CONFIGURATOR v1.0 — UNIT MK-1</span>
+<span>ROBOT CONFIGURATOR v1.0 — UNIT MK-1</span>
     <span>ORDER REF: ${orderRef}</span>
     <span>${now}</span>
   </div>
