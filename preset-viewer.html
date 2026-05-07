@@ -297,9 +297,9 @@
     <script type="module">
       import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-      const SUPABASE_URL = "https://paxeivuabqbfodnjxfpw.supabase.co";
+      const SUPABASE_URL = "https://nzevwmjhvtxjdphorjcf.supabase.co";
       const SUPABASE_ANON_KEY =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBheGVpdnVhYnFiZm9kbmp4ZnB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNDQwMTAsImV4cCI6MjA4OTgyMDAxMH0.iit20CxI6S04wEJgsPRmEyf3oziSD4e9T2SjJGlHiVQ";
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56ZXZ3bWpodnR4amRwaG9yamNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMjkxMjMsImV4cCI6MjA5MzcwNTEyM30.cRWdxVyizbBtP0Eb984GT1E9ZM22wLe0DHWshellygQ";
       const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       const PRESET_PARTS = {
@@ -462,7 +462,7 @@
         document.getElementById("report-area").innerHTML = `
 <div class="report-wrap" id="printable-report">
   <div class="rpt-header">
-    <div><div class="rpt-title">ROBOT CONFIGURATOR</div><div class="rpt-subtitle">Design Report · MK-1 Unit · ${orderRef}</div></div>
+    <div><div class="rpt-title">BLACKBURN CHASSIS CONFIGURATOR</div><div class="rpt-subtitle">Design Report · MK-1 Unit · ${orderRef}</div></div>
     <div class="rpt-meta">Generated: ${now}<br>Parts: ${totalParts} · Weight: ${totalWeightDisp}<br>Dimensions: ${dims}</div>
   </div>
   <div class="rpt-section-title">◼ ORTHOGRAPHIC VIEWS WITH DIMENSIONS</div>
@@ -487,7 +487,7 @@
       <tr class="rpt-weight-total"><td colspan="3">TOTAL WEIGHT</td><td style="text-align:right">${totalWeightDisp}</td></tr></table>
     </div>
   </div>
-  <div class="rpt-footer"><span>ROBOT CONFIGURATOR v1.0 — UNIT MK-1</span><span>${label.toUpperCase()}</span><span>${now}</span></div>
+  <div class="rpt-footer"><span>BLACKBURN CHASSIS CONFIGURATOR v1.0 — UNIT MK-1</span><span>${label.toUpperCase()}</span><span>${now}</span></div>
 </div>`;
       }
 
