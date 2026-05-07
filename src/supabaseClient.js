@@ -15,8 +15,8 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 //               The anon key is safe to expose in frontend code —
 //               RLS policies protect what it can actually access.
 
-export const SUPABASE_URL = "https://paxeivuabqbfodnjxfpw.supabase.co";
+export const SUPABASE_URL = "https://nzevwmjhvtxjdphorjcf.supabase.co";
 export const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBheGVpdnVhYnFiZm9kbmp4ZnB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNDQwMTAsImV4cCI6MjA4OTgyMDAxMH0.iit20CxI6S04wEJgsPRmEyf3oziSD4e9T2SjJGlHiVQ";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56ZXZ3bWpodnR4amRwaG9yamNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMjkxMjMsImV4cCI6MjA5MzcwNTEyM30.cRWdxVyizbBtP0Eb984GT1E9ZM22wLe0DHWshellygQ";
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
